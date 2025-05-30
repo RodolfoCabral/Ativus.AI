@@ -17,8 +17,10 @@ def create_app():
     app = Flask(__name__)
     
     # Configuração do banco de dados
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{os.getenv('DB_USERNAME', 'root')}:{os.getenv('DB_PASSWORD', 'password')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '3306')}/{os.getenv('DB_NAME', 'mydb')}"
+    postgres_url = os.getenv('DATABASE_URL', 'postgresql://postgres:101002Rm101002Rm#@db.dsmhjzhhjzycqihcgeah.supabase.co:5432/postgres')
+    app.config['SQLALCHEMY_DATABASE_URI'] = postgres_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
     
     # Configuração da chave secreta
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'desenvolvimento-secreto-chave')
