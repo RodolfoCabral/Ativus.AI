@@ -1,17 +1,12 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_mail import Message
-from werkzeug.urls import url_parse
+from urllib.parse import urlparse as url_parse
 from src import db, mail
 from src.models.user import User, AccessRequest
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Email, EqualTo, ValidationError
-
-try:
-    from werkzeug.urls import url_parse
-except ImportError:
-    from werkzeug.urls import url_parse_qs as url_parse
 
 
 auth_bp = Blueprint('auth', __name__)
