@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - OS Management{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <!-- Menu Lateral -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>OS Management</h2>
+            <p>Gestão de Ordens de Serviço</p>
+        </div>
+        <div class="sidebar-menu">
+            <ul>
+                <li>
+                    <a href="{{ url_for('main.dashboard') }}" class="active">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="menu-toggle" data-target="relatorios">
+                        <i class="fas fa-chart-bar"></i> Relatórios
+                        <i class="fas fa-chevron-down float-right"></i>
+                    </a>
+                    <ul class="submenu" id="relatorios">
+                        <li><a href="#"><i class="fas fa-list"></i> Lista de Ativos</a></li>
+                        <li><a href="#"><i class="fas fa-tasks"></i> Ordens de Serviço</a></li>
+                        <li><a href="#"><i class="fas fa-clipboard-list"></i> Solicitações de Serviço</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" class="menu-toggle" data-target="kpis">
+                        <i class="fas fa-chart-line"></i> KPIs
+                        <i class="fas fa-chevron-down float-right"></i>
+                    </a>
+                    <ul class="submenu" id="kpis">
+                        <li><a href="#"><i class="fas fa-chart-pie"></i> Desempenho</a></li>
+                        <li><a href="#"><i class="fas fa-tools"></i> Manutenção</a></li>
+                        <li><a href="#"><i class="fas fa-dollar-sign"></i> Custo</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" class="menu-toggle" data-target="ativos">
+                        <i class="fas fa-cubes"></i> Cadastro de Ativos
+                        <i class="fas fa-chevron-down float-right"></i>
+                    </a>
+                    <ul class="submenu" id="ativos">
+                        <li><a href="#"><i class="fas fa-plus-circle"></i> Cadastrar</a></li>
+                        <li><a href="#"><i class="fas fa-list-ul"></i> Listar</a></li>
+                        <li><a href="#"><i class="fas fa-tags"></i> Categoria</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" class="menu-toggle" data-target="plano">
+                        <i class="fas fa-calendar-alt"></i> Plano de Manutenção
+                        <i class="fas fa-chevron-down float-right"></i>
+                    </a>
+                    <ul class="submenu" id="plano">
+                        <li><a href="#"><i class="fas fa-calendar-check"></i> Cadastrar Preventiva</a></li>
+                        <li><a href="#"><i class="fas fa-wrench"></i> Criar OS Corretiva</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" class="menu-toggle" data-target="chamados">
+                        <i class="fas fa-headset"></i> Abrir Chamado
+                        <i class="fas fa-chevron-down float-right"></i>
+                    </a>
+                    <ul class="submenu" id="chamados">
+                        <li><a href="#"><i class="fas fa-plus"></i> Novo</a></li>
+                        <li><a href="#"><i class="fas fa-clock"></i> Em Aberto</a></li>
+                        <li><a href="#"><i class="fas fa-history"></i> Histórico</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class="fas fa-calendar"></i> Programação
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="menu-toggle" data-target="materiais">
+                        <i class="fas fa-boxes"></i> Materiais
+                        <i class="fas fa-chevron-down float-right"></i>
+                    </a>
+                    <ul class="submenu" id="materiais">
+                        <li><a href="#"><i class="fas fa-box-open"></i> Cadastrar Novo Material</a></li>
+                        <li><a href="#"><i class="fas fa-file-invoice"></i> Solicitação</a></li>
+                        <li><a href="#"><i class="fas fa-truck"></i> Fornecedores</a></li>
+                        <li><a href="#"><i class="fas fa-warehouse"></i> Inventário</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" class="menu-toggle" data-target="parametros">
+                        <i class="fas fa-cogs"></i> Parâmetros
+                        <i class="fas fa-chevron-down float-right"></i>
+                    </a>
+                    <ul class="submenu" id="parametros">
+                        <li><a href="{{ url_for('admin.users') }}"><i class="fas fa-users"></i> Usuários</a></li>
+                        <li><a href="#"><i class="fas fa-user-lock"></i> Permissões</a></li>
+                        <li><a href="#"><i class="fas fa-sliders-h"></i> Sistema</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Conteúdo Principal -->
+    <div class="content">
+        <!-- Área Superior -->
+        <div class="top-bar">
+            <div class="menu-toggle-mobile">
+                <i class="fas fa-bars"></i>
+            </div>
+            <div class="logo">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="OS Management" onerror="this.src='{{ url_for('static', filename='img/logo-placeholder.png') }}'">
+            </div>
+            <div class="user-info">
+                <div class="avatar">
+                    {{ current_user.name[0] }}
+                </div>
+                <div class="dropdown">
+                    <div class="dropdown-toggle">
+                        <span>{{ current_user.name }}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="dropdown-menu">
+                        <a href="#"><i class="fas fa-user"></i> Minha Conta</a>
+                        <a href="#"><i class="fas fa-key"></i> Redefinir Senha</a>
+                        <a href="#"><i class="fas fa-question-circle"></i> Suporte</a>
+                        <a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Conteúdo da Página -->
+        <div class="main-content">
+            <h1>Dashboard</h1>
+            <p>Bem-vindo ao sistema de Gestão de Ordens de Serviço.</p>
+            
+            <div class="row">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Ordens de Serviço</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Resumo das ordens de serviço em andamento.</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Chamados Recentes</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Lista dos chamados mais recentes.</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Indicadores</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Principais indicadores de desempenho.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Toggle submenu
+        $('.menu-toggle').click(function(e) {
+            e.preventDefault();
+            const target = $(this).data('target');
+            $('#' + target).toggleClass('active');
+            $(this).find('.fa-chevron-down').toggleClass('fa-chevron-up');
+        });
+        
+        // Toggle user dropdown
+        $('.dropdown-toggle').click(function() {
+            $('.dropdown-menu').toggleClass('show');
+        });
+        
+        // Close dropdown when clicking outside
+        $(document).click(function(e) {
+            if (!$(e.target).closest('.dropdown').length) {
+                $('.dropdown-menu').removeClass('show');
+            }
+        });
+        
+        // Mobile menu toggle
+        $('.menu-toggle-mobile').click(function() {
+            $('.sidebar').toggleClass('active');
+        });
+    });
+</script>
+{% endblock %}

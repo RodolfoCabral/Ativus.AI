@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Solicitações de Acesso - OS Management{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <!-- Menu Lateral -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>OS Management</h2>
+            <p>Gestão de Ordens de Serviço</p>
+        </div>
+        <div class="sidebar-menu">
+            <ul>
+                <li>
+                    <a href="{{ url_for('main.dashboard') }}">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="menu-toggle" data-target="relatorios">
+                        <i class="fas fa-chart-bar"></i> Relatórios
+                        <i class="fas fa-chevron-down float-right"></i>
+                    </a>
+                    <ul class="submenu" id="relatorios">
+                        <li><a href="#"><i class="fas fa-list"></i> Lista de Ativos</a></li>
+                        <li><a href="#"><i class="fas fa-tasks"></i> Ordens de Serviço</a></li>
+                        <li><a href="#"><i class="fas fa-clipboard-list"></i> Solicitações de Serviço</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" class="menu-toggle" data-target="kpis">
+                        <i class="fas fa-chart-line"></i> KPIs
+                        <i class="fas fa-chevron-down float-right"></i>
+                    </a>
+                    <ul class="submenu" id="kpis">
+                        <li><a href="#"><i class="fas fa-chart-pie"></i> Desempenho</a></li>
+                        <li><a href="#"><i class="fas fa-tools"></i> Manutenção</a></li>
+                        <li><a href="#"><i class="fas fa-dollar-sign"></i> Custo</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" class="menu-toggle" data-target="ativos">
+                        <i class="fas fa-cubes"></i> Cadastro de Ativos
+                        <i class="fas fa-chevron-down float-right"></i>
+                    </a>
+                    <ul class="submenu" id="ativos">
+                        <li><a href="#"><i class="fas fa-plus-circle"></i> Cadastrar</a></li>
+                        <li><a href="#"><i class="fas fa-list-ul"></i> Listar</a></li>
+                        <li><a href="#"><i class="fas fa-tags"></i> Categoria</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" class="menu-toggle" data-target="plano">
+                        <i class="fas fa-calendar-alt"></i> Plano de Manutenção
+                        <i class="fas fa-chevron-down float-right"></i>
+                    </a>
+                    <ul class="submenu" id="plano">
+                        <li><a href="#"><i class="fas fa-calendar-check"></i> Cadastrar Preventiva</a></li>
+                        <li><a href="#"><i class="fas fa-wrench"></i> Criar OS Corretiva</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" class="menu-toggle" data-target="chamados">
+                        <i class="fas fa-headset"></i> Abrir Chamado
+                        <i class="fas fa-chevron-down float-right"></i>
+                    </a>
+                    <ul class="submenu" id="chamados">
+                        <li><a href="#"><i class="fas fa-plus"></i> Novo</a></li>
+                        <li><a href="#"><i class="fas fa-clock"></i> Em Aberto</a></li>
+                        <li><a href="#"><i class="fas fa-history"></i> Histórico</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class="fas fa-calendar"></i> Programação
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="menu-toggle" data-target="materiais">
+                        <i class="fas fa-boxes"></i> Materiais
+                        <i class="fas fa-chevron-down float-right"></i>
+                    </a>
+                    <ul class="submenu" id="materiais">
+                        <li><a href="#"><i class="fas fa-box-open"></i> Cadastrar Novo Material</a></li>
+                        <li><a href="#"><i class="fas fa-file-invoice"></i> Solicitação</a></li>
+                        <li><a href="#"><i class="fas fa-truck"></i> Fornecedores</a></li>
+                        <li><a href="#"><i class="fas fa-warehouse"></i> Inventário</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" class="menu-toggle" data-target="parametros">
+                        <i class="fas fa-cogs"></i> Parâmetros
+                        <i class="fas fa-chevron-down float-right"></i>
+                    </a>
+                    <ul class="submenu" id="parametros">
+                        <li><a href="{{ url_for('admin.users') }}"><i class="fas fa-users"></i> Usuários</a></li>
+                        <li><a href="#"><i class="fas fa-user-lock"></i> Permissões</a></li>
+                        <li><a href="#"><i class="fas fa-sliders-h"></i> Sistema</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Conteúdo Principal -->
+    <div class="content">
+        <!-- Área Superior -->
+        <div class="top-bar">
+            <div class="menu-toggle-mobile">
+                <i class="fas fa-bars"></i>
+            </div>
+            <div class="logo">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="OS Management" onerror="this.src='{{ url_for('static', filename='img/logo-placeholder.png') }}'">
+            </div>
+            <div class="user-info">
+                <div class="avatar">
+                    {{ current_user.name[0] }}
+                </div>
+                <div class="dropdown">
+                    <div class="dropdown-toggle">
+                        <span>{{ current_user.name }}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="dropdown-menu">
+                        <a href="#"><i class="fas fa-user"></i> Minha Conta</a>
+                        <a href="#"><i class="fas fa-key"></i> Redefinir Senha</a>
+                        <a href="#"><i class="fas fa-question-circle"></i> Suporte</a>
+                        <a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Conteúdo da Página -->
+        <div class="main-content">
+            <h1>Solicitações de Acesso</h1>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Solicitações Pendentes</h3>
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">
+                        <i class="fas fa-users"></i> Voltar para Usuários
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Email</th>
+                                    <th>Telefone</th>
+                                    <th>Realidade Atual</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in requests %}
+                                <tr>
+                                    <td>{{ request.name }}</td>
+                                    <td>{{ request.email }}</td>
+                                    <td>{{ request.phone }}</td>
+                                    <td>{{ request.current_management[:50] }}{% if request.current_management|length > 50 %}...{% endif %}</td>
+                                    <td>{{ request.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        <form action="{{ url_for('admin.approve_request', request_id=request.id) }}" method="POST" style="display:inline;">
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                <i class="fas fa-check"></i> Aprovar
+                                            </button>
+                                        </form>
+                                        <form action="{{ url_for('admin.reject_request', request_id=request.id) }}" method="POST" style="display:inline;">
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-times"></i> Rejeitar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center">Não há solicitações pendentes.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
