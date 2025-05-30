@@ -8,6 +8,12 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Email, EqualTo, ValidationError
 
+try:
+    from werkzeug.urls import url_parse
+except ImportError:
+    from werkzeug.urls import url_parse_qs as url_parse
+
+
 auth_bp = Blueprint('auth', __name__)
 
 # Formulários
