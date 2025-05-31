@@ -16,8 +16,8 @@ mail = Mail()
 def create_app():
     app = Flask(__name__)
     
-    # Configuração do banco de dados - APENAS Heroku Postgres
-    database_url = os.getenv('DATABASE_URL')
+    # Configuração do banco de dados - Heroku Postgres
+    database_url = os.getenv('HEROKU_POSTGRESQL_NAVY_URL')
     if database_url:
         # Corrigir URL do PostgreSQL para SQLAlchemy 1.4+
         if database_url.startswith("postgres://"):
@@ -41,10 +41,19 @@ def create_app():
     # Configuração da chave secreta
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'desenvolvimento-secreto-chave')
     
+    # Configuração do Flask-Mail
+    app.config['MAIL_SERVER'] = 'smtp.outlook.com'
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', '')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', '')
+    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', '')
+    mail.init_app(app)
+    
     # Rota de teste simples
     @app.route('/')
     def hello():
-        return "Aplicação funcionando! Banco de dados configurado para Heroku Postgres."
+        return "Aplicação funcionando! Banco de dados e email configurados."
     
     # Rota de informações
     @app.route('/info')
@@ -53,7 +62,8 @@ def create_app():
             "status": "online",
             "version": "1.0.0",
             "app": "OS Management System",
-            "database_url": "Configurado" if os.getenv('DATABASE_URL') else "Não configurado",
+            "database_url": "Configurado" if database_url else "Não configurado",
+            "mail_username": os.getenv('MAIL_USERNAME', 'Não configurado'),
             "environment": os.environ.get('ENVIRONMENT', 'production')
         }
     
