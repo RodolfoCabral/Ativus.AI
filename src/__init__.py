@@ -67,4 +67,33 @@ def create_app():
             "environment": os.environ.get('ENVIRONMENT', 'production')
         }
     
+    # Inicialização do Flask-Login
+    login_manager.init_app(app)
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message = 'Por favor, faça login para acessar esta página.'
+
+    # Configuração do carregador de usuário para o Flask-Login
+    @login_manager.user_loader
+    def load_user(user_id):
+        from src.models.user import User
+        return User.query.get(int(user_id))
+
+    # Criação das tabelas do banco de dados
+    with app.app_context():
+        db.create_all()
+        
+        # Criação do usuário administrador se não existir
+        from src.models.user import User
+        admin_user = User.query.filter_by(email='rodolfocabral@outlook.com.br').first()
+        if not admin_user:
+            admin_user = User(
+                name='Administrador',
+                email='rodolfocabral@outlook.com.br',
+                is_admin=True
+            )
+            admin_user.set_password('101002Rm#')
+            db.session.add(admin_user)
+            db.session.commit()
+
+
     return app
