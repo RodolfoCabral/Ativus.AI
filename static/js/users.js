@@ -173,17 +173,38 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Validar formulário
     function validateForm() {
-        const userId = document.getElementById('user-id').value;
-        const name = document.getElementById('user-name').value;
-        const email = document.getElementById('user-email').value;
-        const company = document.getElementById('user-company').value;
+        const name = document.getElementById('user-name').value.trim();
+        const email = document.getElementById('user-email').value.trim();
+        const company = document.getElementById('user-company').value.trim();
         const password = document.getElementById('user-password').value;
         const profile = document.getElementById('user-profile').value;
         const status = document.getElementById('user-status').value;
         
+        console.log("Validando campos:", { name, email, company, profile, status });
+        
         // Validação básica
-        if (!name || !email || !company || !profile || !status) {
-            showMessage('Por favor, preencha todos os campos obrigatórios', 'error');
+        if (!name) {
+            showMessage('Por favor, preencha o campo Nome', 'error');
+            return false;
+        }
+        
+        if (!email) {
+            showMessage('Por favor, preencha o campo Email', 'error');
+            return false;
+        }
+        
+        if (!company) {
+            showMessage('Por favor, preencha o campo Empresa', 'error');
+            return false;
+        }
+        
+        if (!profile) {
+            showMessage('Por favor, selecione um Perfil', 'error');
+            return false;
+        }
+        
+        if (!status) {
+            showMessage('Por favor, selecione um Status', 'error');
             return false;
         }
         
@@ -194,6 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Senha obrigatória apenas para novos usuários
+        const userId = document.getElementById('user-id').value;
         if (!userId && !password) {
             showMessage('Por favor, defina uma senha para o novo usuário', 'error');
             return false;
@@ -201,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return true;
     }
-    
+
     // Validar formato de email
     function isValidEmail(email) {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
