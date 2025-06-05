@@ -1,0 +1,150 @@
+:root {
+  --primary-color: rgb(153, 86, 152);
+  --secondary-color: rgb(187, 143, 186);
+  --tertiary-color: rgb(221, 199, 221);
+  --white-color: rgb(255, 255, 255);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Roboto', sans-serif;
+}
+
+body {
+  background-color: var(--tertiary-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.login-container {
+  background-color: var(--white-color);
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  width: 150px;
+  margin-bottom: 1.5rem;
+}
+
+.login-title {
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+.form-group {
+  margin-bottom: 1.2rem;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.form-control:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: var(--white-color);
+  width: 100%;
+}
+
+.btn-primary:hover {
+  background-color: rgb(133, 66, 132);
+}
+
+.btn-link {
+  background: none;
+  color: var(--primary-color);
+  text-decoration: none;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.signup-link {
+  display: block;
+  margin-top: 1.5rem;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.signup-link:hover {
+  text-decoration: underline;
+}
+
+.message {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  border-radius: 5px;
+  font-weight: 500;
+}
+
+.message.success {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #4CAF50;
+  border: 1px solid #4CAF50;
+}
+
+.message.error {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: #F44336;
+  border: 1px solid #F44336;
+}
+
+@media (max-width: 480px) {
+  .login-container {
+    width: 90%;
+    padding: 1.5rem;
+  }
+  
+  .actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

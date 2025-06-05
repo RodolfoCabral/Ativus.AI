@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ativus.AI - Assinar Plano</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <div class="signup-container">
+        <img src="/static/images/Ativus.png" alt="Ativus.AI Logo" class="logo">
+        <h1 class="signup-title">Assinar Plano</h1>
+        
+        <form id="signup-form" class="elegant-form">
+            <div class="form-group">
+                <label for="source">Onde nos conheceu?</label>
+                <div class="select-wrapper">
+                    <select id="source" class="form-control" required>
+                        <option value="" disabled selected>Selecione uma opção</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="linkedin">LinkedIn</option>
+                        <option value="facebook">Facebook</option>
+                        <option value="indicacao">Indicação</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="fullname">Nome e sobrenome</label>
+                <div class="input-wrapper">
+                    <input type="text" id="fullname" class="form-control" placeholder="Seu nome completo" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="company">Nome da empresa</label>
+                <div class="input-wrapper">
+                    <input type="text" id="company" class="form-control" placeholder="Nome da sua empresa" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Telefone de contato (com DDD)</label>
+                <div class="input-wrapper">
+                    <input type="tel" id="phone" class="form-control" placeholder="(00) 00000-0000" required>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Enviar formulário</button>
+            
+            <div class="actions">
+                <a href="/" class="btn btn-link">Voltar para login</a>
+            </div>
+        </form>
+        <div id="signup-message" class="message" style="display: none;"></div>
+    </div>
+    
+    <script src="/static/js/signup.js"></script>
+</body>
+</html>
