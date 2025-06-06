@@ -182,6 +182,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const profileInput = document.getElementById('user-profile');
         const statusInput = document.getElementById('user-status');
 
+        if (nameInput) {
+            console.log(nameInput.value);
+            } else {
+            console.error('Elemento com id "name" não encontrado!');
+        }   
+
         // Verificar se os elementos existem
         if (!nameInput || !emailInput || !companyInput || !passwordInput || !profileInput || !statusInput) {
             showMessage('Erro interno: campos do formulário não foram encontrados.', 'error');
