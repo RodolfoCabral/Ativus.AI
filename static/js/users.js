@@ -175,56 +175,65 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Validar formulário
     function validateForm() {
-        const name = document.getElementById('user-name').value.trim();
-        const email = document.getElementById('user-email').value.trim();
-        const company = document.getElementById('user-company').value.trim();
-        const password = document.getElementById('user-password').value;
-        const profile = document.getElementById('user-profile').value;
-        const status = document.getElementById('user-status').value;
-        
-        console.log("Validando campos:", { name, email, company, profile, status });
-        
-        // Validação básica
+        const nameInput = document.getElementById('user-name');
+        const emailInput = document.getElementById('user-email');
+        const companyInput = document.getElementById('user-company');
+        const passwordInput = document.getElementById('user-password');
+        const profileInput = document.getElementById('user-profile');
+        const statusInput = document.getElementById('user-status');
+
+        // Verificar se os elementos existem
+        if (!nameInput || !emailInput || !companyInput || !passwordInput || !profileInput || !statusInput) {
+            showMessage('Erro interno: campos do formulário não foram encontrados.', 'error');
+            return false;
+        }
+
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+        const company = companyInput.value.trim();
+        const password = passwordInput.value;
+        const profile = profileInput.value;
+        const status = statusInput.value;
+
         if (!name) {
             showMessage('Por favor, preencha o campo Nome', 'error');
             return false;
         }
-        
+
         if (!email) {
             showMessage('Por favor, preencha o campo Email', 'error');
             return false;
         }
-        
+
         if (!company) {
             showMessage('Por favor, preencha o campo Empresa', 'error');
             return false;
         }
-        
+
         if (!profile) {
             showMessage('Por favor, selecione um Perfil', 'error');
             return false;
         }
-        
+
         if (!status) {
             showMessage('Por favor, selecione um Status', 'error');
             return false;
         }
-        
-        // Validar email
+
         if (!isValidEmail(email)) {
             showMessage('Por favor, insira um email válido', 'error');
             return false;
         }
-        
-        // Senha obrigatória apenas para novos usuários
+
         const userId = document.getElementById('user-id').value;
         if (!userId && !password) {
             showMessage('Por favor, defina uma senha para o novo usuário', 'error');
             return false;
         }
-        
+
         return true;
     }
+
     
     // Validar formato de email
     function isValidEmail(email) {
