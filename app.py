@@ -25,8 +25,8 @@ def create_app():
     #database_url = os.environ.get('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/postgresql-graceful-19419')
     
     # Corrigir prefixo da URL se necessário (Heroku usa postgres://, SQLAlchemy requer postgresql://)
-    #if database_url.startswith('postgres://'):
-    #    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
     
     # Usar sempre PostgreSQL, sem fallback para SQLite
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
