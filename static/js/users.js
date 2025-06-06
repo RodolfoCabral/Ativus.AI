@@ -147,20 +147,22 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Mostrar campo de senha como opcional
             document.querySelector('label[for="user-password"]').textContent = 'Senha (deixe em branco para manter a atual)';
+            document.getElementById('user-password').required = false;
         } else {
             // Resetar formulário para criação
             form.reset();
             document.getElementById('user-id').value = '';
             document.getElementById('user-email').disabled = false;
             document.querySelector('label[for="user-password"]').textContent = 'Senha';
+            document.getElementById('user-password').required = true;
         }
         
         // Exibir modal
         modal.classList.add('show');
         
-        // Configurar botão de salvar
-        const saveBtn = document.getElementById('save-user-btn');
-        saveBtn.onclick = function() {
+        // Configurar formulário para envio
+        form.onsubmit = function(e) {
+            e.preventDefault();
             if (validateForm()) {
                 if (mode === 'create') {
                     createUser();

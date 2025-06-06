@@ -146,7 +146,7 @@
                         </button>
                         <div class="user-dropdown-content">
                             <a href="#"><i class="fas fa-user"></i> Minha Conta</a>
-                            <a href="#"><i class="fas fa-key"></i> Redefinir Senha</a>
+                            <a href="/reset-password"><i class="fas fa-key"></i> Redefinir Senha</a>
                             <a href="#"><i class="fas fa-question-circle"></i> Suporte</a>
                             <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</a>
                         </div>
@@ -224,11 +224,12 @@
                                         <option value="inactive">Bloqueado</option>
                                     </select>
                                 </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary modal-close-btn">Cancelar</button>
+                                    <button type="submit" id="save-user-btn" class="btn btn-primary">Salvar</button>
+                                </div>
                             </form>
                         </div>
-                        <div class="modal-footer">
-                            <button class="btn btn-secondary modal-close-btn">Cancelar</button>
-                            <button id="save-user-btn" class="btn btn-primary">Salvar</button>
                         </div>
                     </div>
                 </div>
