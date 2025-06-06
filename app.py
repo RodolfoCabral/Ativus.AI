@@ -19,15 +19,16 @@ def create_app():
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev_key_for_testing')
     
     # Configuração do banco de dados PostgreSQL
-    database_url = os.environ.get('DATABASE_URL', 'postgresql-graceful-19419')
+    # Forçar uso do PostgreSQL no Heroku
+    database_url = os.environ.get('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/postgresql-graceful-19419')
+    
+    # Corrigir prefixo da URL se necessário (Heroku usa postgres://, SQLAlchemy requer postgresql://)
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     
-    # Se estiver no ambiente local, use SQLite
-    if 'HEROKU_POSTGRESQL' not in database_url and not database_url.startswith('postgresql://'):
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ativus.db'
-    else:
-        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    # Usar sempre PostgreSQL, sem fallback para SQLite
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    print(f"Conectando ao banco de dados: {database_url}")
     
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
