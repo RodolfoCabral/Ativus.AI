@@ -18,12 +18,17 @@ def create_app():
     app = Flask(__name__, static_folder='static')
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev_key_for_testing')
     
-    # Configuração do banco de dados
-    database_url = os.environ.get('HEROKU_POSTGRESQL_NAVY_URL', 'sqlite:///ativus.db')
+    # Configuração do banco de dados PostgreSQL
+    database_url = os.environ.get('DATABASE_URL', 'postgresql-graceful-19419')
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    # Se estiver no ambiente local, use SQLite
+    if 'HEROKU_POSTGRESQL' not in database_url and not database_url.startswith('postgresql://'):
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ativus.db'
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Inicialização do banco de dados
@@ -59,6 +64,11 @@ def create_app():
     @login_required
     def users():
         return send_from_directory('static', 'users.html')
+    
+    @app.route('/reset-password')
+    @login_required
+    def reset_password():
+        return send_from_directory('static', 'reset_password.html')
     
     @app.route('/static/<path:path>')
     def serve_static(path):

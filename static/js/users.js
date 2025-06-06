@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return true;
     }
-
+    
     // Validar formato de email
     function isValidEmail(email) {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

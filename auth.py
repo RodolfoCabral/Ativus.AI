@@ -187,3 +187,24 @@ def delete_user(user_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Erro ao excluir usuário: {str(e)}'}), 500
+
+@auth_bp.route('/reset-password', methods=['POST'])
+@login_required
+def reset_password():
+    data = request.json
+    
+    if not data or not all(k in data for k in ('current_password', 'new_password')):
+        return jsonify({'success': False, 'message': 'Dados incompletos'})
+    
+    # Verificar se a senha atual está correta
+    if not current_user.check_password(data['current_password']):
+        return jsonify({'success': False, 'message': 'Senha atual incorreta'})
+    
+    # Atualizar a senha
+    try:
+        current_user.set_password(data['new_password'])
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Senha alterada com sucesso'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Erro ao alterar senha: {str(e)}'}), 500
