@@ -243,6 +243,8 @@ document.addEventListener('DOMContentLoaded', function() {
             status: document.getElementById('user-status').value
         };
         
+        console.log('Enviando dados do usuário:', userData);
+        
         fetch('/api/users', {
             method: 'POST',
             headers: {
@@ -250,12 +252,19 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify(userData),
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Resposta recebida:', response);
+            return response.json();
+        })
         .then(data => {
+            console.log('Dados da resposta:', data);
             if (data.success) {
                 showMessage('Usuário criado com sucesso!', 'success');
                 closeUserModal();
-                loadUsers();
+                // Garantir que a lista seja atualizada imediatamente
+                setTimeout(() => {
+                    loadUsers();
+                }, 500);
             } else {
                 showMessage(data.message || 'Erro ao criar usuário', 'error');
             }
