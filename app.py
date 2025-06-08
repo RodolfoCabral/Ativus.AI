@@ -19,10 +19,16 @@ def create_app():
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev_key_for_testing')
     
     # Configuração do banco de dados PostgreSQL
-    # Forçar uso do PostgreSQL no Heroku
+    # Priorizar a variável HEROKU_POSTGRESQL_NAVY_URL fornecida pelo usuário
     database_url = os.environ.get('HEROKU_POSTGRESQL_NAVY_URL')
-
-    #database_url = os.environ.get('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/postgresql-graceful-19419')
+    
+    # Fallback para DATABASE_URL se HEROKU_POSTGRESQL_NAVY_URL não estiver disponível
+    if not database_url:
+        database_url = os.environ.get('DATABASE_URL')
+    
+    # Valor padrão para desenvolvimento local
+    if not database_url:
+        database_url = 'postgresql://postgres:postgres@localhost:5432/ativus'
     
     # Corrigir prefixo da URL se necessário (Heroku usa postgres://, SQLAlchemy requer postgresql://)
     if database_url.startswith('postgres://'):
