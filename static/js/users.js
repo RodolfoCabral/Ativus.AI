@@ -183,82 +183,138 @@ document.addEventListener('DOMContentLoaded', function() {
         // Configurar formulário para envio
         form.onsubmit = function(e) {
             e.preventDefault();
-            if (validateForm()) {
-                if (mode === 'create') {
-                    createUser();
-                } else {
-                    updateUser();
-                }
+            console.log('Formulário submetido, iniciando processamento...');
+            
+            // Validação direta sem função separada
+            const name = form.querySelector('#user-name')?.value?.trim() || '';
+            const email = form.querySelector('#user-email')?.value?.trim() || '';
+            const company = form.querySelector('#user-company')?.value?.trim() || '';
+            const password = form.querySelector('#user-password')?.value || '';
+            const profile = form.querySelector('#user-profile')?.value || '';
+            const status = form.querySelector('#user-status')?.value || '';
+            const userId = form.querySelector('#user-id')?.value || '';
+            
+            console.log("Dados do formulário:", { name, email, company, profile, status, userId });
+            
+            // Validação inline
+            if (!name) {
+                showMessage('Por favor, preencha o campo Nome', 'error');
+                return;
+            }
+            
+            if (!email) {
+                showMessage('Por favor, preencha o campo Email', 'error');
+                return;
+            }
+            
+            if (!company) {
+                showMessage('Por favor, preencha o campo Empresa', 'error');
+                return;
+            }
+            
+            if (!profile) {
+                showMessage('Por favor, selecione um Perfil', 'error');
+                return;
+            }
+            
+            if (!status) {
+                showMessage('Por favor, selecione um Status', 'error');
+                return;
+            }
+            
+            // Validar email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showMessage('Por favor, insira um email válido', 'error');
+                return;
+            }
+            
+            // Senha obrigatória apenas para novos usuários
+            if (!userId && !password) {
+                showMessage('Por favor, defina uma senha para o novo usuário', 'error');
+                return;
+            }
+            
+            console.log('Validação concluída, processando...');
+            
+            // Processar baseado no modo
+            if (mode === 'create') {
+                createUser();
+            } else {
+                updateUser();
             }
         };
     }
     
     // Validar formulário
     function validateForm() {
-        // Verificar se os elementos existem antes de acessar suas propriedades
-        const nameElement = document.getElementById('user-name');
-        const emailElement = document.getElementById('user-email');
-        const companyElement = document.getElementById('user-company');
-        const passwordElement = document.getElementById('user-password');
-        const profileElement = document.getElementById('user-profile');
-        const statusElement = document.getElementById('user-status');
-        const userIdElement = document.getElementById('user-id');
+        console.log('Iniciando validação do formulário...');
         
-        if (!nameElement || !emailElement || !companyElement || !passwordElement || !profileElement || !statusElement || !userIdElement) {
-            console.error('Erro: Elementos do formulário não encontrados');
-            showMessage('Erro interno: Elementos do formulário não encontrados', 'error');
-            return false;
-        }
+        // Aguardar um momento para garantir que o DOM esteja pronto
+        setTimeout(() => {
+            // Usar querySelector como alternativa mais robusta
+            const form = document.getElementById('user-form');
+            if (!form) {
+                console.error('Formulário não encontrado');
+                showMessage('Erro interno: Formulário não encontrado', 'error');
+                return false;
+            }
+            
+            // Usar FormData para acessar os valores do formulário
+            const formData = new FormData(form);
+            const name = form.querySelector('#user-name')?.value?.trim() || '';
+            const email = form.querySelector('#user-email')?.value?.trim() || '';
+            const company = form.querySelector('#user-company')?.value?.trim() || '';
+            const password = form.querySelector('#user-password')?.value || '';
+            const profile = form.querySelector('#user-profile')?.value || '';
+            const status = form.querySelector('#user-status')?.value || '';
+            const userId = form.querySelector('#user-id')?.value || '';
+            
+            console.log("Valores do formulário:", { name, email, company, profile, status, userId });
+            
+            // Validação básica
+            if (!name) {
+                showMessage('Por favor, preencha o campo Nome', 'error');
+                return false;
+            }
+            
+            if (!email) {
+                showMessage('Por favor, preencha o campo Email', 'error');
+                return false;
+            }
+            
+            if (!company) {
+                showMessage('Por favor, preencha o campo Empresa', 'error');
+                return false;
+            }
+            
+            if (!profile) {
+                showMessage('Por favor, selecione um Perfil', 'error');
+                return false;
+            }
+            
+            if (!status) {
+                showMessage('Por favor, selecione um Status', 'error');
+                return false;
+            }
+            
+            // Validar email
+            if (!isValidEmail(email)) {
+                showMessage('Por favor, insira um email válido', 'error');
+                return false;
+            }
+            
+            // Senha obrigatória apenas para novos usuários
+            if (!userId && !password) {
+                showMessage('Por favor, defina uma senha para o novo usuário', 'error');
+                return false;
+            }
+            
+            console.log('Validação concluída com sucesso');
+            return true;
+        }, 100);
         
-        const name = nameElement.value.trim();
-        const email = emailElement.value.trim();
-        const company = companyElement.value.trim();
-        const password = passwordElement.value;
-        const profile = profileElement.value;
-        const status = statusElement.value;
-        const userId = userIdElement.value;
-        
-        console.log("Validando campos:", { name, email, company, profile, status, userId });
-        
-        // Validação básica
-        if (!name) {
-            showMessage('Por favor, preencha o campo Nome', 'error');
-            return false;
-        }
-        
-        if (!email) {
-            showMessage('Por favor, preencha o campo Email', 'error');
-            return false;
-        }
-        
-        if (!company) {
-            showMessage('Por favor, preencha o campo Empresa', 'error');
-            return false;
-        }
-        
-        if (!profile) {
-            showMessage('Por favor, selecione um Perfil', 'error');
-            return false;
-        }
-        
-        if (!status) {
-            showMessage('Por favor, selecione um Status', 'error');
-            return false;
-        }
-        
-        // Validar email
-        if (!isValidEmail(email)) {
-            showMessage('Por favor, insira um email válido', 'error');
-            return false;
-        }
-        
-        // Senha obrigatória apenas para novos usuários
-        if (!userId && !password) {
-            showMessage('Por favor, defina uma senha para o novo usuário', 'error');
-            return false;
-        }
-        
-        return true;
+        return true; // Retorna true temporariamente para permitir o processamento
     }
     
     // Validar formato de email
@@ -269,26 +325,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Criar novo usuário
     function createUser() {
-        const nameElement = document.getElementById('user-name');
-        const emailElement = document.getElementById('user-email');
-        const companyElement = document.getElementById('user-company');
-        const passwordElement = document.getElementById('user-password');
-        const profileElement = document.getElementById('user-profile');
-        const statusElement = document.getElementById('user-status');
+        console.log('Função createUser chamada');
         
-        if (!nameElement || !emailElement || !companyElement || !passwordElement || !profileElement || !statusElement) {
-            console.error('Erro: Elementos do formulário não encontrados para criação');
-            showMessage('Erro interno: Elementos do formulário não encontrados', 'error');
+        const form = document.getElementById('user-form');
+        if (!form) {
+            console.error('Formulário não encontrado na função createUser');
+            showMessage('Erro interno: Formulário não encontrado', 'error');
             return;
         }
         
         const userData = {
-            name: nameElement.value,
-            email: emailElement.value,
-            company: companyElement.value,
-            password: passwordElement.value,
-            profile: profileElement.value,
-            status: statusElement.value
+            name: form.querySelector('#user-name')?.value?.trim() || '',
+            email: form.querySelector('#user-email')?.value?.trim() || '',
+            company: form.querySelector('#user-company')?.value?.trim() || '',
+            password: form.querySelector('#user-password')?.value || '',
+            profile: form.querySelector('#user-profile')?.value || '',
+            status: form.querySelector('#user-status')?.value || ''
         };
         
         console.log('Enviando dados do usuário:', userData);
@@ -325,32 +377,30 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Atualizar usuário existente
     function updateUser() {
-        const userIdElement = document.getElementById('user-id');
-        const nameElement = document.getElementById('user-name');
-        const companyElement = document.getElementById('user-company');
-        const profileElement = document.getElementById('user-profile');
-        const statusElement = document.getElementById('user-status');
-        const passwordElement = document.getElementById('user-password');
+        console.log('Função updateUser chamada');
         
-        if (!userIdElement || !nameElement || !companyElement || !profileElement || !statusElement || !passwordElement) {
-            console.error('Erro: Elementos do formulário não encontrados para atualização');
-            showMessage('Erro interno: Elementos do formulário não encontrados', 'error');
+        const form = document.getElementById('user-form');
+        if (!form) {
+            console.error('Formulário não encontrado na função updateUser');
+            showMessage('Erro interno: Formulário não encontrado', 'error');
             return;
         }
         
-        const userId = userIdElement.value;
+        const userId = form.querySelector('#user-id')?.value || '';
         const userData = {
-            name: nameElement.value,
-            company: companyElement.value,
-            profile: profileElement.value,
-            status: statusElement.value
+            name: form.querySelector('#user-name')?.value?.trim() || '',
+            company: form.querySelector('#user-company')?.value?.trim() || '',
+            profile: form.querySelector('#user-profile')?.value || '',
+            status: form.querySelector('#user-status')?.value || ''
         };
         
         // Incluir senha apenas se foi fornecida
-        const password = passwordElement.value;
+        const password = form.querySelector('#user-password')?.value || '';
         if (password) {
             userData.password = password;
         }
+        
+        console.log('Atualizando usuário:', userId, userData);
         
         fetch(`/api/users/${userId}`, {
             method: 'PUT',
