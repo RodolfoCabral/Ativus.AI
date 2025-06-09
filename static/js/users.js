@@ -130,31 +130,51 @@ document.addEventListener('DOMContentLoaded', function() {
         const modalTitle = document.querySelector('.modal-title');
         const form = document.getElementById('user-form');
         
+        if (!modal || !modalTitle || !form) {
+            console.error('Erro: Elementos do modal não encontrados');
+            showMessage('Erro interno: Elementos do modal não encontrados', 'error');
+            return;
+        }
+        
         // Configurar título do modal
         modalTitle.textContent = mode === 'create' ? 'Cadastrar Novo Usuário' : 'Editar Usuário';
         
         // Preencher formulário se estiver editando
         if (mode === 'edit' && user) {
-            document.getElementById('user-id').value = user.id;
-            document.getElementById('user-name').value = user.name || '';
-            document.getElementById('user-email').value = user.email;
-            document.getElementById('user-company').value = user.company || '';
-            document.getElementById('user-profile').value = user.profile;
-            document.getElementById('user-status').value = user.status;
+            const userIdElement = document.getElementById('user-id');
+            const nameElement = document.getElementById('user-name');
+            const emailElement = document.getElementById('user-email');
+            const companyElement = document.getElementById('user-company');
+            const profileElement = document.getElementById('user-profile');
+            const statusElement = document.getElementById('user-status');
+            const passwordLabel = document.querySelector('label[for="user-password"]');
+            const passwordElement = document.getElementById('user-password');
             
-            // Campo de email desabilitado na edição
-            document.getElementById('user-email').disabled = true;
+            if (userIdElement) userIdElement.value = user.id;
+            if (nameElement) nameElement.value = user.name || '';
+            if (emailElement) {
+                emailElement.value = user.email;
+                emailElement.disabled = true;
+            }
+            if (companyElement) companyElement.value = user.company || '';
+            if (profileElement) profileElement.value = user.profile;
+            if (statusElement) statusElement.value = user.status;
             
             // Mostrar campo de senha como opcional
-            document.querySelector('label[for="user-password"]').textContent = 'Senha (deixe em branco para manter a atual)';
-            document.getElementById('user-password').required = false;
+            if (passwordLabel) passwordLabel.textContent = 'Senha (deixe em branco para manter a atual)';
+            if (passwordElement) passwordElement.required = false;
         } else {
             // Resetar formulário para criação
             form.reset();
-            document.getElementById('user-id').value = '';
-            document.getElementById('user-email').disabled = false;
-            document.querySelector('label[for="user-password"]').textContent = 'Senha';
-            document.getElementById('user-password').required = true;
+            const userIdElement = document.getElementById('user-id');
+            const emailElement = document.getElementById('user-email');
+            const passwordLabel = document.querySelector('label[for="user-password"]');
+            const passwordElement = document.getElementById('user-password');
+            
+            if (userIdElement) userIdElement.value = '';
+            if (emailElement) emailElement.disabled = false;
+            if (passwordLabel) passwordLabel.textContent = 'Senha';
+            if (passwordElement) passwordElement.required = true;
         }
         
         // Exibir modal
@@ -175,14 +195,30 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Validar formulário
     function validateForm() {
-        const name = document.getElementById('user-name').value.trim();
-        const email = document.getElementById('user-email').value.trim();
-        const company = document.getElementById('user-company').value.trim();
-        const password = document.getElementById('user-password').value;
-        const profile = document.getElementById('user-profile').value;
-        const status = document.getElementById('user-status').value;
+        // Verificar se os elementos existem antes de acessar suas propriedades
+        const nameElement = document.getElementById('user-name');
+        const emailElement = document.getElementById('user-email');
+        const companyElement = document.getElementById('user-company');
+        const passwordElement = document.getElementById('user-password');
+        const profileElement = document.getElementById('user-profile');
+        const statusElement = document.getElementById('user-status');
+        const userIdElement = document.getElementById('user-id');
         
-        console.log("Validando campos:", { name, email, company, profile, status });
+        if (!nameElement || !emailElement || !companyElement || !passwordElement || !profileElement || !statusElement || !userIdElement) {
+            console.error('Erro: Elementos do formulário não encontrados');
+            showMessage('Erro interno: Elementos do formulário não encontrados', 'error');
+            return false;
+        }
+        
+        const name = nameElement.value.trim();
+        const email = emailElement.value.trim();
+        const company = companyElement.value.trim();
+        const password = passwordElement.value;
+        const profile = profileElement.value;
+        const status = statusElement.value;
+        const userId = userIdElement.value;
+        
+        console.log("Validando campos:", { name, email, company, profile, status, userId });
         
         // Validação básica
         if (!name) {
@@ -217,7 +253,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Senha obrigatória apenas para novos usuários
-        const userId = document.getElementById('user-id').value;
         if (!userId && !password) {
             showMessage('Por favor, defina uma senha para o novo usuário', 'error');
             return false;
@@ -234,13 +269,26 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Criar novo usuário
     function createUser() {
+        const nameElement = document.getElementById('user-name');
+        const emailElement = document.getElementById('user-email');
+        const companyElement = document.getElementById('user-company');
+        const passwordElement = document.getElementById('user-password');
+        const profileElement = document.getElementById('user-profile');
+        const statusElement = document.getElementById('user-status');
+        
+        if (!nameElement || !emailElement || !companyElement || !passwordElement || !profileElement || !statusElement) {
+            console.error('Erro: Elementos do formulário não encontrados para criação');
+            showMessage('Erro interno: Elementos do formulário não encontrados', 'error');
+            return;
+        }
+        
         const userData = {
-            name: document.getElementById('user-name').value,
-            email: document.getElementById('user-email').value,
-            company: document.getElementById('user-company').value,
-            password: document.getElementById('user-password').value,
-            profile: document.getElementById('user-profile').value,
-            status: document.getElementById('user-status').value
+            name: nameElement.value,
+            email: emailElement.value,
+            company: companyElement.value,
+            password: passwordElement.value,
+            profile: profileElement.value,
+            status: statusElement.value
         };
         
         console.log('Enviando dados do usuário:', userData);
@@ -277,16 +325,29 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Atualizar usuário existente
     function updateUser() {
-        const userId = document.getElementById('user-id').value;
+        const userIdElement = document.getElementById('user-id');
+        const nameElement = document.getElementById('user-name');
+        const companyElement = document.getElementById('user-company');
+        const profileElement = document.getElementById('user-profile');
+        const statusElement = document.getElementById('user-status');
+        const passwordElement = document.getElementById('user-password');
+        
+        if (!userIdElement || !nameElement || !companyElement || !profileElement || !statusElement || !passwordElement) {
+            console.error('Erro: Elementos do formulário não encontrados para atualização');
+            showMessage('Erro interno: Elementos do formulário não encontrados', 'error');
+            return;
+        }
+        
+        const userId = userIdElement.value;
         const userData = {
-            name: document.getElementById('user-name').value,
-            company: document.getElementById('user-company').value,
-            profile: document.getElementById('user-profile').value,
-            status: document.getElementById('user-status').value
+            name: nameElement.value,
+            company: companyElement.value,
+            profile: profileElement.value,
+            status: statusElement.value
         };
         
         // Incluir senha apenas se foi fornecida
-        const password = document.getElementById('user-password').value;
+        const password = passwordElement.value;
         if (password) {
             userData.password = password;
         }
