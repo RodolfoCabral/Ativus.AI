@@ -247,35 +247,3 @@ document.addEventListener('DOMContentLoaded', function() {
         dynamicContent.style.display = 'block';
     }
 });
-
-    // Carregar informações do usuário logado
-    function loadCurrentUserInfo() {
-        fetch('/api/user')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Atualizar nome e empresa do usuário na interface
-                    const userNameElement = document.getElementById('user-name');
-                    const userCompanyElement = document.getElementById('user-company');
-                    
-                    if (userNameElement && data.user.name) {
-                        userNameElement.textContent = data.user.name;
-                    }
-                    
-                    if (userCompanyElement && data.user.company) {
-                        userCompanyElement.textContent = data.user.company;
-                    }
-                    
-                    console.log('Informações do usuário carregadas:', data.user);
-                } else {
-                    console.error('Erro ao carregar informações do usuário:', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Erro ao buscar informações do usuário:', error);
-            });
-    }
-
-    // Carregar informações do usuário quando a página carregar
-    loadCurrentUserInfo();
-

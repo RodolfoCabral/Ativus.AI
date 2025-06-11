@@ -39,12 +39,15 @@ def logout():
 @login_required
 def get_user():
     return jsonify({
-        'id': current_user.id,
-        'email': current_user.email,
-        'profile': current_user.profile,
-        'name': current_user.name,
-        'company': current_user.company,
-        'status': current_user.status
+        'success': True,
+        'user': {
+            'id': current_user.id,
+            'email': current_user.email,
+            'profile': current_user.profile,
+            'name': current_user.name,
+            'company': current_user.company,
+            'status': current_user.status
+        }
     })
 
 @auth_bp.route('/users', methods=['GET'])
