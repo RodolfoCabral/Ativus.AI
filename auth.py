@@ -53,8 +53,17 @@ def get_user():
 @auth_bp.route('/users', methods=['GET'])
 @login_required
 def get_users():
-    # Todos os usuários podem ver a lista, mas apenas master pode modificar
-    users = User.query.all()
+    # Filtrar usuários baseado no perfil do usuário atual
+    if current_user.profile == 'master':
+        # Master pode ver todos os usuários
+        users = User.query.all()
+    elif current_user.profile == 'admin':
+        # Admin só pode ver usuários da mesma empresa
+        users = User.query.filter_by(company=current_user.company).all()
+    else:
+        # Usuários comuns não podem ver a lista
+        return jsonify({'success': False, 'message': 'Permissão negada. Apenas administradores podem visualizar usuários.'}), 403
+    
     users_list = []
     
     for user in users:
@@ -72,26 +81,40 @@ def get_users():
 @auth_bp.route('/users', methods=['POST'])
 @login_required
 def create_user():
-    # Verificar se o usuário tem permissão (apenas master)
-    if current_user.profile != 'master':
-        return jsonify({'success': False, 'message': 'Permissão negada. Apenas usuários master podem criar novos usuários.'}), 403
+    # Verificar se o usuário tem permissão (master ou admin)
+    if current_user.profile not in ['master', 'admin']:
+        return jsonify({'success': False, 'message': 'Permissão negada. Apenas usuários master e admin podem criar novos usuários.'}), 403
     
     data = request.json
     
-    # Validar dados
-    required_fields = ['email', 'password', 'name', 'company', 'profile', 'status']
+    # Validar dados básicos
+    required_fields = ['email', 'password', 'name', 'profile', 'status']
     if not data or not all(k in data for k in required_fields):
         return jsonify({'success': False, 'message': 'Dados incompletos'})
+    
+    # Definir empresa baseado no perfil do usuário atual
+    if current_user.profile == 'master':
+        # Master pode definir qualquer empresa
+        if 'company' not in data or not data['company']:
+            return jsonify({'success': False, 'message': 'Campo empresa é obrigatório'})
+        company = data['company']
+    elif current_user.profile == 'admin':
+        # Admin só pode criar usuários da mesma empresa
+        company = current_user.company
     
     # Verificar se o email já existe
     if User.query.filter_by(email=data['email']).first():
         return jsonify({'success': False, 'message': 'Email já cadastrado'})
     
+    # Verificar se admin está tentando criar outro master
+    if current_user.profile == 'admin' and data['profile'] == 'master':
+        return jsonify({'success': False, 'message': 'Administradores não podem criar usuários master'})
+    
     # Criar novo usuário
     new_user = User(
         email=data['email'],
         name=data['name'],
-        company=data['company'],
+        company=company,
         profile=data['profile'],
         status=data['status']
     )
@@ -119,26 +142,43 @@ def create_user():
 @auth_bp.route('/users/<int:user_id>', methods=['PUT'])
 @login_required
 def update_user(user_id):
-    # Verificar se o usuário tem permissão (apenas master)
-    if current_user.profile != 'master':
-        return jsonify({'success': False, 'message': 'Permissão negada. Apenas usuários master podem editar usuários.'}), 403
+    # Verificar se o usuário tem permissão (master ou admin)
+    if current_user.profile not in ['master', 'admin']:
+        return jsonify({'success': False, 'message': 'Permissão negada. Apenas usuários master e admin podem editar usuários.'}), 403
     
     # Verificar se o usuário existe
     user_to_update = User.query.get(user_id)
     if not user_to_update:
         return jsonify({'success': False, 'message': 'Usuário não encontrado'}), 404
     
+    # Se for admin, verificar se o usuário pertence à mesma empresa
+    if current_user.profile == 'admin':
+        if user_to_update.company != current_user.company:
+            return jsonify({'success': False, 'message': 'Permissão negada. Você só pode editar usuários da sua empresa.'}), 403
+        
+        # Admin não pode editar usuários master
+        if user_to_update.profile == 'master':
+            return jsonify({'success': False, 'message': 'Administradores não podem editar usuários master.'}), 403
+    
     data = request.json
     
     # Atualizar campos
     if 'name' in data:
         user_to_update.name = data['name']
-    if 'company' in data:
+    
+    # Apenas master pode alterar empresa
+    if 'company' in data and current_user.profile == 'master':
         user_to_update.company = data['company']
+    
     if 'profile' in data:
+        # Admin não pode criar/promover para master
+        if current_user.profile == 'admin' and data['profile'] == 'master':
+            return jsonify({'success': False, 'message': 'Administradores não podem promover usuários para master.'}), 403
         user_to_update.profile = data['profile']
+    
     if 'status' in data:
         user_to_update.status = data['status']
+    
     if 'password' in data and data['password']:
         user_to_update.set_password(data['password'])
     
@@ -163,16 +203,25 @@ def update_user(user_id):
 @auth_bp.route('/users/<int:user_id>', methods=['DELETE'])
 @login_required
 def delete_user(user_id):
-    # Verificar se o usuário tem permissão (apenas master)
-    if current_user.profile != 'master':
-        return jsonify({'success': False, 'message': 'Permissão negada. Apenas usuários master podem excluir usuários.'}), 403
+    # Verificar se o usuário tem permissão (master ou admin)
+    if current_user.profile not in ['master', 'admin']:
+        return jsonify({'success': False, 'message': 'Permissão negada. Apenas usuários master e admin podem excluir usuários.'}), 403
     
     # Verificar se o usuário existe
     user_to_delete = User.query.get(user_id)
     if not user_to_delete:
         return jsonify({'success': False, 'message': 'Usuário não encontrado'}), 404
     
-    # Não permitir excluir usuários master
+    # Se for admin, verificar se o usuário pertence à mesma empresa
+    if current_user.profile == 'admin':
+        if user_to_delete.company != current_user.company:
+            return jsonify({'success': False, 'message': 'Permissão negada. Você só pode excluir usuários da sua empresa.'}), 403
+        
+        # Admin não pode excluir usuários master
+        if user_to_delete.profile == 'master':
+            return jsonify({'success': False, 'message': 'Administradores não podem excluir usuários master.'}), 403
+    
+    # Não permitir excluir usuários master (para qualquer perfil)
     if user_to_delete.profile == 'master':
         return jsonify({'success': False, 'message': 'Não é permitido excluir usuários com perfil master'}), 403
     

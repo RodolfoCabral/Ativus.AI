@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Variáveis globais
     let currentUserProfile = '';
+    let currentUserCompany = '';
     let usersList = [];
     
     // Verificar o perfil do usuário atual
@@ -10,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success && data.user) {
                     currentUserProfile = data.user.profile;
+                    currentUserCompany = data.user.company;
                     loadUsers();
                 } else {
                     console.error('Erro ao obter perfil do usuário:', data.message);
@@ -161,8 +163,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 emailElement.value = user.email;
                 emailElement.disabled = true;
             }
-            if (companyElement) companyElement.value = user.company || '';
-            if (profileElement) profileElement.value = user.profile;
+            if (companyElement) {
+                companyElement.value = user.company || '';
+                // Admin não pode alterar empresa
+                if (currentUserProfile === 'admin') {
+                    companyElement.disabled = true;
+                }
+            }
+            if (profileElement) {
+                profileElement.value = user.profile;
+                // Admin não pode editar perfil master
+                if (currentUserProfile === 'admin' && user.profile === 'master') {
+                    profileElement.disabled = true;
+                }
+            }
             if (statusElement) statusElement.value = user.status;
             
             // Mostrar campo de senha como opcional
@@ -173,6 +187,8 @@ document.addEventListener('DOMContentLoaded', function() {
             form.reset();
             const userIdElement = document.getElementById('user-id');
             const emailElement = document.getElementById('user-email');
+            const companyElement = document.getElementById('user-company');
+            const profileElement = document.getElementById('user-profile');
             const passwordLabel = document.querySelector('label[for="user-password"]');
             const passwordElement = document.getElementById('user-password');
             
@@ -180,6 +196,36 @@ document.addEventListener('DOMContentLoaded', function() {
             if (emailElement) emailElement.disabled = false;
             if (passwordLabel) passwordLabel.textContent = 'Senha';
             if (passwordElement) passwordElement.required = true;
+            
+            // Configurar campo empresa baseado no perfil do usuário atual
+            if (companyElement) {
+                if (currentUserProfile === 'admin') {
+                    // Admin: pré-preencher com sua empresa e desabilitar
+                    companyElement.value = currentUserCompany;
+                    companyElement.disabled = true;
+                } else {
+                    // Master: pode definir qualquer empresa
+                    companyElement.value = '';
+                    companyElement.disabled = false;
+                }
+            }
+            
+            // Configurar opções de perfil baseado no usuário atual
+            if (profileElement) {
+                // Limpar opções existentes
+                profileElement.innerHTML = '<option value="">Selecione um perfil</option>';
+                
+                if (currentUserProfile === 'master') {
+                    // Master pode criar qualquer perfil
+                    profileElement.innerHTML += '<option value="user">Usuário</option>';
+                    profileElement.innerHTML += '<option value="admin">Administrador</option>';
+                    profileElement.innerHTML += '<option value="master">Master</option>';
+                } else if (currentUserProfile === 'admin') {
+                    // Admin só pode criar usuários comuns e outros admins
+                    profileElement.innerHTML += '<option value="user">Usuário</option>';
+                    profileElement.innerHTML += '<option value="admin">Administrador</option>';
+                }
+            }
         }
         
         // Exibir modal
@@ -212,7 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            if (!company) {
+            // Para admin, empresa é automática; para master, é obrigatória
+            if (currentUserProfile === 'master' && !company) {
                 showMessage('Por favor, preencha o campo Empresa', 'error');
                 return;
             }
@@ -484,8 +531,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const addUserBtn = document.getElementById('add-user-btn');
         if (addUserBtn) {
             addUserBtn.addEventListener('click', function() {
-                if (currentUserProfile !== 'master') {
-                    showMessage('Apenas usuários com perfil master podem adicionar usuários', 'error');
+                if (currentUserProfile !== 'master' && currentUserProfile !== 'admin') {
+                    showMessage('Apenas usuários com perfil master ou admin podem adicionar usuários', 'error');
                     return;
                 }
                 openUserModal('create');
