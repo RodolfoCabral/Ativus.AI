@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Mostrar ou ocultar botão de adicionar usuário com base no perfil
         const addUserBtn = document.getElementById('add-user-btn');
         if (addUserBtn) {
-            if (currentUserProfile === 'master') {
+            if (currentUserProfile === 'master' || currentUserProfile === 'admin') {
                 addUserBtn.style.display = 'inline-block';
             } else {
                 addUserBtn.style.display = 'none';
@@ -94,14 +94,26 @@ document.addEventListener('DOMContentLoaded', function() {
         // Botões de editar
         document.querySelectorAll('.btn-edit').forEach(button => {
             button.addEventListener('click', function() {
-                if (currentUserProfile !== 'master') {
-                    showMessage('Apenas usuários com perfil master podem editar usuários', 'error');
+                if (currentUserProfile !== 'master' && currentUserProfile !== 'admin') {
+                    showMessage('Apenas usuários com perfil master ou admin podem editar usuários', 'error');
                     return;
                 }
                 
                 const userId = this.getAttribute('data-id');
                 const user = usersList.find(u => u.id == userId);
                 if (user) {
+                    // Admin só pode editar usuários da mesma empresa
+                    if (currentUserProfile === 'admin' && user.company !== currentUserCompany) {
+                        showMessage('Você só pode editar usuários da sua empresa', 'error');
+                        return;
+                    }
+                    
+                    // Admin não pode editar usuários master
+                    if (currentUserProfile === 'admin' && user.profile === 'master') {
+                        showMessage('Administradores não podem editar usuários master', 'error');
+                        return;
+                    }
+                    
                     openUserModal('edit', user);
                 }
             });
@@ -110,14 +122,26 @@ document.addEventListener('DOMContentLoaded', function() {
         // Botões de excluir
         document.querySelectorAll('.btn-delete').forEach(button => {
             button.addEventListener('click', function() {
-                if (currentUserProfile !== 'master') {
-                    showMessage('Apenas usuários com perfil master podem excluir usuários', 'error');
+                if (currentUserProfile !== 'master' && currentUserProfile !== 'admin') {
+                    showMessage('Apenas usuários com perfil master ou admin podem excluir usuários', 'error');
                     return;
                 }
                 
                 const userId = this.getAttribute('data-id');
                 const user = usersList.find(u => u.id == userId);
                 if (user) {
+                    // Admin só pode excluir usuários da mesma empresa
+                    if (currentUserProfile === 'admin' && user.company !== currentUserCompany) {
+                        showMessage('Você só pode excluir usuários da sua empresa', 'error');
+                        return;
+                    }
+                    
+                    // Admin não pode excluir usuários master
+                    if (currentUserProfile === 'admin' && user.profile === 'master') {
+                        showMessage('Administradores não podem excluir usuários master', 'error');
+                        return;
+                    }
+                    
                     if (user.profile === 'master') {
                         showMessage('Não é possível excluir usuários com perfil master', 'error');
                         return;

@@ -556,3 +556,173 @@ body {
     justify-content: flex-end;
     gap: 10px;
 }
+
+/* Responsive Design - Media Queries */
+
+/* Tablet and Mobile Styles */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform var(--transition-speed);
+    }
+    
+    .sidebar.mobile-open {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .sidebar-collapsed .main-content {
+        margin-left: 0;
+    }
+    
+    .sidebar-toggle {
+        display: block;
+    }
+    
+    /* Melhorar submenu em mobile */
+    .submenu {
+        background-color: rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+        margin: 5px 8px;
+    }
+    
+    .submenu-link {
+        padding: 8px 15px 8px 35px;
+        margin: 2px 0;
+        font-size: 13px;
+    }
+    
+    .menu-item.active .submenu {
+        max-height: 300px;
+        padding: 5px 0;
+    }
+    
+    /* Ajustar tabela em mobile */
+    .user-table {
+        font-size: 14px;
+    }
+    
+    .user-table th,
+    .user-table td {
+        padding: 8px 10px;
+    }
+    
+    /* Esconder algumas colunas em telas pequenas */
+    .user-table th:nth-child(3),
+    .user-table td:nth-child(3) {
+        display: none;
+    }
+    
+    /* Ajustar modal em mobile */
+    .modal {
+        margin: 10px;
+        max-width: calc(100% - 20px);
+    }
+    
+    .modal-body {
+        padding: 15px;
+    }
+    
+    /* Ajustar user info */
+    .user-info {
+        flex-direction: column;
+        align-items: flex-end;
+    }
+    
+    #user-name,
+    #user-company {
+        font-size: 12px;
+        margin: 2px 0;
+    }
+}
+
+/* Mobile Small Styles */
+@media (max-width: 480px) {
+    .top-bar {
+        padding: 0 10px;
+    }
+    
+    .user-management {
+        padding: 15px;
+        margin: 10px;
+    }
+    
+    .user-management h2 {
+        font-size: 18px;
+    }
+    
+    /* Esconder mais colunas em telas muito pequenas */
+    .user-table th:nth-child(4),
+    .user-table td:nth-child(4) {
+        display: none;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .btn-action {
+        padding: 8px;
+        font-size: 12px;
+    }
+    
+    /* Melhorar submenu em telas muito pequenas */
+    .menu-link {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .submenu-link {
+        padding: 6px 12px 6px 30px;
+        font-size: 12px;
+    }
+    
+    /* Ajustar botões */
+    .btn {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+}
+
+/* Landscape Mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .sidebar {
+        width: 200px;
+    }
+    
+    .menu-link {
+        padding: 8px 12px;
+    }
+    
+    .submenu-link {
+        padding: 6px 12px 6px 30px;
+    }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+    .menu-link,
+    .submenu-link {
+        padding: 12px 15px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .submenu-link {
+        padding-left: 45px;
+    }
+    
+    .btn-action {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+

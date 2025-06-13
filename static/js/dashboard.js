@@ -5,6 +5,16 @@ document.addEventListener('DOMContentLoaded', function() {
         item.addEventListener('click', function(e) {
             if (e.target.closest('.submenu')) return;
             e.preventDefault();
+            
+            // Em mobile, fechar outros submenus abertos
+            if (window.innerWidth <= 768) {
+                menuItems.forEach(otherItem => {
+                    if (otherItem !== this) {
+                        otherItem.classList.remove('active');
+                    }
+                });
+            }
+            
             this.classList.toggle('active');
         });
     });
@@ -12,9 +22,34 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle sidebar
     const sidebarToggle = document.getElementById('sidebar-toggle');
     const dashboardContainer = document.querySelector('.dashboard-container');
+    const sidebar = document.querySelector('.sidebar');
     
     sidebarToggle.addEventListener('click', function() {
-        dashboardContainer.classList.toggle('sidebar-collapsed');
+        if (window.innerWidth <= 768) {
+            // Em mobile, usar classe mobile-open
+            sidebar.classList.toggle('mobile-open');
+        } else {
+            // Em desktop, usar classe sidebar-collapsed
+            dashboardContainer.classList.toggle('sidebar-collapsed');
+        }
+    });
+    
+    // Fechar sidebar em mobile quando clicar fora
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth <= 768) {
+            if (!e.target.closest('.sidebar') && !e.target.closest('.sidebar-toggle')) {
+                sidebar.classList.remove('mobile-open');
+            }
+        }
+    });
+    
+    // Ajustar comportamento ao redimensionar janela
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            sidebar.classList.remove('mobile-open');
+        } else {
+            dashboardContainer.classList.remove('sidebar-collapsed');
+        }
     });
 
     // User dropdown
