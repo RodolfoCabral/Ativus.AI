@@ -9,8 +9,13 @@
     --medium-gray: #e0e0e0;
     --sidebar-width: 260px;
     --sidebar-collapsed-width: 70px;
+    --sidebar-mobile-width: 200px;
     --topbar-height: 60px;
     --transition-speed: 0.3s;
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body {
@@ -18,11 +23,13 @@ body {
     padding: 0;
     font-family: 'Roboto', sans-serif;
     background-color: var(--light-gray);
+    overflow-x: hidden;
 }
 
 .dashboard-container {
     display: flex;
     min-height: 100vh;
+    position: relative;
 }
 
 /* Sidebar Styles */
@@ -35,9 +42,22 @@ body {
     left: 0;
     top: 0;
     overflow-y: auto;
-    transition: width var(--transition-speed);
+    overflow-x: hidden;
+    transition: transform var(--transition-speed), width var(--transition-speed);
     z-index: 1000;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile sidebar - hidden by default */
+@media (max-width: 768px) {
+    .sidebar {
+        width: var(--sidebar-mobile-width);
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.mobile-open {
+        transform: translateX(0);
+    }
 }
 
 .sidebar-header {
@@ -138,6 +158,16 @@ body {
     flex: 1;
     margin-left: var(--sidebar-width);
     transition: margin-left var(--transition-speed);
+    width: 100%;
+    min-width: 0; /* Permite que o conteúdo encolha */
+}
+
+/* Mobile main content - sem margem */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
 }
 
 /* Top Bar Styles */
@@ -152,6 +182,21 @@ body {
     position: sticky;
     top: 0;
     z-index: 900;
+    width: 100%;
+}
+
+/* Mobile top bar adjustments */
+@media (max-width: 768px) {
+    .top-bar {
+        padding: 0 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .top-bar {
+        padding: 0 8px;
+        height: 50px;
+    }
 }
 
 .sidebar-toggle {
@@ -169,17 +214,51 @@ body {
 .user-info {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
 }
 
 #user-name {
     font-weight: 500;
-    margin-right: 10px;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
 }
 
 #user-company {
     color: var(--primary-color);
-    font-size: 14px;
-    margin-right: 15px;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+}
+
+/* Mobile user info adjustments */
+@media (max-width: 768px) {
+    .user-info {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+    }
+    
+    #user-name {
+        font-size: 12px;
+        max-width: 80px;
+    }
+    
+    #user-company {
+        font-size: 10px;
+        max-width: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+    .user-info {
+        display: none; /* Esconder em telas muito pequenas */
+    }
 }
 
 .user-dropdown {
@@ -236,9 +315,25 @@ body {
     display: block;
 }
 
-/* Content Area Styles */
+/* Content area */
 .content {
     padding: 20px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+/* Mobile content adjustments */
+@media (max-width: 768px) {
+    .content {
+        padding: 15px 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .content {
+        padding: 10px 8px;
+    }
 }
 
 .welcome-panel {
@@ -559,29 +654,26 @@ body {
 
 /* Responsive Design - Media Queries */
 
-/* Tablet and Mobile Styles */
+/* Mobile overlay for sidebar */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
 @media (max-width: 768px) {
-    .sidebar {
-        transform: translateX(-100%);
-        transition: transform var(--transition-speed);
-    }
-    
-    .sidebar.mobile-open {
-        transform: translateX(0);
-    }
-    
-    .main-content {
-        margin-left: 0;
-    }
-    
-    .sidebar-collapsed .main-content {
-        margin-left: 0;
-    }
-    
-    .sidebar-toggle {
+    .sidebar-overlay.show {
         display: block;
     }
-    
+}
+
+/* Tablet and Mobile Styles */
+@media (max-width: 768px) {
     /* Melhorar submenu em mobile */
     .submenu {
         background-color: rgba(0, 0, 0, 0.1);
@@ -603,103 +695,135 @@ body {
     /* Ajustar tabela em mobile */
     .user-table {
         font-size: 14px;
+        width: 100%;
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
     }
     
+    .user-table thead,
+    .user-table tbody,
     .user-table th,
-    .user-table td {
-        padding: 8px 10px;
+    .user-table td,
+    .user-table tr {
+        display: block;
     }
     
-    /* Esconder algumas colunas em telas pequenas */
-    .user-table th:nth-child(3),
-    .user-table td:nth-child(3) {
-        display: none;
+    .user-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    
+    .user-table tr {
+        border: 1px solid var(--medium-gray);
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 8px;
+        background-color: var(--white-color);
+    }
+    
+    .user-table td {
+        border: none;
+        position: relative;
+        padding: 8px 8px 8px 50%;
+        white-space: normal;
+        text-align: left;
+    }
+    
+    .user-table td:before {
+        content: attr(data-label) ": ";
+        position: absolute;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        font-weight: bold;
+        color: var(--primary-color);
     }
     
     /* Ajustar modal em mobile */
     .modal {
         margin: 10px;
         max-width: calc(100% - 20px);
+        max-height: calc(100vh - 20px);
+        overflow-y: auto;
     }
     
     .modal-body {
         padding: 15px;
     }
-    
-    /* Ajustar user info */
-    .user-info {
-        flex-direction: column;
-        align-items: flex-end;
-    }
-    
-    #user-name,
-    #user-company {
-        font-size: 12px;
-        margin: 2px 0;
-    }
 }
 
 /* Mobile Small Styles */
 @media (max-width: 480px) {
-    .top-bar {
-        padding: 0 10px;
-    }
-    
     .user-management {
-        padding: 15px;
-        margin: 10px;
+        padding: 15px 10px;
+        margin: 5px;
     }
     
     .user-management h2 {
         font-size: 18px;
-    }
-    
-    /* Esconder mais colunas em telas muito pequenas */
-    .user-table th:nth-child(4),
-    .user-table td:nth-child(4) {
-        display: none;
+        margin-bottom: 15px;
     }
     
     .action-buttons {
-        flex-direction: column;
-        gap: 4px;
+        flex-direction: row;
+        gap: 8px;
+        justify-content: center;
     }
     
     .btn-action {
         padding: 8px;
-        font-size: 12px;
+        font-size: 14px;
+        min-width: 40px;
+        min-height: 40px;
     }
     
     /* Melhorar submenu em telas muito pequenas */
     .menu-link {
-        padding: 10px 12px;
+        padding: 12px 15px;
         font-size: 14px;
     }
     
     .submenu-link {
-        padding: 6px 12px 6px 30px;
+        padding: 8px 15px 8px 35px;
         font-size: 12px;
     }
     
     /* Ajustar botões */
     .btn {
-        padding: 8px 12px;
+        padding: 10px 15px;
         font-size: 14px;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    /* Formulário responsivo */
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .form-control {
+        font-size: 16px; /* Evita zoom no iOS */
+        padding: 12px;
     }
 }
 
 /* Landscape Mobile */
 @media (max-width: 768px) and (orientation: landscape) {
     .sidebar {
-        width: 200px;
+        width: 180px;
     }
     
     .menu-link {
         padding: 8px 12px;
+        font-size: 13px;
     }
     
     .submenu-link {
         padding: 6px 12px 6px 30px;
+        font-size: 12px;
     }
 }
 
@@ -707,7 +831,6 @@ body {
 @media (hover: none) and (pointer: coarse) {
     .menu-link,
     .submenu-link {
-        padding: 12px 15px;
         min-height: 44px;
         display: flex;
         align-items: center;
@@ -723,6 +846,45 @@ body {
         display: flex;
         align-items: center;
         justify-content: center;
+    }
+    
+    /* Melhorar área de toque para elementos interativos */
+    .user-dropdown-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    .sidebar-toggle {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+/* iPhone X e dispositivos com notch */
+@media only screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) {
+    .top-bar {
+        padding-top: env(safe-area-inset-top, 0);
+        padding-left: env(safe-area-inset-left, 10px);
+        padding-right: env(safe-area-inset-right, 10px);
+    }
+    
+    .sidebar {
+        padding-top: env(safe-area-inset-top, 0);
+    }
+    
+    .user-info {
+        display: flex !important;
+        font-size: 11px;
+    }
+    
+    #user-name {
+        max-width: 60px;
+        font-size: 11px;
+    }
+    
+    #user-company {
+        max-width: 50px;
+        font-size: 10px;
     }
 }
 

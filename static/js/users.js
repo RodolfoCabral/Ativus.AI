@@ -57,14 +57,14 @@ document.addEventListener('DOMContentLoaded', function() {
         usersList.forEach(user => {
             const row = document.createElement('tr');
             
-            // Células da tabela
+            // Células da tabela com data-labels para responsividade
             row.innerHTML = `
-                <td>${user.name || ''}</td>
-                <td>${user.email}</td>
-                <td>${user.company || ''}</td>
-                <td>${user.profile}</td>
-                <td><span class="status-badge ${user.status === 'active' ? 'status-active' : 'status-inactive'}">${user.status === 'active' ? 'Liberado' : 'Bloqueado'}</span></td>
-                <td>
+                <td data-label="Nome">${user.name || ''}</td>
+                <td data-label="Email">${user.email}</td>
+                <td data-label="Empresa">${user.company || ''}</td>
+                <td data-label="Perfil">${user.profile}</td>
+                <td data-label="Status"><span class="status-badge ${user.status === 'active' ? 'status-active' : 'status-inactive'}">${user.status === 'active' ? 'Liberado' : 'Bloqueado'}</span></td>
+                <td data-label="Ações">
                     <div class="action-buttons">
                         <button class="btn-action btn-edit" data-id="${user.id}" title="Editar"><i class="fas fa-edit"></i></button>
                         <button class="btn-action btn-delete" data-id="${user.id}" title="Excluir" ${user.profile === 'master' ? 'disabled' : ''}><i class="fas fa-trash"></i></button>

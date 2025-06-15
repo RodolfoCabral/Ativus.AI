@@ -1,2 +1,73 @@
 @import 'style.css';
 @import 'signup.css';
+
+/* Responsividade para página de login */
+@media (max-width: 768px) {
+    .login-container {
+        padding: 20px 15px;
+        max-width: 90%;
+    }
+    
+    .logo {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .login-title {
+        font-size: 18px;
+        margin-bottom: 20px;
+    }
+    
+    .form-control {
+        font-size: 16px; /* Evita zoom no iOS */
+        padding: 12px;
+    }
+    
+    .btn {
+        padding: 12px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        padding: 15px 10px;
+        max-width: 95%;
+    }
+    
+    .logo {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .login-title {
+        font-size: 16px;
+        margin-bottom: 15px;
+    }
+}
+
+/* Responsividade para página de signup */
+@media (max-width: 768px) {
+    .signup-container {
+        padding: 20px 15px;
+        max-width: 90%;
+    }
+    
+    .signup-title {
+        font-size: 18px;
+        margin-bottom: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .signup-container {
+        padding: 15px 10px;
+        max-width: 95%;
+    }
+    
+    .signup-title {
+        font-size: 16px;
+        margin-bottom: 15px;
+    }
+}
+
