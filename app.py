@@ -79,42 +79,6 @@ def create_app():
     def reset_password():
         return send_from_directory('static', 'reset_password.html')
     
-    # Rotas para as páginas com cards
-    @app.route('/relatorios')
-    @login_required
-    def relatorios():
-        return send_from_directory('static', 'relatorios.html')
-    
-    @app.route('/kpis')
-    @login_required
-    def kpis():
-        return send_from_directory('static', 'kpis.html')
-    
-    @app.route('/parametros')
-    @login_required
-    def parametros():
-        return send_from_directory('static', 'parametros.html')
-    
-    @app.route('/cadastro-ativos')
-    @login_required
-    def cadastro_ativos():
-        return send_from_directory('static', 'cadastro-ativos.html')
-    
-    @app.route('/plano-manutencao')
-    @login_required
-    def plano_manutencao():
-        return send_from_directory('static', 'plano-manutencao.html')
-    
-    @app.route('/abrir-chamado')
-    @login_required
-    def abrir_chamado():
-        return send_from_directory('static', 'abrir-chamado.html')
-    
-    @app.route('/materiais')
-    @login_required
-    def materiais():
-        return send_from_directory('static', 'materiais.html')
-    
     @app.route('/static/<path:path>')
     def serve_static(path):
         return send_from_directory('static', path)
