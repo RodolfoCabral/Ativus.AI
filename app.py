@@ -145,6 +145,16 @@ def create_app():
             print(f"Erro ao processar cadastro: {str(e)}")
             return jsonify({'success': False, 'message': 'Erro ao processar cadastro'})
     
+    @app.route('/ativos/arvore')
+    @login_required
+    def arvore_ativos():
+        return send_from_directory('static', 'arvore-ativos.html')
+    
+    @app.route('/ativos/categorias')
+    @login_required
+    def categorias_ativos():
+        return send_from_directory('static', 'categorias-ativos.html')
+    
     return app
 
 def send_signup_email(data):
@@ -187,22 +197,4 @@ def send_signup_email(data):
     except Exception as e:
         print(f"Erro ao enviar email com SendGrid: {e}")
         raise
-
-    
-    @app.route('/ativos/arvore')
-    @login_required
-    def arvore_ativos():
-        return send_from_directory('static', 'arvore-ativos.html')
-    
-    @app.route('/ativos/categorias')
-    @login_required
-    def categorias_ativos():
-        return send_from_directory('static', 'categorias-ativos.html')
-
-
-    
-    @app.route('/ativos/arvore')
-    @login_required
-    def arvore_ativos():
-        return send_from_directory('static', 'arvore-ativos.html')
 
