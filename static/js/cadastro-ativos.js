@@ -76,11 +76,19 @@ function navigateTo(url) {
 
 // Funções para modal de cadastro
 function showCadastroOptions() {
-    document.getElementById('cadastro-modal').style.display = 'flex';
+    const modal = document.getElementById('cadastro-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 10);
 }
 
 function closeCadastroModal() {
-    document.getElementById('cadastro-modal').style.display = 'none';
+    const modal = document.getElementById('cadastro-modal');
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
     // Fechar todos os formulários
     closeAllForms();
 }
@@ -98,34 +106,58 @@ function closeAllForms() {
 // Funções para abrir formulários específicos
 function openFilialForm() {
     closeCadastroModal();
-    document.getElementById('filial-form-modal').style.display = 'flex';
+    const modal = document.getElementById('filial-form-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 10);
 }
 
 function openSetorForm() {
     closeCadastroModal();
     loadFiliais(); // Carregar filiais para o select
-    document.getElementById('setor-form-modal').style.display = 'flex';
+    const modal = document.getElementById('setor-form-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 10);
 }
 
 function openEquipamentoForm() {
     closeCadastroModal();
     loadSetores(); // Carregar setores para o select
-    document.getElementById('equipamento-form-modal').style.display = 'flex';
+    const modal = document.getElementById('equipamento-form-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 10);
 }
 
 // Funções para fechar formulários específicos
 function closeFilialForm() {
-    document.getElementById('filial-form-modal').style.display = 'none';
+    const modal = document.getElementById('filial-form-modal');
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
     document.getElementById('filial-form').reset();
 }
 
 function closeSetorForm() {
-    document.getElementById('setor-form-modal').style.display = 'none';
+    const modal = document.getElementById('setor-form-modal');
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
     document.getElementById('setor-form').reset();
 }
 
 function closeEquipamentoForm() {
-    document.getElementById('equipamento-form-modal').style.display = 'none';
+    const modal = document.getElementById('equipamento-form-modal');
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
     document.getElementById('equipamento-form').reset();
 }
 
