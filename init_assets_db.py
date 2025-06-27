@@ -5,8 +5,9 @@ Script para inicializar as tabelas de ativos no banco de dados
 
 import os
 import sys
-from app import create_app, db
-from models.assets import Filial, Setor, Equipamento, Categoria
+from app import create_app
+from models import db
+from assets_models import Filial, Setor, Equipamento, Categoria
 
 def init_assets_tables():
     """Inicializar tabelas de ativos"""
@@ -18,7 +19,7 @@ def init_assets_tables():
             print("Criando tabelas de ativos...")
             
             # Importar modelos para garantir que sejam registrados
-            from models.assets import Filial, Setor, Equipamento, Categoria
+            from assets_models import Filial, Setor, Equipamento, Categoria
             
             # Criar todas as tabelas
             db.create_all()

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, session
-from app import db
-from models.assets import Filial, Setor, Equipamento, Categoria
+from models import db
 from models.user import User
+from assets_models import Filial, Setor, Equipamento, Categoria
 from datetime import datetime
 
 assets_bp = Blueprint('assets', __name__)

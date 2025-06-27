@@ -54,7 +54,14 @@ def create_app():
     
     # Registro de blueprints
     app.register_blueprint(auth_bp)
-    app.register_blueprint(assets_bp)
+    
+    # Importar e registrar blueprint de ativos após inicialização do app
+    try:
+        from routes.assets import assets_bp
+        app.register_blueprint(assets_bp)
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar assets_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de ativos.")
     
     # Rotas para arquivos estáticos
     @app.route('/')
