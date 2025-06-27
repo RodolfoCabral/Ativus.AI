@@ -199,3 +199,10 @@ def send_signup_email(data):
     def categorias_ativos():
         return send_from_directory('static', 'categorias-ativos.html')
 
+
+    
+    @app.route('/ativos/arvore')
+    @login_required
+    def arvore_ativos():
+        return send_from_directory('static', 'arvore-ativos.html')
+

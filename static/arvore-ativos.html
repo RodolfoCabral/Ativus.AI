@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Árvore de Ativos - Ativus.AI</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .tree-container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+        }
+
+        .tree-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .tree-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .tree-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tree-view {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+        }
+
+        .tree-node {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .tree-item {
+            position: relative;
+            margin: 4px 0;
+        }
+
+        .tree-item::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 50%;
+            width: 1px;
+            background: #ddd;
+        }
+
+        .tree-item::after {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            width: 16px;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .tree-item:last-child::before {
+            bottom: 50%;
+        }
+
+        .tree-content {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px 8px 32px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .tree-content:hover {
+            background-color: rgba(153, 86, 152, 0.05);
+        }
+
+        .tree-icon {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 10px;
+        }
+
+        /* Ícones específicos por tipo */
+        .filial-icon {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .setor-icon {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            border: 2px solid #1976D2;
+        }
+
+        .equipamento-icon {
+            background: linear-gradient(135deg, #4CAF50, #388E3C);
+            color: white;
+        }
+
+        .tree-label {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .tree-description {
+            font-size: 12px;
+            color: #666;
+            margin-left: 8px;
+        }
+
+        .tree-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .tree-content:hover .tree-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: rgba(153, 86, 152, 0.1);
+        }
+
+        .action-btn.edit {
+            color: #9956a8;
+        }
+
+        .action-btn.delete {
+            color: #e74c3c;
+        }
+
+        .action-btn.info {
+            color: #3498db;
+        }
+
+        .tree-children {
+            margin-left: 20px;
+            position: relative;
+        }
+
+        .tree-children::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: #ddd;
+        }
+
+        .expand-toggle {
+            position: absolute;
+            left: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 2px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: #666;
+            z-index: 1;
+        }
+
+        .expand-toggle:hover {
+            border-color: #9956a8;
+            color: #9956a8;
+        }
+
+        .tree-item.collapsed .tree-children {
+            display: none;
+        }
+
+        .tree-item.collapsed .expand-toggle::before {
+            content: '+';
+        }
+
+        .tree-item.expanded .expand-toggle::before {
+            content: '−';
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #ddd;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .tree-container {
+                margin: 10px;
+                padding: 16px;
+            }
+
+            .tree-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .tree-stats {
+                flex-wrap: wrap;
+            }
+
+            .tree-content {
+                padding: 6px 8px 6px 28px;
+            }
+
+            .tree-children {
+                margin-left: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Menu Lateral -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="/static/images/Ativus.png" alt="Ativus.AI Logo" class="sidebar-logo">
+                <span class="sidebar-title">Ativus.AI</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="/dashboard" class="nav-link">
+                            <i class="fas fa-tachometer-alt nav-icon"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/relatorios" class="nav-link">
+                            <i class="fas fa-chart-bar nav-icon"></i>
+                            <span class="nav-text">Relatórios</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/kpis" class="nav-link">
+                            <i class="fas fa-chart-line nav-icon"></i>
+                            <span class="nav-text">KPIs</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/cadastro-ativos" class="nav-link">
+                            <i class="fas fa-industry nav-icon"></i>
+                            <span class="nav-text">Cadastro de Ativos</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/plano-manutencao" class="nav-link">
+                            <i class="fas fa-tools nav-icon"></i>
+                            <span class="nav-text">Plano de Manutenção</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/abrir-chamado" class="nav-link">
+                            <i class="fas fa-headset nav-icon"></i>
+                            <span class="nav-text">Abrir Chamado</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/materiais" class="nav-link">
+                            <i class="fas fa-boxes nav-icon"></i>
+                            <span class="nav-text">Materiais</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/parametros" class="nav-link">
+                            <i class="fas fa-cog nav-icon"></i>
+                            <span class="nav-text">Parâmetros</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Conteúdo Principal -->
+        <div class="main-content">
+            <!-- Barra Superior -->
+            <div class="topbar">
+                <div class="topbar-left">
+                    <button class="sidebar-toggle" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="page-title">Árvore de Ativos</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-info">
+                        <span class="user-name" id="userName">Carregando...</span>
+                        <div class="user-dropdown">
+                            <button class="user-avatar" id="userAvatar">
+                                <i class="fas fa-user"></i>
+                            </button>
+                            <div class="dropdown-menu" id="userDropdown">
+                                <a href="/users" class="dropdown-item">
+                                    <i class="fas fa-user-cog"></i>
+                                    Gerenciar Usuários
+                                </a>
+                                <a href="/reset-password" class="dropdown-item">
+                                    <i class="fas fa-key"></i>
+                                    Alterar Senha
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <button class="dropdown-item" id="logoutBtn">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    Sair
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conteúdo da Árvore -->
+            <div class="tree-container">
+                <div class="tree-header">
+                    <div class="tree-title">
+                        <i class="fas fa-sitemap"></i>
+                        Estrutura de Ativos
+                    </div>
+                    <div class="tree-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-industry filial-icon"></i>
+                            <span id="filialCount">0</span> Filiais
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-circle setor-icon"></i>
+                            <span id="setorCount">0</span> Setores
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-check equipamento-icon"></i>
+                            <span id="equipamentoCount">0</span> Equipamentos
+                        </div>
+                    </div>
+                </div>
+
+                <div id="treeContent" class="tree-view">
+                    <div class="loading-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Carregando estrutura de ativos...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/arvore-ativos.js"></script>
+</body>
+</html>
+
