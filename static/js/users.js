@@ -4,6 +4,59 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentUserCompany = '';
     let usersList = [];
     
+    // Toggle sidebar
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const dashboardContainer = document.querySelector('.dashboard-container');
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+                // Em mobile, usar classe mobile-open e mostrar overlay
+                sidebar.classList.toggle('mobile-open');
+                if (sidebarOverlay) {
+                    sidebarOverlay.classList.toggle('show');
+                }
+            } else {
+                // Em desktop, usar classe sidebar-collapsed
+                dashboardContainer.classList.toggle('sidebar-collapsed');
+            }
+        });
+    }
+    
+    // Fechar sidebar em mobile quando clicar no overlay
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('mobile-open');
+            sidebarOverlay.classList.remove('show');
+        });
+    }
+    
+    // Fechar sidebar em mobile quando clicar fora
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth <= 768) {
+            if (!e.target.closest('.sidebar') && !e.target.closest('.sidebar-toggle')) {
+                sidebar.classList.remove('mobile-open');
+                if (sidebarOverlay) {
+                    sidebarOverlay.classList.remove('show');
+                }
+            }
+        }
+    });
+    
+    // Ajustar comportamento ao redimensionar janela
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            sidebar.classList.remove('mobile-open');
+            if (sidebarOverlay) {
+                sidebarOverlay.classList.remove('show');
+            }
+        } else {
+            dashboardContainer.classList.remove('sidebar-collapsed');
+        }
+    });
+    
     // Verificar o perfil do usuário atual
     function checkCurrentUserProfile() {
         fetch('/api/user')
