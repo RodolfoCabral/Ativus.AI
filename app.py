@@ -54,6 +54,7 @@ def create_app():
     
     # Registro de blueprints
     app.register_blueprint(auth_bp)
+    app.register_blueprint(assets_bp)
     
     # Rotas para arquivos estáticos
     @app.route('/')
@@ -179,3 +180,15 @@ def send_signup_email(data):
     except Exception as e:
         print(f"Erro ao enviar email com SendGrid: {e}")
         raise
+
+    
+    @app.route('/ativos/arvore')
+    @login_required
+    def arvore_ativos():
+        return send_from_directory('static', 'arvore-ativos.html')
+    
+    @app.route('/ativos/categorias')
+    @login_required
+    def categorias_ativos():
+        return send_from_directory('static', 'categorias-ativos.html')
+

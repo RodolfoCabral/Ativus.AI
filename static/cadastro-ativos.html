@@ -108,79 +108,243 @@
                     <h1><i class="fas fa-boxes"></i> Cadastro de Ativos</h1>
                     <p>Gerenciamento de ativos e equipamentos</p>
                 </div>
-                
-                <div class="buttons-container" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; padding: 40px 20px; max-width: 800px; margin: 0 auto;">
+                             <div class="cards-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; padding: 40px 20px; max-width: 1000px; margin: 0 auto;">
                     
-                    <button onclick="navigateTo('/ativos/cadastrar')" style="
-                        background: linear-gradient(135deg, #9956a8, #bb8fba);
-                        color: white;
-                        border: none;
-                        padding: 20px 30px;
-                        border-radius: 12px;
-                        font-size: 18px;
-                        font-weight: 600;
+                    <div class="card" onclick="showCadastroOptions()" style="
+                        background: white;
+                        border-radius: 16px;
+                        padding: 32px 24px;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
                         cursor: pointer;
-                        min-width: 200px;
-                        min-height: 80px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 12px;
-                        box-shadow: 0 4px 15px rgba(153, 86, 152, 0.3);
                         transition: all 0.3s ease;
-                        text-decoration: none;
-                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(153, 86, 152, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(153, 86, 152, 0.3)'">
-                        <i class="fas fa-plus" style="font-size: 24px;"></i>
-                        Cadastrar Ativo
-                    </button>
-                    <button onclick="navigateTo('/ativos/listar')" style="
-                        background: linear-gradient(135deg, #9956a8, #bb8fba);
-                        color: white;
-                        border: none;
-                        padding: 20px 30px;
-                        border-radius: 12px;
-                        font-size: 18px;
-                        font-weight: 600;
+                        border: 1px solid rgba(153, 86, 152, 0.1);
+                        text-align: center;
+                        min-height: 200px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        position: relative;
+                        overflow: hidden;
+                    " onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='0 16px 48px rgba(153, 86, 152, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(0, 0, 0, 0.1)'">
+                        <div style="
+                            width: 80px;
+                            height: 80px;
+                            background: linear-gradient(135deg, #9956a8, #bb8fba);
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            margin-bottom: 20px;
+                            box-shadow: 0 4px 16px rgba(153, 86, 152, 0.3);
+                        ">
+                            <i class="fas fa-plus" style="font-size: 32px; color: white;"></i>
+                        </div>
+                        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #333;">Cadastrar Ativo</h3>
+                        <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">Cadastre filiais, setores e equipamentos</p>
+                        <div style="
+                            position: absolute;
+                            bottom: 16px;
+                            right: 16px;
+                            width: 32px;
+                            height: 32px;
+                            background: linear-gradient(135deg, #9956a8, #bb8fba);
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        ">
+                            <i class="fas fa-arrow-right" style="font-size: 14px; color: white;"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="card" onclick="navigateTo('/ativos/arvore')" style="
+                        background: white;
+                        border-radius: 16px;
+                        padding: 32px 24px;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
                         cursor: pointer;
-                        min-width: 200px;
-                        min-height: 80px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 12px;
-                        box-shadow: 0 4px 15px rgba(153, 86, 152, 0.3);
                         transition: all 0.3s ease;
-                        text-decoration: none;
-                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(153, 86, 152, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(153, 86, 152, 0.3)'">
-                        <i class="fas fa-list" style="font-size: 24px;"></i>
-                        Listar Ativos
-                    </button>
-                    <button onclick="navigateTo('/ativos/categorias')" style="
-                        background: linear-gradient(135deg, #9956a8, #bb8fba);
-                        color: white;
-                        border: none;
-                        padding: 20px 30px;
-                        border-radius: 12px;
-                        font-size: 18px;
-                        font-weight: 600;
+                        border: 1px solid rgba(153, 86, 152, 0.1);
+                        text-align: center;
+                        min-height: 200px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        position: relative;
+                        overflow: hidden;
+                    " onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='0 16px 48px rgba(153, 86, 152, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(0, 0, 0, 0.1)'">
+                        <div style="
+                            width: 80px;
+                            height: 80px;
+                            background: linear-gradient(135deg, #9956a8, #bb8fba);
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            margin-bottom: 20px;
+                            box-shadow: 0 4px 16px rgba(153, 86, 152, 0.3);
+                        ">
+                            <i class="fas fa-sitemap" style="font-size: 32px; color: white;"></i>
+                        </div>
+                        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #333;">Árvore de Ativos</h3>
+                        <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">Visualize a estrutura hierárquica dos ativos</p>
+                        <div style="
+                            position: absolute;
+                            bottom: 16px;
+                            right: 16px;
+                            width: 32px;
+                            height: 32px;
+                            background: linear-gradient(135deg, #9956a8, #bb8fba);
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        ">
+                            <i class="fas fa-arrow-right" style="font-size: 14px; color: white;"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="card" onclick="navigateTo('/ativos/categorias')" style="
+                        background: white;
+                        border-radius: 16px;
+                        padding: 32px 24px;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
                         cursor: pointer;
-                        min-width: 200px;
-                        min-height: 80px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 12px;
-                        box-shadow: 0 4px 15px rgba(153, 86, 152, 0.3);
                         transition: all 0.3s ease;
-                        text-decoration: none;
-                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(153, 86, 152, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(153, 86, 152, 0.3)'">
-                        <i class="fas fa-tags" style="font-size: 24px;"></i>
-                        Categorias
-                    </button>
+                        border: 1px solid rgba(153, 86, 152, 0.1);
+                        text-align: center;
+                        min-height: 200px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        position: relative;
+                        overflow: hidden;
+                    " onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='0 16px 48px rgba(153, 86, 152, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(0, 0, 0, 0.1)'">
+                        <div style="
+                            width: 80px;
+                            height: 80px;
+                            background: linear-gradient(135deg, #9956a8, #bb8fba);
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            margin-bottom: 20px;
+                            box-shadow: 0 4px 16px rgba(153, 86, 152, 0.3);
+                        ">
+                            <i class="fas fa-tags" style="font-size: 32px; color: white;"></i>
+                        </div>
+                        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #333;">Categorias</h3>
+                        <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">Gerencie categorias de equipamentos</p>
+                        <div style="
+                            position: absolute;
+                            bottom: 16px;
+                            right: 16px;
+                            width: 32px;
+                            height: 32px;
+                            background: linear-gradient(135deg, #9956a8, #bb8fba);
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        ">
+                            <i class="fas fa-arrow-right" style="font-size: 14px; color: white;"></i>
+                        </div>
+                    </div>
+                    
                 </div>
-            </div>
-        </div>
-    </div>
+                
+                <!-- Modal de Opções de Cadastro -->
+                <div id="cadastro-modal" class="modal-backdrop" style="display: none;">
+                    <div class="modal" style="max-width: 600px;">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Escolha o tipo de cadastro</h3>
+                            <button class="modal-close" onclick="closeCadastroModal()">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; padding: 20px 0;">
+                                
+                                <div class="cadastro-option" onclick="openFilialForm()" style="
+                                    background: white;
+                                    border: 2px solid rgba(153, 86, 152, 0.2);
+                                    border-radius: 12px;
+                                    padding: 24px 16px;
+                                    text-align: center;
+                                    cursor: pointer;
+                                    transition: all 0.3s ease;
+                                " onmouseover="this.style.borderColor='#9956a8'; this.style.backgroundColor='rgba(153, 86, 152, 0.05)'" onmouseout="this.style.borderColor='rgba(153, 86, 152, 0.2)'; this.style.backgroundColor='white'">
+                                    <div style="
+                                        width: 60px;
+                                        height: 60px;
+                                        background: linear-gradient(135deg, #9956a8, #bb8fba);
+                                        border-radius: 50%;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        margin: 0 auto 12px auto;
+                                    ">
+                                        <i class="fas fa-building" style="font-size: 24px; color: white;"></i>
+                                    </div>
+                                    <h4 style="margin: 0 0 8px 0; font-size: 16px; color: #333;">Cadastrar Filial</h4>
+                                    <p style="margin: 0; font-size: 12px; color: #666;">Unidade principal</p>
+                                </div>
+                                
+                                <div class="cadastro-option" onclick="openSetorForm()" style="
+                                    background: white;
+                                    border: 2px solid rgba(153, 86, 152, 0.2);
+                                    border-radius: 12px;
+                                    padding: 24px 16px;
+                                    text-align: center;
+                                    cursor: pointer;
+                                    transition: all 0.3s ease;
+                                " onmouseover="this.style.borderColor='#9956a8'; this.style.backgroundColor='rgba(153, 86, 152, 0.05)'" onmouseout="this.style.borderColor='rgba(153, 86, 152, 0.2)'; this.style.backgroundColor='white'">
+                                    <div style="
+                                        width: 60px;
+                                        height: 60px;
+                                        background: linear-gradient(135deg, #9956a8, #bb8fba);
+                                        border-radius: 50%;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        margin: 0 auto 12px auto;
+                                    ">
+                                        <i class="fas fa-layer-group" style="font-size: 24px; color: white;"></i>
+                                    </div>
+                                    <h4 style="margin: 0 0 8px 0; font-size: 16px; color: #333;">Cadastrar Setor</h4>
+                                    <p style="margin: 0; font-size: 12px; color: #666;">Área da filial</p>
+                                </div>
+                                
+                                <div class="cadastro-option" onclick="openEquipamentoForm()" style="
+                                    background: white;
+                                    border: 2px solid rgba(153, 86, 152, 0.2);
+                                    border-radius: 12px;
+                                    padding: 24px 16px;
+                                    text-align: center;
+                                    cursor: pointer;
+                                    transition: all 0.3s ease;
+                                " onmouseover="this.style.borderColor='#9956a8'; this.style.backgroundColor='rgba(153, 86, 152, 0.05)'" onmouseout="this.style.borderColor='rgba(153, 86, 152, 0.2)'; this.style.backgroundColor='white'">
+                                    <div style="
+                                        width: 60px;
+                                        height: 60px;
+                                        background: linear-gradient(135deg, #9956a8, #bb8fba);
+                                        border-radius: 50%;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        margin: 0 auto 12px auto;
+                                    ">
+                                        <i class="fas fa-cog" style="font-size: 24px; color: white;"></i>
+                                    </div>
+                                    <h4 style="margin: 0 0 8px 0; font-size: 16px; color: #333;">Cadastrar Equipamento</h4>
+                                    <p style="margin: 0; font-size: 12px; color: #666;">Ativo do setor</p>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>  </div>
     
     <script src="/static/js/user_info.js"></script>
     <script src="/static/js/dashboard.js"></script>
@@ -191,3 +355,185 @@
     </script>
 </body>
 </html>
+                
+                <!-- Modal de Cadastro de Filial -->
+                <div id="filial-form-modal" class="modal-backdrop" style="display: none;">
+                    <div class="modal" style="max-width: 800px;">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Cadastrar Nova Filial</h3>
+                            <button class="modal-close" onclick="closeFilialForm()">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="filial-form">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                                    
+                                    <div class="form-group">
+                                        <label for="filial-tag">Tag da Filial *</label>
+                                        <input type="text" id="filial-tag" name="tag" class="form-control" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="filial-descricao">Descrição *</label>
+                                        <input type="text" id="filial-descricao" name="descricao" class="form-control" required>
+                                    </div>
+                                    
+                                    <div class="form-group" style="grid-column: 1 / -1;">
+                                        <label for="filial-endereco">Endereço *</label>
+                                        <input type="text" id="filial-endereco" name="endereco" class="form-control" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="filial-cidade">Cidade *</label>
+                                        <input type="text" id="filial-cidade" name="cidade" class="form-control" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="filial-estado">Estado *</label>
+                                        <select id="filial-estado" name="estado" class="form-select" required>
+                                            <option value="">Selecione</option>
+                                            <option value="AC">Acre</option>
+                                            <option value="AL">Alagoas</option>
+                                            <option value="AP">Amapá</option>
+                                            <option value="AM">Amazonas</option>
+                                            <option value="BA">Bahia</option>
+                                            <option value="CE">Ceará</option>
+                                            <option value="DF">Distrito Federal</option>
+                                            <option value="ES">Espírito Santo</option>
+                                            <option value="GO">Goiás</option>
+                                            <option value="MA">Maranhão</option>
+                                            <option value="MT">Mato Grosso</option>
+                                            <option value="MS">Mato Grosso do Sul</option>
+                                            <option value="MG">Minas Gerais</option>
+                                            <option value="PA">Pará</option>
+                                            <option value="PB">Paraíba</option>
+                                            <option value="PR">Paraná</option>
+                                            <option value="PE">Pernambuco</option>
+                                            <option value="PI">Piauí</option>
+                                            <option value="RJ">Rio de Janeiro</option>
+                                            <option value="RN">Rio Grande do Norte</option>
+                                            <option value="RS">Rio Grande do Sul</option>
+                                            <option value="RO">Rondônia</option>
+                                            <option value="RR">Roraima</option>
+                                            <option value="SC">Santa Catarina</option>
+                                            <option value="SP">São Paulo</option>
+                                            <option value="SE">Sergipe</option>
+                                            <option value="TO">Tocantins</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="filial-email">E-mail *</label>
+                                        <input type="email" id="filial-email" name="email" class="form-control" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="filial-telefone">Telefone *</label>
+                                        <input type="tel" id="filial-telefone" name="telefone" class="form-control" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="filial-cnpj">CNPJ *</label>
+                                        <input type="text" id="filial-cnpj" name="cnpj" class="form-control" required>
+                                    </div>
+                                    
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" onclick="closeFilialForm()">Cancelar</button>
+                            <button class="btn btn-primary" onclick="saveFilial()">Salvar Filial</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Modal de Cadastro de Setor -->
+                <div id="setor-form-modal" class="modal-backdrop" style="display: none;">
+                    <div class="modal" style="max-width: 600px;">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Cadastrar Novo Setor</h3>
+                            <button class="modal-close" onclick="closeSetorForm()">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="setor-form">
+                                <div style="display: grid; gap: 16px;">
+                                    
+                                    <div class="form-group">
+                                        <label for="setor-filial-select">Filial *</label>
+                                        <select id="setor-filial-select" name="filial_id" class="form-select" required>
+                                            <option value="">Carregando filiais...</option>
+                                        </select>
+                                        <small class="form-text">Selecione a filial à qual este setor pertence</small>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="setor-tag">Tag do Setor *</label>
+                                        <input type="text" id="setor-tag" name="tag" class="form-control" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="setor-descricao">Descrição *</label>
+                                        <input type="text" id="setor-descricao" name="descricao" class="form-control" required>
+                                    </div>
+                                    
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" onclick="closeSetorForm()">Cancelar</button>
+                            <button class="btn btn-primary" onclick="saveSetor()">Salvar Setor</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Modal de Cadastro de Equipamento -->
+                <div id="equipamento-form-modal" class="modal-backdrop" style="display: none;">
+                    <div class="modal" style="max-width: 600px;">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Cadastrar Novo Equipamento</h3>
+                            <button class="modal-close" onclick="closeEquipamentoForm()">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="equipamento-form">
+                                <div style="display: grid; gap: 16px;">
+                                    
+                                    <div class="form-group">
+                                        <label for="equipamento-setor-select">Setor *</label>
+                                        <select id="equipamento-setor-select" name="setor_id" class="form-select" required>
+                                            <option value="">Carregando setores...</option>
+                                        </select>
+                                        <small class="form-text">Selecione o setor ao qual este equipamento pertence</small>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="equipamento-tag">Tag do Equipamento *</label>
+                                        <input type="text" id="equipamento-tag" name="tag" class="form-control" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="equipamento-descricao">Descrição *</label>
+                                        <input type="text" id="equipamento-descricao" name="descricao" class="form-control" required>
+                                    </div>
+                                    
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" onclick="closeEquipamentoForm()">Cancelar</button>
+                            <button class="btn btn-primary" onclick="saveEquipamento()">Salvar Equipamento</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/user_info.js"></script>
+    <script src="/static/js/cadastro-ativos.js"></script>
+    <script>
+        function navigateTo(url) {
+            window.location.href = url;
+        }
+    </script>
+</body>
+</html>
+
