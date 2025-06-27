@@ -1,4 +1,5 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify
+from flask_login import login_required, current_user
 from models import db
 from models.user import User
 from assets_models import Filial, Setor, Equipamento, Categoria
@@ -6,36 +7,26 @@ from datetime import datetime
 
 assets_bp = Blueprint('assets', __name__)
 
-def get_current_user():
-    """Obter usuário atual da sessão"""
-    if 'user_id' not in session:
-        return None
-    return User.query.get(session['user_id'])
-
 def check_admin_permission():
     """Verificar se o usuário tem permissão de admin"""
-    user = get_current_user()
-    if not user:
+    if not current_user.is_authenticated:
         return False, "Usuário não autenticado"
-    if user.profile not in ['admin', 'master']:
+    if current_user.profile not in ['admin', 'master']:
         return False, "Acesso negado. Apenas administradores podem realizar esta ação."
-    return True, user
+    return True, current_user
 
 # ==================== FILIAIS ====================
 
 @assets_bp.route('/api/filiais', methods=['GET'])
+@login_required
 def get_filiais():
     """Listar filiais da empresa do usuário"""
-    user = get_current_user()
-    if not user:
-        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
-    
     try:
         # Filtrar por empresa do usuário
-        if user.profile == 'master':
+        if current_user.profile == 'master':
             filiais = Filial.query.all()
         else:
-            filiais = Filial.query.filter_by(empresa=user.company).all()
+            filiais = Filial.query.filter_by(empresa=current_user.company).all()
         
         return jsonify({
             'success': True,
@@ -45,13 +36,13 @@ def get_filiais():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @assets_bp.route('/api/filiais', methods=['POST'])
+@login_required
 def create_filial():
     """Criar nova filial"""
     has_permission, user_or_message = check_admin_permission()
     if not has_permission:
         return jsonify({'success': False, 'message': user_or_message}), 403
     
-    user = user_or_message
     data = request.get_json()
     
     # Validar campos obrigatórios
@@ -62,7 +53,7 @@ def create_filial():
     
     try:
         # Verificar se tag já existe na empresa
-        existing = Filial.query.filter_by(tag=data['tag'], empresa=user.company).first()
+        existing = Filial.query.filter_by(tag=data['tag'], empresa=current_user.company).first()
         if existing:
             return jsonify({'success': False, 'message': 'Tag já existe nesta empresa'}), 400
         
@@ -76,8 +67,8 @@ def create_filial():
             email=data['email'],
             telefone=data['telefone'],
             cnpj=data['cnpj'],
-            empresa=user.company,
-            usuario_criacao=user.email
+            empresa=current_user.company,
+            usuario_criacao=current_user.email
         )
         
         db.session.add(filial)
@@ -85,9 +76,10 @@ def create_filial():
         
         return jsonify({
             'success': True,
-            'message': 'Filial criada com sucesso',
+            'message': 'Filial cadastrada com sucesso',
             'filial': filial.to_dict()
         })
+        
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -95,18 +87,15 @@ def create_filial():
 # ==================== SETORES ====================
 
 @assets_bp.route('/api/setores', methods=['GET'])
+@login_required
 def get_setores():
     """Listar setores da empresa do usuário"""
-    user = get_current_user()
-    if not user:
-        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
-    
     try:
         # Filtrar por empresa do usuário
-        if user.profile == 'master':
+        if current_user.profile == 'master':
             setores = Setor.query.all()
         else:
-            setores = Setor.query.filter_by(empresa=user.company).all()
+            setores = Setor.query.filter_by(empresa=current_user.company).all()
         
         return jsonify({
             'success': True,
@@ -116,13 +105,13 @@ def get_setores():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @assets_bp.route('/api/setores', methods=['POST'])
+@login_required
 def create_setor():
     """Criar novo setor"""
     has_permission, user_or_message = check_admin_permission()
     if not has_permission:
         return jsonify({'success': False, 'message': user_or_message}), 403
     
-    user = user_or_message
     data = request.get_json()
     
     # Validar campos obrigatórios
@@ -133,12 +122,12 @@ def create_setor():
     
     try:
         # Verificar se filial existe e pertence à empresa
-        filial = Filial.query.filter_by(id=data['filial_id'], empresa=user.company).first()
+        filial = Filial.query.filter_by(id=data['filial_id'], empresa=current_user.company).first()
         if not filial:
-            return jsonify({'success': False, 'message': 'Filial não encontrada ou não pertence à sua empresa'}), 400
+            return jsonify({'success': False, 'message': 'Filial não encontrada'}), 400
         
         # Verificar se tag já existe na empresa
-        existing = Setor.query.filter_by(tag=data['tag'], empresa=user.company).first()
+        existing = Setor.query.filter_by(tag=data['tag'], empresa=current_user.company).first()
         if existing:
             return jsonify({'success': False, 'message': 'Tag já existe nesta empresa'}), 400
         
@@ -147,8 +136,8 @@ def create_setor():
             tag=data['tag'],
             descricao=data['descricao'],
             filial_id=data['filial_id'],
-            empresa=user.company,
-            usuario_criacao=user.email
+            empresa=current_user.company,
+            usuario_criacao=current_user.email
         )
         
         db.session.add(setor)
@@ -156,9 +145,10 @@ def create_setor():
         
         return jsonify({
             'success': True,
-            'message': 'Setor criado com sucesso',
+            'message': 'Setor cadastrado com sucesso',
             'setor': setor.to_dict()
         })
+        
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
