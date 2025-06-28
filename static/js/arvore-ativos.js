@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Carregar dados ao inicializar
     loadAssetsData();
 
+    // Tornar função global para o botão "Tentar novamente"
+    window.loadAssetsData = loadAssetsData;
+
     async function loadAssetsData() {
         try {
             showLoading();
@@ -102,6 +105,112 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Adicionar event listeners para expansão/colapso
         addTreeEventListeners();
+    }
+
+    function renderFilial(filial) {
+        const setoresFilial = assetsData.setores.filter(setor => setor.filial_id === filial.id);
+        
+        let html = `
+            <div class="tree-item" data-type="filial" data-id="${filial.id}">
+                <div class="tree-item-header">
+                    ${setoresFilial.length > 0 ? '<button class="tree-toggle">-</button>' : '<div style="width: 20px;"></div>'}
+                    <div class="tree-icon filial">
+                        <i class="fas fa-industry"></i>
+                    </div>
+                    <div class="tree-label">
+                        <span class="tree-tag">${filial.tag}</span>
+                        <span class="tree-description">${filial.descricao}</span>
+                    </div>
+                    <div class="tree-actions">
+                        <button class="tree-action" onclick="showAssetInfo('filial', ${filial.id})" title="Informações">
+                            <i class="fas fa-info"></i>
+                        </button>
+                        <button class="tree-action" onclick="editAsset('filial', ${filial.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="tree-action" onclick="deleteAsset('filial', ${filial.id})" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>`;
+        
+        if (setoresFilial.length > 0) {
+            html += '<div class="tree-children">';
+            setoresFilial.forEach(setor => {
+                html += renderSetor(setor);
+            });
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        return html;
+    }
+
+    function renderSetor(setor) {
+        const equipamentosSetor = assetsData.equipamentos.filter(eq => eq.setor_id === setor.id);
+        
+        let html = `
+            <div class="tree-item" data-type="setor" data-id="${setor.id}">
+                <div class="tree-item-header">
+                    ${equipamentosSetor.length > 0 ? '<button class="tree-toggle">-</button>' : '<div style="width: 20px;"></div>'}
+                    <div class="tree-icon setor">
+                        <i class="fas fa-circle"></i>
+                    </div>
+                    <div class="tree-label">
+                        <span class="tree-tag">${setor.tag}</span>
+                        <span class="tree-description">${setor.descricao}</span>
+                    </div>
+                    <div class="tree-actions">
+                        <button class="tree-action" onclick="showAssetInfo('setor', ${setor.id})" title="Informações">
+                            <i class="fas fa-info"></i>
+                        </button>
+                        <button class="tree-action" onclick="editAsset('setor', ${setor.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="tree-action" onclick="deleteAsset('setor', ${setor.id})" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>`;
+        
+        if (equipamentosSetor.length > 0) {
+            html += '<div class="tree-children">';
+            equipamentosSetor.forEach(equipamento => {
+                html += renderEquipamento(equipamento);
+            });
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        return html;
+    }
+
+    function renderEquipamento(equipamento) {
+        return `
+            <div class="tree-item" data-type="equipamento" data-id="${equipamento.id}">
+                <div class="tree-item-header">
+                    <div style="width: 20px;"></div>
+                    <div class="tree-icon equipamento">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="tree-label">
+                        <span class="tree-tag">${equipamento.tag}</span>
+                        <span class="tree-description">${equipamento.descricao}</span>
+                    </div>
+                    <div class="tree-actions">
+                        <button class="tree-action" onclick="showAssetInfo('equipamento', ${equipamento.id})" title="Informações">
+                            <i class="fas fa-info"></i>
+                        </button>
+                        <button class="tree-action" onclick="editAsset('equipamento', ${equipamento.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="tree-action" onclick="deleteAsset('equipamento', ${equipamento.id})" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     function renderFilialNode(filial) {
