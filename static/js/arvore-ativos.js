@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showLoading() {
-        const treeContent = document.getElementById('treeContent');
+        const treeContent = document.getElementById('tree-content');
         treeContent.innerHTML = `
             <div class="loading-state">
                 <i class="fas fa-spinner fa-spin"></i>
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showError(message) {
-        const treeContent = document.getElementById('treeContent');
+        const treeContent = document.getElementById('tree-content');
         treeContent.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-exclamation-triangle"></i>
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showEmpty() {
-        const treeContent = document.getElementById('treeContent');
+        const treeContent = document.getElementById('tree-content');
         treeContent.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-sitemap"></i>
@@ -83,22 +83,21 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
-    function renderTree() {
-        const treeContent = document.getElementById('treeContent');
+      function renderTree() {
+        const treeContent = document.getElementById('tree-content');
         
         if (assetsData.filiais.length === 0) {
             showEmpty();
             return;
         }
 
-        let treeHtml = '<ul class="tree-node">';
+        let treeHtml = '';
         
-        // Renderizar cada filial
+        // Renderizar filiais
         assetsData.filiais.forEach(filial => {
-            treeHtml += renderFilialNode(filial);
+            treeHtml += renderFilial(filial);
         });
         
-        treeHtml += '</ul>';
         treeContent.innerHTML = treeHtml;
 
         // Adicionar event listeners para expansão/colapso
@@ -219,11 +218,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-
-    function updateStats() {
-        document.getElementById('filialCount').textContent = assetsData.filiais.length;
-        document.getElementById('setorCount').textContent = assetsData.setores.length;
-        document.getElementById('equipamentoCount').textContent = assetsData.equipamentos.length;
+    
+    function updateCounters() {
+        document.getElementById('filiais-count').textContent = assetsData.filiais.length;
+        document.getElementById('setores-count').textContent = assetsData.setores.length;
+        document.getElementById('equipamentos-count').textContent = assetsData.equipamentos.length;
     }
 
     // Funções globais para ações dos botões
