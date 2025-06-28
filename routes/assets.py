@@ -2,8 +2,15 @@ from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from models import db
 from models.user import User
-from assets_models import Filial, Setor, Equipamento, Categoria
 from datetime import datetime
+
+# Importação segura dos modelos de ativos
+try:
+    from assets_models import Filial, Setor, Equipamento, Categoria
+    ASSETS_AVAILABLE = True
+except ImportError as e:
+    print(f"Erro ao importar modelos de ativos: {e}")
+    ASSETS_AVAILABLE = False
 
 assets_bp = Blueprint('assets', __name__)
 
@@ -21,6 +28,9 @@ def check_admin_permission():
 @login_required
 def get_filiais():
     """Listar filiais da empresa do usuário"""
+    if not ASSETS_AVAILABLE:
+        return jsonify({'success': False, 'message': 'Funcionalidade de ativos não disponível'}), 503
+    
     try:
         # Filtrar por empresa do usuário
         if current_user.profile == 'master':
