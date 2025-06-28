@@ -156,18 +156,15 @@ def create_setor():
 # ==================== EQUIPAMENTOS ====================
 
 @assets_bp.route('/api/equipamentos', methods=['GET'])
+@login_required
 def get_equipamentos():
     """Listar equipamentos da empresa do usuário"""
-    user = get_current_user()
-    if not user:
-        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
-    
     try:
         # Filtrar por empresa do usuário
-        if user.profile == 'master':
+        if current_user.profile == 'master':
             equipamentos = Equipamento.query.all()
         else:
-            equipamentos = Equipamento.query.filter_by(empresa=user.company).all()
+            equipamentos = Equipamento.query.filter_by(empresa=current_user.company).all()
         
         return jsonify({
             'success': True,
@@ -177,13 +174,13 @@ def get_equipamentos():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @assets_bp.route('/api/equipamentos', methods=['POST'])
+@login_required
 def create_equipamento():
     """Criar novo equipamento"""
     has_permission, user_or_message = check_admin_permission()
     if not has_permission:
         return jsonify({'success': False, 'message': user_or_message}), 403
     
-    user = user_or_message
     data = request.get_json()
     
     # Validar campos obrigatórios
@@ -194,12 +191,12 @@ def create_equipamento():
     
     try:
         # Verificar se setor existe e pertence à empresa
-        setor = Setor.query.filter_by(id=data['setor_id'], empresa=user.company).first()
+        setor = Setor.query.filter_by(id=data['setor_id'], empresa=current_user.company).first()
         if not setor:
             return jsonify({'success': False, 'message': 'Setor não encontrado ou não pertence à sua empresa'}), 400
         
         # Verificar se tag já existe na empresa
-        existing = Equipamento.query.filter_by(tag=data['tag'], empresa=user.company).first()
+        existing = Equipamento.query.filter_by(tag=data['tag'], empresa=current_user.company).first()
         if existing:
             return jsonify({'success': False, 'message': 'Tag já existe nesta empresa'}), 400
         
@@ -208,8 +205,8 @@ def create_equipamento():
             tag=data['tag'],
             descricao=data['descricao'],
             setor_id=data['setor_id'],
-            empresa=user.company,
-            usuario_criacao=user.email
+            empresa=current_user.company,
+            usuario_criacao=current_user.email
         )
         
         db.session.add(equipamento)
@@ -217,9 +214,10 @@ def create_equipamento():
         
         return jsonify({
             'success': True,
-            'message': 'Equipamento criado com sucesso',
+            'message': 'Equipamento cadastrado com sucesso',
             'equipamento': equipamento.to_dict()
         })
+        
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
