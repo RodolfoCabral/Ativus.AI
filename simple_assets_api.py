@@ -1,80 +1,65 @@
-# APIs simplificadas para ativos - para adicionar ao app.py
+#!/usr/bin/env python3
+"""
+Script simples para testar as APIs de ativos
+"""
 
-@app.route('/api/filiais', methods=['GET'])
-@login_required
-def api_get_filiais():
-    """API simplificada para filiais"""
-    try:
-        # Simular dados para teste
-        filiais_mock = [
-            {
-                'id': 1,
-                'tag': 'F01',
-                'descricao': 'Unidade olinda',
-                'endereco': 'Rua Principal, 123',
-                'cidade': 'Olinda',
-                'estado': 'PE',
-                'email': 'filial@empresa.com',
-                'telefone': '(81) 99999-9999',
-                'cnpj': '12.345.678/0001-90',
-                'empresa': current_user.company,
-                'data_criacao': '2024-06-26T10:00:00',
-                'usuario_criacao': current_user.email
-            }
-        ]
-        
-        return jsonify({
-            'success': True,
-            'filiais': filiais_mock
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+import requests
+import json
 
-@app.route('/api/setores', methods=['GET'])
-@login_required
-def api_get_setores():
-    """API simplificada para setores"""
-    try:
-        setores_mock = [
-            {
-                'id': 1,
-                'tag': 'PM',
-                'descricao': 'Pré-moldagem',
-                'filial_id': 1,
-                'empresa': current_user.company,
-                'data_criacao': '2024-06-26T10:00:00',
-                'usuario_criacao': current_user.email
-            }
-        ]
-        
-        return jsonify({
-            'success': True,
-            'setores': setores_mock
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+# Configuração
+BASE_URL = "http://localhost:5000"  # Para teste local
+# BASE_URL = "https://ativusai-af6f1462097d.herokuapp.com"  # Para teste no Heroku
 
-@app.route('/api/equipamentos', methods=['GET'])
-@login_required
-def api_get_equipamentos():
-    """API simplificada para equipamentos"""
+def test_stats_api():
+    """Testa a API de estatísticas"""
+    print("🔍 Testando API de estatísticas...")
     try:
-        equipamentos_mock = [
-            {
-                'id': 1,
-                'tag': 'EQP001',
-                'descricao': 'Máquina de Corte',
-                'setor_id': 1,
-                'empresa': current_user.company,
-                'data_criacao': '2024-06-26T10:00:00',
-                'usuario_criacao': current_user.email
-            }
-        ]
-        
-        return jsonify({
-            'success': True,
-            'equipamentos': equipamentos_mock
-        })
+        response = requests.get(f"{BASE_URL}/api/test/assets-stats")
+        print(f"Status: {response.status_code}")
+        print(f"Resposta: {json.dumps(response.json(), indent=2)}")
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+        print(f"Erro: {e}")
+
+def test_populate_api():
+    """Testa a API de popular dados"""
+    print("\n📝 Testando API de popular dados...")
+    try:
+        response = requests.post(f"{BASE_URL}/api/test/populate-sample-data")
+        print(f"Status: {response.status_code}")
+        print(f"Resposta: {json.dumps(response.json(), indent=2)}")
+    except Exception as e:
+        print(f"Erro: {e}")
+
+def test_clear_company_api():
+    """Testa a API de limpar dados da empresa"""
+    print("\n🗑️ Testando API de limpar dados da empresa...")
+    try:
+        response = requests.post(f"{BASE_URL}/api/test/clear-company-assets")
+        print(f"Status: {response.status_code}")
+        print(f"Resposta: {json.dumps(response.json(), indent=2)}")
+    except Exception as e:
+        print(f"Erro: {e}")
+
+def test_clear_all_api():
+    """Testa a API de limpar todos os dados"""
+    print("\n💥 Testando API de limpar todos os dados...")
+    try:
+        response = requests.post(f"{BASE_URL}/api/test/clear-all-assets")
+        print(f"Status: {response.status_code}")
+        print(f"Resposta: {json.dumps(response.json(), indent=2)}")
+    except Exception as e:
+        print(f"Erro: {e}")
+
+if __name__ == "__main__":
+    print("🧪 TESTE DAS APIs DE ATIVOS")
+    print("=" * 50)
+    
+    # Testar APIs
+    test_stats_api()
+    test_populate_api()
+    test_stats_api()  # Verificar se os dados foram criados
+    test_clear_company_api()
+    test_stats_api()  # Verificar se os dados foram removidos
+    
+    print("\n✅ Testes concluídos!")
 

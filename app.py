@@ -118,6 +118,11 @@ def create_app():
     def abrir_chamado():
         return send_from_directory('static', 'abrir-chamado.html')
     
+    @app.route('/test-admin')
+    @login_required
+    def test_admin():
+        return send_from_directory('static', 'test-admin.html')
+    
     @app.route('/materiais')
     @login_required
     def materiais():
@@ -233,6 +238,14 @@ def create_app():
             })
         except Exception as e:
             return jsonify({'success': False, 'message': str(e)}), 500
+    
+    # Registrar APIs de teste
+    try:
+        from test_apis import register_test_apis
+        register_test_apis(app)
+        print("APIs de teste registradas com sucesso")
+    except ImportError as e:
+        print(f"Aviso: APIs de teste não disponíveis: {e}")
     
     return app
 

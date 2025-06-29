@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administração de Testes - Ativus.AI</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        
+        .test-section h3 {
+            color: #6c5ce7;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #6c5ce7;
+            padding-bottom: 10px;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+        }
+        
+        .test-button.danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        
+        .test-button.danger:hover {
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #6c5ce7;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #6c5ce7;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .result-message {
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 6px;
+            display: none;
+        }
+        
+        .result-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .result-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .warning-text {
+            color: #e74c3c;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Superior -->
+    <div class="header">
+        <button class="sidebar-toggle" id="sidebar-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div class="header-right">
+            <div class="user-info">
+                <span class="user-name" id="user-name">Carregando...</span>
+                <span class="user-company" id="user-company">Carregando...</span>
+            </div>
+            <div class="user-avatar">
+                <button class="user-dropdown-btn" id="user-dropdown-btn">
+                    <div class="avatar-circle">
+                        <span id="user-initials">U</span>
+                    </div>
+                </button>
+                <div class="user-dropdown" id="user-dropdown">
+                    <a href="/users">Gerenciar Usuários</a>
+                    <a href="/logout">Sair</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Lateral -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="/static/images/Ativus.png" alt="Ativus.AI Logo" class="sidebar-logo">
+            <span class="sidebar-title">Ativus.AI</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/dashboard" class="nav-item">
+                <i class="nav-icon">📊</i>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="/relatorios" class="nav-item">
+                <i class="nav-icon">📋</i>
+                <span class="nav-text">Relatórios</span>
+            </a>
+            <a href="/kpis" class="nav-item">
+                <i class="nav-icon">📈</i>
+                <span class="nav-text">KPIs</span>
+            </a>
+            <a href="/cadastro-ativos" class="nav-item">
+                <i class="nav-icon">📦</i>
+                <span class="nav-text">Cadastro de Ativos</span>
+            </a>
+            <a href="/test-admin" class="nav-item active">
+                <i class="nav-icon">🔧</i>
+                <span class="nav-text">Admin Testes</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Overlay para mobile -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Conteúdo Principal -->
+    <div class="main-content">
+        <div class="test-container">
+            <h2>🔧 Administração de Testes - Sistema de Ativos</h2>
+            <p>Esta página permite gerenciar dados de teste do sistema de ativos. <strong>Use com cuidado!</strong></p>
+            
+            <!-- Estatísticas Atuais -->
+            <div class="test-section">
+                <h3>📊 Estatísticas Atuais</h3>
+                <button class="test-button" onclick="loadStats()">🔄 Atualizar Estatísticas</button>
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="filiais-stat">-</div>
+                        <div class="stat-label">Filiais</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="setores-stat">-</div>
+                        <div class="stat-label">Setores</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="equipamentos-stat">-</div>
+                        <div class="stat-label">Equipamentos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="categorias-stat">-</div>
+                        <div class="stat-label">Categorias</div>
+                    </div>
+                </div>
+                <div class="result-message" id="stats-message"></div>
+            </div>
+            
+            <!-- Dados de Exemplo -->
+            <div class="test-section">
+                <h3>📝 Dados de Exemplo</h3>
+                <p>Popula o sistema com dados de exemplo para testes e demonstrações.</p>
+                <button class="test-button" onclick="populateSampleData()">
+                    ➕ Criar Dados de Exemplo
+                </button>
+                <div class="result-message" id="populate-message"></div>
+                <div style="margin-top: 15px; font-size: 14px; color: #666;">
+                    <strong>Dados que serão criados:</strong>
+                    <ul>
+                        <li>3 Filiais (Olinda, Recife, São Paulo)</li>
+                        <li>7 Setores distribuídos nas filiais</li>
+                        <li>10 Equipamentos distribuídos nos setores</li>
+                        <li>6 Categorias de equipamentos</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Limpeza de Dados -->
+            <div class="test-section">
+                <h3>🗑️ Limpeza de Dados</h3>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4>Limpar Dados da Sua Empresa</h4>
+                    <p>Remove apenas os dados de ativos da sua empresa.</p>
+                    <button class="test-button danger" onclick="clearCompanyAssets()">
+                        🗑️ Limpar Dados da Empresa
+                    </button>
+                </div>
+                
+                <div>
+                    <h4>Limpar Todos os Dados (Apenas Master)</h4>
+                    <p class="warning-text">⚠️ ATENÇÃO: Esta ação remove TODOS os dados de ativos de TODAS as empresas!</p>
+                    <button class="test-button danger" onclick="clearAllAssets()">
+                        💥 Limpar TODOS os Dados
+                    </button>
+                </div>
+                
+                <div class="result-message" id="clear-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+    <script>
+        // Funções para as APIs de teste
+        
+        async function loadStats() {
+            showLoading('stats-message');
+            try {
+                const response = await fetch('/api/test/assets-stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('filiais-stat').textContent = data.stats.filiais;
+                    document.getElementById('setores-stat').textContent = data.stats.setores;
+                    document.getElementById('equipamentos-stat').textContent = data.stats.equipamentos;
+                    document.getElementById('categorias-stat').textContent = data.stats.categorias;
+                    showMessage('stats-message', 'Estatísticas atualizadas com sucesso!', 'success');
+                } else {
+                    showMessage('stats-message', data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('stats-message', 'Erro ao carregar estatísticas: ' + error.message, 'error');
+            }
+        }
+        
+        async function populateSampleData() {
+            if (!confirm('Deseja criar dados de exemplo? Esta ação adicionará novos registros ao sistema.')) {
+                return;
+            }
+            
+            showLoading('populate-message');
+            try {
+                const response = await fetch('/api/test/populate-sample-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('populate-message', 
+                        `Dados criados com sucesso! Filiais: ${data.data.filiais}, Setores: ${data.data.setores}, Equipamentos: ${data.data.equipamentos}, Categorias: ${data.data.categorias}`, 
+                        'success');
+                    loadStats(); // Atualizar estatísticas
+                } else {
+                    showMessage('populate-message', data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('populate-message', 'Erro ao criar dados: ' + error.message, 'error');
+            }
+        }
+        
+        async function clearCompanyAssets() {
+            if (!confirm('Tem certeza que deseja limpar TODOS os dados de ativos da sua empresa? Esta ação não pode ser desfeita!')) {
+                return;
+            }
+            
+            showLoading('clear-message');
+            try {
+                const response = await fetch('/api/test/clear-company-assets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('clear-message', 
+                        `Dados removidos: ${data.removed.filiais} filiais, ${data.removed.setores} setores, ${data.removed.equipamentos} equipamentos, ${data.removed.categorias} categorias`, 
+                        'success');
+                    loadStats(); // Atualizar estatísticas
+                } else {
+                    showMessage('clear-message', data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('clear-message', 'Erro ao limpar dados: ' + error.message, 'error');
+            }
+        }
+        
+        async function clearAllAssets() {
+            if (!confirm('⚠️ ATENÇÃO: Deseja limpar TODOS os dados de ativos de TODAS as empresas? Esta ação é IRREVERSÍVEL!')) {
+                return;
+            }
+            
+            if (!confirm('Confirma novamente? Esta ação removerá TODOS os dados do sistema!')) {
+                return;
+            }
+            
+            showLoading('clear-message');
+            try {
+                const response = await fetch('/api/test/clear-all-assets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('clear-message', data.message, 'success');
+                    loadStats(); // Atualizar estatísticas
+                } else {
+                    showMessage('clear-message', data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('clear-message', 'Erro ao limpar dados: ' + error.message, 'error');
+            }
+        }
+        
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result-message ${type}`;
+            element.style.display = 'block';
+            
+            // Esconder mensagem após 5 segundos
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.textContent = 'Processando...';
+            element.className = 'result-message';
+            element.style.display = 'block';
+        }
+        
+        // Carregar estatísticas ao carregar a página
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+        });
+    </script>
+</body>
+</html>
+
