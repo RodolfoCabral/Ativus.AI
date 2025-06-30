@@ -406,15 +406,107 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    window.editAsset = function(type, id) {
-        // Redirecionar para página de edição ou abrir modal de edição
-        alert(`Editar ${type} ID: ${id} - Funcionalidade em desenvolvimento`);
+    window.editAsset = async function(type, id) {
+        try {
+            // Verificar permissões (apenas admin e master podem editar)
+            const userProfile = await getCurrentUserProfile();
+            if (!userProfile || (userProfile !== 'admin' && userProfile !== 'master')) {
+                alert('Apenas administradores podem editar ativos.');
+                return;
+            }
+            
+            // Buscar dados do ativo
+            const response = await fetch(`/api/${type}s/${id}`);
+            const data = await response.json();
+            
+            if (!data.success) {
+                alert('Erro ao carregar dados: ' + data.message);
+                return;
+            }
+            
+            // Abrir modal de edição baseado no tipo
+            switch(type) {
+                case 'filial':
+                    openEditFilialModal(data.filial);
+                    break;
+                case 'setor':
+                    openEditSetorModal(data.setor);
+                    break;
+                case 'equipamento':
+                    openEditEquipamentoModal(data.equipamento);
+                    break;
+            }
+            
+        } catch (error) {
+            console.error('Erro ao editar ativo:', error);
+            alert('Erro ao carregar dados para edição.');
+        }
     };
 
-    window.deleteAsset = function(type, id) {
-        if (confirm(`Tem certeza que deseja excluir este ${type}?`)) {
-            // Implementar exclusão
-            alert(`Excluir ${type} ID: ${id} - Funcionalidade em desenvolvimento`);
+    window.deleteAsset = async function(type, id) {
+        try {
+            // Verificar permissões (apenas admin e master podem excluir)
+            const userProfile = await getCurrentUserProfile();
+            if (!userProfile || (userProfile !== 'admin' && userProfile !== 'master')) {
+                alert('Apenas administradores podem excluir ativos.');
+                return;
+            }
+            
+            // Buscar dados do ativo para mostrar informações na confirmação
+            const response = await fetch(`/api/${type}s/${id}`);
+            const data = await response.json();
+            
+            if (!data.success) {
+                alert('Erro ao carregar dados: ' + data.message);
+                return;
+            }
+            
+            const asset = data[type];
+            let confirmMessage = `⚠️ ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\n`;
+            confirmMessage += `Deseja excluir permanentemente da base de dados:\n`;
+            confirmMessage += `${type.toUpperCase()}: ${asset.tag} - ${asset.descricao}\n\n`;
+            
+            // Adicionar aviso sobre dependentes
+            if (type === 'filial') {
+                confirmMessage += `⚠️ AVISO: Todos os setores e equipamentos desta filial também serão excluídos!\n\n`;
+            } else if (type === 'setor') {
+                confirmMessage += `⚠️ AVISO: Todos os equipamentos deste setor também serão excluídos!\n\n`;
+            }
+            
+            confirmMessage += `Confirma a exclusão?`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            // Confirmação adicional para filiais e setores
+            if (type === 'filial' || type === 'setor') {
+                if (!confirm(`Confirma novamente? Esta ação removerá TODOS os dados relacionados!`)) {
+                    return;
+                }
+            }
+            
+            // Executar exclusão
+            const deleteResponse = await fetch(`/api/${type}s/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const deleteData = await deleteResponse.json();
+            
+            if (deleteData.success) {
+                alert(deleteData.message);
+                // Recarregar dados da árvore
+                loadAssetsData();
+            } else {
+                alert('Erro ao excluir: ' + deleteData.message);
+            }
+            
+        } catch (error) {
+            console.error('Erro ao excluir ativo:', error);
+            alert('Erro ao excluir ativo.');
         }
     };
 
@@ -483,4 +575,344 @@ document.addEventListener('DOMContentLoaded', function() {
     // Função para recarregar dados
     window.reloadAssetsData = loadAssetsData;
 });
+
+
+    // ==================== FUNÇÕES AUXILIARES ====================
+    
+    let currentUserProfile = '';
+    let currentUserCompany = '';
+    
+    async function getCurrentUserProfile() {
+        if (currentUserProfile) {
+            return currentUserProfile;
+        }
+        
+        try {
+            const response = await fetch('/api/user');
+            const data = await response.json();
+            
+            if (data.success && data.user) {
+                currentUserProfile = data.user.profile;
+                currentUserCompany = data.user.company;
+                return currentUserProfile;
+            }
+        } catch (error) {
+            console.error('Erro ao obter perfil do usuário:', error);
+        }
+        
+        return 'user'; // Fallback
+    }
+    
+    // ==================== MODAIS DE EDIÇÃO ====================
+    
+    function openEditFilialModal(filial) {
+        // Criar modal de edição para filial
+        const modalHtml = `
+            <div id="edit-filial-modal" class="modal-backdrop">
+                <div class="modal" style="max-width: 800px;">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Editar Filial</h3>
+                        <button class="modal-close" onclick="closeEditFilialModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="edit-filial-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="edit-filial-tag">Tag da Filial *</label>
+                                    <input type="text" id="edit-filial-tag" name="tag" value="${filial.tag}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-filial-descricao">Descrição *</label>
+                                    <input type="text" id="edit-filial-descricao" name="descricao" value="${filial.descricao}" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-filial-endereco">Endereço *</label>
+                                <input type="text" id="edit-filial-endereco" name="endereco" value="${filial.endereco}" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="edit-filial-cidade">Cidade *</label>
+                                    <input type="text" id="edit-filial-cidade" name="cidade" value="${filial.cidade}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-filial-estado">Estado *</label>
+                                    <select id="edit-filial-estado" name="estado" required>
+                                        <option value="">Selecione...</option>
+                                        <option value="AC" ${filial.estado === 'AC' ? 'selected' : ''}>Acre</option>
+                                        <option value="AL" ${filial.estado === 'AL' ? 'selected' : ''}>Alagoas</option>
+                                        <option value="AP" ${filial.estado === 'AP' ? 'selected' : ''}>Amapá</option>
+                                        <option value="AM" ${filial.estado === 'AM' ? 'selected' : ''}>Amazonas</option>
+                                        <option value="BA" ${filial.estado === 'BA' ? 'selected' : ''}>Bahia</option>
+                                        <option value="CE" ${filial.estado === 'CE' ? 'selected' : ''}>Ceará</option>
+                                        <option value="DF" ${filial.estado === 'DF' ? 'selected' : ''}>Distrito Federal</option>
+                                        <option value="ES" ${filial.estado === 'ES' ? 'selected' : ''}>Espírito Santo</option>
+                                        <option value="GO" ${filial.estado === 'GO' ? 'selected' : ''}>Goiás</option>
+                                        <option value="MA" ${filial.estado === 'MA' ? 'selected' : ''}>Maranhão</option>
+                                        <option value="MT" ${filial.estado === 'MT' ? 'selected' : ''}>Mato Grosso</option>
+                                        <option value="MS" ${filial.estado === 'MS' ? 'selected' : ''}>Mato Grosso do Sul</option>
+                                        <option value="MG" ${filial.estado === 'MG' ? 'selected' : ''}>Minas Gerais</option>
+                                        <option value="PA" ${filial.estado === 'PA' ? 'selected' : ''}>Pará</option>
+                                        <option value="PB" ${filial.estado === 'PB' ? 'selected' : ''}>Paraíba</option>
+                                        <option value="PR" ${filial.estado === 'PR' ? 'selected' : ''}>Paraná</option>
+                                        <option value="PE" ${filial.estado === 'PE' ? 'selected' : ''}>Pernambuco</option>
+                                        <option value="PI" ${filial.estado === 'PI' ? 'selected' : ''}>Piauí</option>
+                                        <option value="RJ" ${filial.estado === 'RJ' ? 'selected' : ''}>Rio de Janeiro</option>
+                                        <option value="RN" ${filial.estado === 'RN' ? 'selected' : ''}>Rio Grande do Norte</option>
+                                        <option value="RS" ${filial.estado === 'RS' ? 'selected' : ''}>Rio Grande do Sul</option>
+                                        <option value="RO" ${filial.estado === 'RO' ? 'selected' : ''}>Rondônia</option>
+                                        <option value="RR" ${filial.estado === 'RR' ? 'selected' : ''}>Roraima</option>
+                                        <option value="SC" ${filial.estado === 'SC' ? 'selected' : ''}>Santa Catarina</option>
+                                        <option value="SP" ${filial.estado === 'SP' ? 'selected' : ''}>São Paulo</option>
+                                        <option value="SE" ${filial.estado === 'SE' ? 'selected' : ''}>Sergipe</option>
+                                        <option value="TO" ${filial.estado === 'TO' ? 'selected' : ''}>Tocantins</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="edit-filial-email">E-mail *</label>
+                                    <input type="email" id="edit-filial-email" name="email" value="${filial.email}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-filial-telefone">Telefone *</label>
+                                    <input type="tel" id="edit-filial-telefone" name="telefone" value="${filial.telefone}" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-filial-cnpj">CNPJ *</label>
+                                <input type="text" id="edit-filial-cnpj" name="cnpj" value="${filial.cnpj}" required>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeEditFilialModal()">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="saveEditFilial(${filial.id})">Salvar Alterações</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        document.getElementById('edit-filial-modal').style.display = 'flex';
+    }
+    
+    function openEditSetorModal(setor) {
+        // Primeiro, carregar lista de filiais
+        fetch('/api/filiais')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const filiaisOptions = data.filiais.map(filial => 
+                        `<option value="${filial.id}" ${filial.id === setor.filial_id ? 'selected' : ''}>${filial.tag} - ${filial.descricao}</option>`
+                    ).join('');
+                    
+                    const modalHtml = `
+                        <div id="edit-setor-modal" class="modal-backdrop">
+                            <div class="modal" style="max-width: 600px;">
+                                <div class="modal-header">
+                                    <h3 class="modal-title">Editar Setor</h3>
+                                    <button class="modal-close" onclick="closeEditSetorModal()">&times;</button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="edit-setor-form">
+                                        <div class="form-group">
+                                            <label for="edit-setor-filial">Filial *</label>
+                                            <select id="edit-setor-filial" name="filial_id" required>
+                                                <option value="">Selecione uma filial...</option>
+                                                ${filiaisOptions}
+                                            </select>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="edit-setor-tag">Tag do Setor *</label>
+                                                <input type="text" id="edit-setor-tag" name="tag" value="${setor.tag}" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-setor-descricao">Descrição *</label>
+                                                <input type="text" id="edit-setor-descricao" name="descricao" value="${setor.descricao}" required>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" onclick="closeEditSetorModal()">Cancelar</button>
+                                    <button type="button" class="btn btn-primary" onclick="saveEditSetor(${setor.id})">Salvar Alterações</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    document.getElementById('edit-setor-modal').style.display = 'flex';
+                }
+            });
+    }
+    
+    function openEditEquipamentoModal(equipamento) {
+        // Primeiro, carregar lista de setores
+        fetch('/api/setores')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const setoresOptions = data.setores.map(setor => 
+                        `<option value="${setor.id}" ${setor.id === equipamento.setor_id ? 'selected' : ''}>${setor.filial_tag} > ${setor.tag} - ${setor.descricao}</option>`
+                    ).join('');
+                    
+                    const modalHtml = `
+                        <div id="edit-equipamento-modal" class="modal-backdrop">
+                            <div class="modal" style="max-width: 600px;">
+                                <div class="modal-header">
+                                    <h3 class="modal-title">Editar Equipamento</h3>
+                                    <button class="modal-close" onclick="closeEditEquipamentoModal()">&times;</button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="edit-equipamento-form">
+                                        <div class="form-group">
+                                            <label for="edit-equipamento-setor">Setor *</label>
+                                            <select id="edit-equipamento-setor" name="setor_id" required>
+                                                <option value="">Selecione um setor...</option>
+                                                ${setoresOptions}
+                                            </select>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="edit-equipamento-tag">Tag do Equipamento *</label>
+                                                <input type="text" id="edit-equipamento-tag" name="tag" value="${equipamento.tag}" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-equipamento-descricao">Descrição *</label>
+                                                <input type="text" id="edit-equipamento-descricao" name="descricao" value="${equipamento.descricao}" required>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" onclick="closeEditEquipamentoModal()">Cancelar</button>
+                                    <button type="button" class="btn btn-primary" onclick="saveEditEquipamento(${equipamento.id})">Salvar Alterações</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    document.getElementById('edit-equipamento-modal').style.display = 'flex';
+                }
+            });
+    }
+    
+    // ==================== FUNÇÕES DE FECHAMENTO DE MODAIS ====================
+    
+    window.closeEditFilialModal = function() {
+        const modal = document.getElementById('edit-filial-modal');
+        if (modal) {
+            modal.remove();
+        }
+    };
+    
+    window.closeEditSetorModal = function() {
+        const modal = document.getElementById('edit-setor-modal');
+        if (modal) {
+            modal.remove();
+        }
+    };
+    
+    window.closeEditEquipamentoModal = function() {
+        const modal = document.getElementById('edit-equipamento-modal');
+        if (modal) {
+            modal.remove();
+        }
+    };
+    
+    // ==================== FUNÇÕES DE SALVAMENTO ====================
+    
+    window.saveEditFilial = async function(filialId) {
+        try {
+            const form = document.getElementById('edit-filial-form');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            const response = await fetch(`/api/filiais/${filialId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('Filial atualizada com sucesso!');
+                closeEditFilialModal();
+                loadAssetsData(); // Recarregar dados
+            } else {
+                alert('Erro ao atualizar filial: ' + result.message);
+            }
+            
+        } catch (error) {
+            console.error('Erro ao salvar filial:', error);
+            alert('Erro ao salvar alterações.');
+        }
+    };
+    
+    window.saveEditSetor = async function(setorId) {
+        try {
+            const form = document.getElementById('edit-setor-form');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            const response = await fetch(`/api/setores/${setorId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('Setor atualizado com sucesso!');
+                closeEditSetorModal();
+                loadAssetsData(); // Recarregar dados
+            } else {
+                alert('Erro ao atualizar setor: ' + result.message);
+            }
+            
+        } catch (error) {
+            console.error('Erro ao salvar setor:', error);
+            alert('Erro ao salvar alterações.');
+        }
+    };
+    
+    window.saveEditEquipamento = async function(equipamentoId) {
+        try {
+            const form = document.getElementById('edit-equipamento-form');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            const response = await fetch(`/api/equipamentos/${equipamentoId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('Equipamento atualizado com sucesso!');
+                closeEditEquipamentoModal();
+                loadAssetsData(); // Recarregar dados
+            } else {
+                alert('Erro ao atualizar equipamento: ' + result.message);
+            }
+            
+        } catch (error) {
+            console.error('Erro ao salvar equipamento:', error);
+            alert('Erro ao salvar alterações.');
+        }
+    };
 
