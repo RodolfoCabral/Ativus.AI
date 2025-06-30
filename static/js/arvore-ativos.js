@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Renderizar árvore
             //renderTree();
-            //updateStats();
+            updateStats();
 
         } catch (error) {
             console.error('Erro ao carregar dados:', error);
