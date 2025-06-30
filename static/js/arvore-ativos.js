@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             showLoading();
             
+            console.log('Carregando dados dos ativos...');
+            
             // Carregar todos os dados em paralelo
             const [filiaisResponse, setoresResponse, equipamentosResponse] = await Promise.all([
                 fetch('/api/filiais'),
@@ -22,20 +24,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetch('/api/equipamentos')
             ]);
 
+            console.log('Respostas recebidas:', {
+                filiais: filiaisResponse.status,
+                setores: setoresResponse.status,
+                equipamentos: equipamentosResponse.status
+            });
+
             if (filiaisResponse.ok) {
                 const filiaisData = await filiaisResponse.json();
-                assetsData.filiais = filiaisData.filiais || [];
+                console.log('Dados de filiais:', filiaisData);
+                if (filiaisData.success) {
+                    assetsData.filiais = filiaisData.filiais || [];
+                }
+            } else {
+                console.error('Erro na API de filiais:', filiaisResponse.status);
             }
 
             if (setoresResponse.ok) {
                 const setoresData = await setoresResponse.json();
-                assetsData.setores = setoresData.setores || [];
+                console.log('Dados de setores:', setoresData);
+                if (setoresData.success) {
+                    assetsData.setores = setoresData.setores || [];
+                }
+            } else {
+                console.error('Erro na API de setores:', setoresResponse.status);
             }
 
             if (equipamentosResponse.ok) {
                 const equipamentosData = await equipamentosResponse.json();
-                assetsData.equipamentos = equipamentosData.equipamentos || [];
+                console.log('Dados de equipamentos:', equipamentosData);
+                if (equipamentosData.success) {
+                    assetsData.equipamentos = equipamentosData.equipamentos || [];
+                }
+            } else {
+                console.error('Erro na API de equipamentos:', equipamentosResponse.status);
             }
+
+            console.log('Dados finais carregados:', assetsData);
 
             // Renderizar árvore
             renderTree();
