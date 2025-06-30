@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Renderizar árvore
             renderTree();
+            updateCounters();
             //updateStats();
 
         } catch (error) {
