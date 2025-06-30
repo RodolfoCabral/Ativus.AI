@@ -65,7 +65,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Renderizar árvore
             renderTree();
             updateCounters();
-            //updateStats();
 
         } catch (error) {
             console.error('Erro ao carregar dados:', error);
@@ -344,13 +343,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function addTreeEventListeners() {
         // Event listeners para expansão/colapso
-        document.querySelectorAll('.expand-toggle').forEach(toggle => {
+        document.querySelectorAll('.tree-toggle').forEach(toggle => {
             toggle.addEventListener('click', function(e) {
                 e.stopPropagation();
+                e.preventDefault();
+                
                 const treeItem = this.closest('.tree-item');
-                treeItem.classList.toggle('collapsed');
-                treeItem.classList.toggle('expanded');
+                const children = treeItem.querySelector('.tree-children');
+                
+                if (children) {
+                    const isCurrentlyVisible = children.style.display !== 'none' && children.style.display !== '';
+                    
+                    if (isCurrentlyVisible) {
+                        // Colapsar
+                        children.style.display = 'none';
+                        this.textContent = '+';
+                        this.title = 'Expandir';
+                    } else {
+                        // Expandir
+                        children.style.display = 'block';
+                        this.textContent = '-';
+                        this.title = 'Colapsar';
+                    }
+                }
             });
+        });
+        
+        // Inicializar estado dos botões
+        document.querySelectorAll('.tree-children').forEach(children => {
+            children.style.display = 'block'; // Mostrar por padrão
+        });
+        
+        document.querySelectorAll('.tree-toggle').forEach(toggle => {
+            toggle.textContent = '-';
+            toggle.title = 'Colapsar';
         });
     }
     
