@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Renderizar árvore
             renderTree();
-            updateStats();
+            updateCounters();
 
         } catch (error) {
             console.error('Erro ao carregar dados:', error);
