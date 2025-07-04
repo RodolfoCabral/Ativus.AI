@@ -357,14 +357,33 @@
             
             // Executar exclusão
             console.log(`Enviando requisição DELETE para /api/${type}s/${id}`);
-            const deleteResponse = await fetch(`/api/${type}s/${id}`, {
+            const endpointMap = {
+                filial: 'filiais',
+                setor: 'setores',
+                equipamento: 'equipamentos'
+            };
+            const deleteResponse = await fetch(`/api/${endpointMap[type]}/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
             
-            const deleteData = await deleteResponse.json();
+            //const deleteData = await deleteResponse.json();
+            let deleteData;
+            try {
+                const contentType = deleteResponse.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    deleteData = await deleteResponse.json();
+                } else {
+                    const text = await deleteResponse.text();
+                    throw new Error('Resposta inesperada da API:\n' + text);
+                }
+            } catch (err) {
+                console.error('Erro ao processar resposta da exclusão:', err);
+                alert('Erro ao excluir ativo.\n' + err.message);
+                return;
+            }
             console.log(`Resposta da exclusão:`, deleteData);
             
             if (deleteData.success) {
