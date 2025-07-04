@@ -80,19 +80,29 @@
         .tree-toggle {
             width: 20px;
             height: 20px;
-            border: none;
-            background: #e5e7eb;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
             border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             font-size: 12px;
+            font-weight: bold;
             color: #6b7280;
+            transition: all 0.2s ease;
+            user-select: none;
         }
         
         .tree-toggle:hover {
-            background: #d1d5db;
+            background: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        
+        .tree-toggle:active {
+            background: #e5e7eb;
+            transform: scale(0.95);
         }
         
         .tree-icon {
@@ -364,7 +374,6 @@
     </div>
 
     <script src="/static/js/dashboard.js"></script>
-    <script src="/static/js/arvore-ativos.js"></script>
+    <script src="/static/js/arvore-ativos-fixed.js"></script>
 </body>
 </html>
-
