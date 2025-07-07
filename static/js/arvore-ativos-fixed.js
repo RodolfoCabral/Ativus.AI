@@ -365,18 +365,20 @@
             }
             
             // Executar exclusão
-            console.log(`Enviando requisição DELETE para /api/${type}s/${id}`);
+            console.log(`Enviando requisição DELETE para /api/${type}es/${id}`);
             
             // Mostrar indicador de carregamento
             const loadingModal = showLoadingModal(`Excluindo ${type}...`);
             
             try {
-                const deleteResponse = await fetch(`/api/${type}s/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json'
+                function getApiPath(type, id) {
+                    switch (type) {
+                        case 'filial': return `/api/filiais/${id}`;
+                        case 'setor': return `/api/setores/${id}`;
+                        case 'equipamento': return `/api/equipamentos/${id}`;
+                        default: throw new Error(`Tipo de ativo desconhecido: ${type}`);
                     }
-                });
+                };
                 
                 // Fechar indicador de carregamento
                 closeLoadingModal(loadingModal);
