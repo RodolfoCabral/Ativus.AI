@@ -363,22 +363,29 @@
                     return;
                 }
             }
-            
+          
             // Executar exclusão
-            console.log(`Enviando requisição DELETE para /api/${type}es/${id}`);
+            console.log(`Enviando requisição DELETE para /api/${type}s/${id}`);
             
             // Mostrar indicador de carregamento
             const loadingModal = showLoadingModal(`Excluindo ${type}...`);
+
+            function getApiPath(type, id) {
+                switch (type) {
+                    case 'filial': return `/api/filiais/${id}`;
+                    case 'setor': return `/api/setores/${id}`;
+                    case 'equipamento': return `/api/equipamentos/${id}`;
+                    default: throw new Error(`Tipo de ativo desconhecido: ${type}`);
+                }
+            };
             
             try {
-                function getApiPath(type, id) {
-                    switch (type) {
-                        case 'filial': return `/api/filiais/${id}`;
-                        case 'setor': return `/api/setores/${id}`;
-                        case 'equipamento': return `/api/equipamentos/${id}`;
-                        default: throw new Error(`Tipo de ativo desconhecido: ${type}`);
+                const deleteResponse = await fetch(getApiPath(type, id), {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
                     }
-                };
+                });
                 
                 // Fechar indicador de carregamento
                 closeLoadingModal(loadingModal);
