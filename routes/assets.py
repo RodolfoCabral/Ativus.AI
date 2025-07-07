@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from models import db
 from models.user import User
 from datetime import datetime
+import traceback
 
 # Importação segura dos modelos de ativos
 try:
@@ -449,5 +450,7 @@ def delete_equipamento(equipamento_id):
         })
     except Exception as e:
         db.session.rollback()
+        print("ERRO AO EXCLUIR EQUIPAMENTO:")
+        print(traceback.format_exc())  # <-- Isto mostrará no log do Heroku ou console local
         return jsonify({'success': False, 'message': f'Erro ao excluir equipamento: {str(e)}'}), 500
 
