@@ -238,7 +238,7 @@ def create_equipamento():
 @assets_bp.route('/api/categorias', methods=['GET'])
 def get_categorias():
     """Listar categorias da empresa do usuário"""
-    user = get_current_user()
+    user = current_user #get_current_user()
     if not user:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     
@@ -301,7 +301,7 @@ def create_categoria():
 @assets_bp.route('/api/arvore-ativos', methods=['GET'])
 def get_arvore_ativos():
     """Obter árvore hierárquica de ativos"""
-    user = get_current_user()
+    user = current_user #get_current_user()
     if not user:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     
@@ -338,7 +338,7 @@ def get_arvore_ativos():
 @login_required
 def delete_filial(filial_id):
     """Excluir uma filial e todos os seus setores e equipamentos"""
-    user = get_current_user()
+    user = current_user #get_current_user()
     if not user:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     
@@ -384,7 +384,7 @@ def delete_filial(filial_id):
 @login_required
 def delete_setor(setor_id):
     """Excluir um setor e todos os seus equipamentos"""
-    user = get_current_user()
+    user = current_user #get_current_user()
     if not user:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     
