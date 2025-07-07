@@ -423,7 +423,7 @@ def delete_setor(setor_id):
 @login_required
 def delete_equipamento(equipamento_id):
     """Excluir um equipamento"""
-    user = get_current_user()
+    user = current_user #get_current_user()
     if not user:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     
