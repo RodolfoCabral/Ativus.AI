@@ -317,16 +317,25 @@
             
             // Buscar dados do ativo para mostrar informações na confirmação
             console.log(`Buscando dados do ${type} com ID ${id}`);
-            const response = await fetch(`/api/${type}s/${id}`);
-            const data = await response.json();
-            console.log(`Resposta da API:`, data);
+            let asset;
             
-            if (!data.success) {
-                alert('Erro ao carregar dados: ' + data.message);
+            switch(type) {
+                case 'filial':
+                    asset = assetsData.filiais.find(f => f.id === id);
+                    break;
+                case 'setor':
+                    asset = assetsData.setores.find(s => s.id === id);
+                    break;
+                case 'equipamento':
+                    asset = assetsData.equipamentos.find(e => e.id === id);
+                    break;
+            }
+            
+            if (!asset) {
+                alert(`${type.charAt(0).toUpperCase() + type.slice(1)} não encontrado(a).`);
                 return;
             }
             
-            const asset = data[type];
             let confirmMessage = `⚠️ ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\n`;
             confirmMessage += `Deseja excluir permanentemente da base de dados:\n`;
             confirmMessage += `${type.toUpperCase()}: ${asset.tag} - ${asset.descricao}\n\n`;
@@ -357,49 +366,120 @@
             
             // Executar exclusão
             console.log(`Enviando requisição DELETE para /api/${type}s/${id}`);
-            const endpointMap = {
-                filial: 'filiais',
-                setor: 'setores',
-                equipamento: 'equipamentos'
-            };
-            const deleteResponse = await fetch(`/api/${endpointMap[type]}/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
             
-            //const deleteData = await deleteResponse.json();
-            let deleteData;
+            // Mostrar indicador de carregamento
+            const loadingModal = showLoadingModal(`Excluindo ${type}...`);
+            
             try {
-                const contentType = deleteResponse.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    deleteData = await deleteResponse.json();
-                } else {
-                    const text = await deleteResponse.text();
-                    throw new Error('Resposta inesperada da API:\n' + text);
+                const deleteResponse = await fetch(`/api/${type}s/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                // Fechar indicador de carregamento
+                closeLoadingModal(loadingModal);
+                
+                // Verificar status da resposta
+                if (!deleteResponse.ok) {
+                    const errorText = await deleteResponse.text();
+                    console.error(`Erro na resposta da API (${deleteResponse.status}):`, errorText);
+                    throw new Error(`Erro ${deleteResponse.status}: ${errorText || 'Falha na comunicação com o servidor'}`);
                 }
-            } catch (err) {
-                console.error('Erro ao processar resposta da exclusão:', err);
-                alert('Erro ao excluir ativo.\n' + err.message);
-                return;
-            }
-            console.log(`Resposta da exclusão:`, deleteData);
-            
-            if (deleteData.success) {
-                alert(deleteData.message);
-                // Recarregar dados da árvore
-                console.log(`Recarregando dados da árvore`);
-                loadAssetsData();
-            } else {
-                alert('Erro ao excluir: ' + deleteData.message);
+                
+                // Tentar processar a resposta como JSON
+                let deleteData;
+                try {
+                    deleteData = await deleteResponse.json();
+                } catch (jsonError) {
+                    console.error('Erro ao processar JSON da resposta:', jsonError);
+                    const responseText = await deleteResponse.text();
+                    throw new Error(`Resposta inválida do servidor: ${responseText}`);
+                }
+                
+                console.log(`Resposta da exclusão:`, deleteData);
+                
+                if (deleteData.success) {
+                    alert(deleteData.message || `${type.charAt(0).toUpperCase() + type.slice(1)} excluído(a) com sucesso!`);
+                    // Recarregar dados da árvore
+                    console.log(`Recarregando dados da árvore`);
+                    loadAssetsData();
+                } else {
+                    alert('Erro ao excluir: ' + (deleteData.message || 'Erro desconhecido'));
+                }
+            } catch (fetchError) {
+                // Fechar indicador de carregamento se ainda estiver aberto
+                closeLoadingModal(loadingModal);
+                
+                console.error('Erro na requisição de exclusão:', fetchError);
+                alert(`Erro ao excluir ${type}: ${fetchError.message}`);
             }
             
         } catch (error) {
             console.error('Erro ao excluir ativo:', error);
-            alert('Erro ao excluir ativo.');
+            alert(`Erro ao excluir ${type}: ${error.message || 'Erro desconhecido'}`);
         }
     };
+    
+    // Funções auxiliares para indicador de carregamento
+    function showLoadingModal(message) {
+        const modal = document.createElement('div');
+        modal.className = 'loading-modal';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        modal.style.display = 'flex';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+        modal.style.zIndex = '9999';
+        
+        const content = document.createElement('div');
+        content.style.backgroundColor = 'white';
+        content.style.padding = '20px';
+        content.style.borderRadius = '8px';
+        content.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+        content.style.textAlign = 'center';
+        
+        const spinner = document.createElement('div');
+        spinner.className = 'loading-spinner';
+        spinner.style.display = 'inline-block';
+        spinner.style.width = '30px';
+        spinner.style.height = '30px';
+        spinner.style.border = '3px solid #f3f3f3';
+        spinner.style.borderTop = '3px solid #3498db';
+        spinner.style.borderRadius = '50%';
+        spinner.style.animation = 'spin 1s linear infinite';
+        
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        
+        const text = document.createElement('p');
+        text.textContent = message || 'Carregando...';
+        text.style.marginTop = '10px';
+        
+        content.appendChild(spinner);
+        content.appendChild(text);
+        modal.appendChild(content);
+        document.head.appendChild(style);
+        document.body.appendChild(modal);
+        
+        return modal;
+    }
+    
+    function closeLoadingModal(modal) {
+        if (modal && document.body.contains(modal)) {
+            document.body.removeChild(modal);
+        }
+    }
 
     function showAssetModal(type, asset) {
         let content = '';
@@ -488,13 +568,22 @@
             }
             
             // Buscar dados do ativo
-            console.log(`Buscando dados do ${type} com ID ${id}`);
-            const response = await fetch(`/api/${type}s/${id}`);
-            const data = await response.json();
-            console.log(`Resposta da API:`, data);
+            let asset;
             
-            if (!data.success) {
-                alert('Erro ao carregar dados: ' + data.message);
+            switch(type) {
+                case 'filial':
+                    asset = assetsData.filiais.find(f => f.id === id);
+                    break;
+                case 'setor':
+                    asset = assetsData.setores.find(s => s.id === id);
+                    break;
+                case 'equipamento':
+                    asset = assetsData.equipamentos.find(e => e.id === id);
+                    break;
+            }
+            
+            if (!asset) {
+                alert(`${type.charAt(0).toUpperCase() + type.slice(1)} não encontrado(a).`);
                 return;
             }
             
@@ -502,13 +591,13 @@
             console.log(`Abrindo modal de edição para ${type}`);
             switch(type) {
                 case 'filial':
-                    openEditFilialModal(data.filial);
+                    openEditFilialModal(asset);
                     break;
                 case 'setor':
-                    openEditSetorModal(data.setor);
+                    openEditSetorModal(asset);
                     break;
                 case 'equipamento':
-                    openEditEquipamentoModal(data.equipamento);
+                    openEditEquipamentoModal(asset);
                     break;
             }
             
@@ -532,6 +621,12 @@
         try {
             console.log('Fazendo requisição para /api/user');
             const response = await fetch('/api/user');
+            
+            if (!response.ok) {
+                console.error(`Erro na API de usuário: ${response.status}`);
+                return 'user'; // Fallback
+            }
+            
             const data = await response.json();
             console.log('Resposta da API de usuário:', data);
             
@@ -641,6 +736,8 @@
             };
             
             try {
+                const loadingModal = showLoadingModal('Salvando alterações...');
+                
                 const response = await fetch(`/api/filiais/${filial.id}`, {
                     method: 'PUT',
                     headers: {
@@ -649,18 +746,25 @@
                     body: JSON.stringify(formData)
                 });
                 
+                closeLoadingModal(loadingModal);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Erro ${response.status}: ${errorText || 'Falha na comunicação com o servidor'}`);
+                }
+                
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert(data.message);
+                    alert(data.message || 'Filial atualizada com sucesso!');
                     closeModal();
                     loadAssetsData(); // Recarregar dados
                 } else {
-                    alert('Erro ao salvar: ' + data.message);
+                    alert('Erro ao salvar: ' + (data.message || 'Erro desconhecido'));
                 }
             } catch (error) {
                 console.error('Erro ao salvar filial:', error);
-                alert('Erro ao salvar alterações.');
+                alert('Erro ao salvar alterações: ' + error.message);
             }
         });
     }
@@ -730,6 +834,8 @@
             };
             
             try {
+                const loadingModal = showLoadingModal('Salvando alterações...');
+                
                 const response = await fetch(`/api/setores/${setor.id}`, {
                     method: 'PUT',
                     headers: {
@@ -738,18 +844,25 @@
                     body: JSON.stringify(formData)
                 });
                 
+                closeLoadingModal(loadingModal);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Erro ${response.status}: ${errorText || 'Falha na comunicação com o servidor'}`);
+                }
+                
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert(data.message);
+                    alert(data.message || 'Setor atualizado com sucesso!');
                     closeModal();
                     loadAssetsData(); // Recarregar dados
                 } else {
-                    alert('Erro ao salvar: ' + data.message);
+                    alert('Erro ao salvar: ' + (data.message || 'Erro desconhecido'));
                 }
             } catch (error) {
                 console.error('Erro ao salvar setor:', error);
-                alert('Erro ao salvar alterações.');
+                alert('Erro ao salvar alterações: ' + error.message);
             }
         });
     }
@@ -819,6 +932,8 @@
             };
             
             try {
+                const loadingModal = showLoadingModal('Salvando alterações...');
+                
                 const response = await fetch(`/api/equipamentos/${equipamento.id}`, {
                     method: 'PUT',
                     headers: {
@@ -827,18 +942,25 @@
                     body: JSON.stringify(formData)
                 });
                 
+                closeLoadingModal(loadingModal);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Erro ${response.status}: ${errorText || 'Falha na comunicação com o servidor'}`);
+                }
+                
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert(data.message);
+                    alert(data.message || 'Equipamento atualizado com sucesso!');
                     closeModal();
                     loadAssetsData(); // Recarregar dados
                 } else {
-                    alert('Erro ao salvar: ' + data.message);
+                    alert('Erro ao salvar: ' + (data.message || 'Erro desconhecido'));
                 }
             } catch (error) {
                 console.error('Erro ao salvar equipamento:', error);
-                alert('Erro ao salvar alterações.');
+                alert('Erro ao salvar alterações: ' + error.message);
             }
         });
     }

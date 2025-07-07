@@ -330,3 +330,124 @@ def get_arvore_ativos():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+
+# ==================== EXCLUSÃO ====================
+
+@assets_bp.route('/api/filiais/<int:filial_id>', methods=['DELETE'])
+@login_required
+def delete_filial(filial_id):
+    """Excluir uma filial e todos os seus setores e equipamentos"""
+    user = get_current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+    
+    # Verificar permissões (apenas admin e master podem excluir)
+    if user.profile not in ['admin', 'master']:
+        return jsonify({'success': False, 'message': 'Permissão negada. Apenas administradores podem excluir ativos.'}), 403
+    
+    try:
+        filial = Filial.query.get(filial_id)
+        if not filial:
+            return jsonify({'success': False, 'message': 'Filial não encontrada'}), 404
+        
+        # Verificar se o usuário tem permissão para esta empresa
+        if user.profile != 'master' and filial.empresa != user.company:
+            return jsonify({'success': False, 'message': 'Permissão negada. Você só pode excluir ativos da sua empresa.'}), 403
+        
+        # Contar setores e equipamentos que serão excluídos
+        setores_count = Setor.query.filter_by(filial_id=filial_id).count()
+        equipamentos_count = 0
+        for setor in Setor.query.filter_by(filial_id=filial_id).all():
+            equipamentos_count += Equipamento.query.filter_by(setor_id=setor.id).count()
+        
+        # Excluir todos os equipamentos dos setores da filial
+        for setor in Setor.query.filter_by(filial_id=filial_id).all():
+            Equipamento.query.filter_by(setor_id=setor.id).delete()
+        
+        # Excluir todos os setores da filial
+        Setor.query.filter_by(filial_id=filial_id).delete()
+        
+        # Excluir a filial
+        db.session.delete(filial)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Filial excluída com sucesso! Também foram excluídos {setores_count} setores e {equipamentos_count} equipamentos.'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Erro ao excluir filial: {str(e)}'}), 500
+
+@assets_bp.route('/api/setores/<int:setor_id>', methods=['DELETE'])
+@login_required
+def delete_setor(setor_id):
+    """Excluir um setor e todos os seus equipamentos"""
+    user = get_current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+    
+    # Verificar permissões (apenas admin e master podem excluir)
+    if user.profile not in ['admin', 'master']:
+        return jsonify({'success': False, 'message': 'Permissão negada. Apenas administradores podem excluir ativos.'}), 403
+    
+    try:
+        setor = Setor.query.get(setor_id)
+        if not setor:
+            return jsonify({'success': False, 'message': 'Setor não encontrado'}), 404
+        
+        # Verificar se o usuário tem permissão para esta empresa
+        if user.profile != 'master' and setor.empresa != user.company:
+            return jsonify({'success': False, 'message': 'Permissão negada. Você só pode excluir ativos da sua empresa.'}), 403
+        
+        # Contar equipamentos que serão excluídos
+        equipamentos_count = Equipamento.query.filter_by(setor_id=setor_id).count()
+        
+        # Excluir todos os equipamentos do setor
+        Equipamento.query.filter_by(setor_id=setor_id).delete()
+        
+        # Excluir o setor
+        db.session.delete(setor)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Setor excluído com sucesso! Também foram excluídos {equipamentos_count} equipamentos.'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Erro ao excluir setor: {str(e)}'}), 500
+
+@assets_bp.route('/api/equipamentos/<int:equipamento_id>', methods=['DELETE'])
+@login_required
+def delete_equipamento(equipamento_id):
+    """Excluir um equipamento"""
+    user = get_current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+    
+    # Verificar permissões (apenas admin e master podem excluir)
+    if user.profile not in ['admin', 'master']:
+        return jsonify({'success': False, 'message': 'Permissão negada. Apenas administradores podem excluir ativos.'}), 403
+    
+    try:
+        equipamento = Equipamento.query.get(equipamento_id)
+        if not equipamento:
+            return jsonify({'success': False, 'message': 'Equipamento não encontrado'}), 404
+        
+        # Verificar se o usuário tem permissão para esta empresa
+        if user.profile != 'master' and equipamento.empresa != user.company:
+            return jsonify({'success': False, 'message': 'Permissão negada. Você só pode excluir ativos da sua empresa.'}), 403
+        
+        # Excluir o equipamento
+        db.session.delete(equipamento)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Equipamento excluído com sucesso!'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Erro ao excluir equipamento: {str(e)}'}), 500
+
