@@ -55,22 +55,6 @@ def create_app():
     # Registro de blueprints
     app.register_blueprint(auth_bp)
     
-    # Importar e registrar blueprint de ativos após inicialização do app
-    try:
-        from routes.assets import assets_bp
-        app.register_blueprint(assets_bp)
-    except ImportError as e:
-        print(f"Aviso: Não foi possível importar assets_bp: {e}")
-        print("Sistema funcionará sem funcionalidades de ativos.")
-    
-    # Importar e registrar blueprint de chamados
-    try:
-        from routes.chamados import chamados_bp
-        app.register_blueprint(chamados_bp)
-    except ImportError as e:
-        print(f"Aviso: Não foi possível importar chamados_bp: {e}")
-        print("Sistema funcionará sem funcionalidades de chamados.")
-    
     # Rotas para arquivos estáticos
     @app.route('/')
     def index():
@@ -126,16 +110,6 @@ def create_app():
     def abrir_chamado():
         return send_from_directory('static', 'abrir-chamado.html')
     
-    @app.route('/chamados/abertos')
-    @login_required
-    def chamados_abertos():
-        return send_from_directory('static', 'chamados-abertos.html')
-    
-    @app.route('/chamados/historico')
-    @login_required
-    def chamados_historico():
-        return send_from_directory('static', 'chamados-historico.html')
-    
     @app.route('/materiais')
     @login_required
     def materiais():
@@ -162,95 +136,6 @@ def create_app():
         except Exception as e:
             print(f"Erro ao processar cadastro: {str(e)}")
             return jsonify({'success': False, 'message': 'Erro ao processar cadastro'})
-    
-    @app.route('/ativos/arvore')
-    @login_required
-    def arvore_ativos():
-        return send_from_directory('static', 'arvore-ativos.html')
-    
-    @app.route('/ativos/categorias')
-    @login_required
-    def categorias_ativos():
-        return send_from_directory('static', 'categorias-ativos.html')
-    
-    # APIs simplificadas para ativos
-    @app.route('/api/filiais', methods=['GET'])
-    @login_required
-    def api_get_filiais():
-        """API simplificada para filiais"""
-        try:
-            # Simular dados para teste
-            filiais_mock = [
-                {
-                    'id': 1,
-                    'tag': 'F01',
-                    'descricao': 'Unidade olinda',
-                    'endereco': 'Rua Principal, 123',
-                    'cidade': 'Olinda',
-                    'estado': 'PE',
-                    'email': 'filial@empresa.com',
-                    'telefone': '(81) 99999-9999',
-                    'cnpj': '12.345.678/0001-90',
-                    'empresa': current_user.company,
-                    'data_criacao': '2024-06-26T10:00:00',
-                    'usuario_criacao': current_user.email
-                }
-            ]
-            
-            return jsonify({
-                'success': True,
-                'filiais': filiais_mock
-            })
-        except Exception as e:
-            return jsonify({'success': False, 'message': str(e)}), 500
-
-    @app.route('/api/setores', methods=['GET'])
-    @login_required
-    def api_get_setores():
-        """API simplificada para setores"""
-        try:
-            setores_mock = [
-                {
-                    'id': 1,
-                    'tag': 'PM',
-                    'descricao': 'Pré-moldagem',
-                    'filial_id': 1,
-                    'empresa': current_user.company,
-                    'data_criacao': '2024-06-26T10:00:00',
-                    'usuario_criacao': current_user.email
-                }
-            ]
-            
-            return jsonify({
-                'success': True,
-                'setores': setores_mock
-            })
-        except Exception as e:
-            return jsonify({'success': False, 'message': str(e)}), 500
-
-    @app.route('/api/equipamentos', methods=['GET'])
-    @login_required
-    def api_get_equipamentos():
-        """API simplificada para equipamentos"""
-        try:
-            equipamentos_mock = [
-                {
-                    'id': 1,
-                    'tag': 'EQP001',
-                    'descricao': 'Máquina de Corte',
-                    'setor_id': 1,
-                    'empresa': current_user.company,
-                    'data_criacao': '2024-06-26T10:00:00',
-                    'usuario_criacao': current_user.email
-                }
-            ]
-            
-            return jsonify({
-                'success': True,
-                'equipamentos': equipamentos_mock
-            })
-        except Exception as e:
-            return jsonify({'success': False, 'message': str(e)}), 500
     
     return app
 
@@ -294,4 +179,3 @@ def send_signup_email(data):
     except Exception as e:
         print(f"Erro ao enviar email com SendGrid: {e}")
         raise
-
