@@ -63,6 +63,14 @@ def create_app():
         print(f"Aviso: Não foi possível importar assets_bp: {e}")
         print("Sistema funcionará sem funcionalidades de ativos.")
     
+    # Importar e registrar blueprint de chamados
+    try:
+        from routes.chamados import chamados_bp
+        app.register_blueprint(chamados_bp)
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar chamados_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de chamados.")
+    
     # Rotas para arquivos estáticos
     @app.route('/')
     def index():
@@ -117,6 +125,16 @@ def create_app():
     @login_required
     def abrir_chamado():
         return send_from_directory('static', 'abrir-chamado.html')
+    
+    @app.route('/chamados/abertos')
+    @login_required
+    def chamados_abertos():
+        return send_from_directory('static', 'chamados-abertos.html')
+    
+    @app.route('/chamados/historico')
+    @login_required
+    def chamados_historico():
+        return send_from_directory('static', 'chamados-historico.html')
     
     @app.route('/materiais')
     @login_required
