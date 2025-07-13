@@ -399,3 +399,7 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+window.openNovoChamadoForm = openNovoChamadoForm;
+window.closeNovoChamadoModal = closeNovoChamadoModal;
+window.carregarSetores = carregarSetores;
+window.carregarEquipamentos = carregarEquipamentos;
