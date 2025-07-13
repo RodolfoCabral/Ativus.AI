@@ -229,6 +229,7 @@ document.getElementById('novo-chamado-form').addEventListener('submit', async fu
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include', // <- ESSENCIAL!
             body: JSON.stringify(chamadoData)
         });
         
