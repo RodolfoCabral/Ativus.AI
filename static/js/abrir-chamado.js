@@ -175,14 +175,15 @@ function preencherNomeSolicitante() {
 
 // Abrir modal de novo chamado
 function openNovoChamadoForm() {
-    document.getElementById('novo-chamado-modal').style.display = 'flex';
+    const modal = document.getElementById('novo-chamado-modal');
+    modal.classList.add('show');
     preencherDataHoraAtual();
     preencherNomeSolicitante();
 }
 
 // Fechar modal de novo chamado
 function closeNovoChamadoModal() {
-    document.getElementById('novo-chamado-modal').style.display = 'none';
+    document.getElementById('novo-chamado-modal').classList.remove('show');
     document.getElementById('novo-chamado-form').reset();
     
     // Resetar selects
