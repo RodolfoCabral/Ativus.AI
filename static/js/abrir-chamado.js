@@ -177,6 +177,7 @@ function preencherNomeSolicitante() {
 function openNovoChamadoForm() {
     const modal = document.getElementById('novo-chamado-modal');
     modal.classList.add('show');
+    modal.style.display = 'flex';
     preencherDataHoraAtual();
     preencherNomeSolicitante();
 }
@@ -185,7 +186,6 @@ function openNovoChamadoForm() {
 function closeNovoChamadoModal() {
     document.getElementById('novo-chamado-modal').classList.remove('show');
     document.getElementById('novo-chamado-form').reset();
-    
     // Resetar selects
     document.getElementById('setor').disabled = true;
     document.getElementById('equipamento').disabled = true;
