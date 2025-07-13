@@ -67,8 +67,12 @@ def create_app():
     try:
         from routes.chamados import chamados_bp
         app.register_blueprint(chamados_bp)
+        print("Blueprint de chamados registrado com sucesso")
     except ImportError as e:
         print(f"Aviso: Não foi possível importar chamados_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de chamados.")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de chamados: {e}")
         print("Sistema funcionará sem funcionalidades de chamados.")
     
     # Rotas para arquivos estáticos

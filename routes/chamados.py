@@ -1,8 +1,15 @@
 from flask import Blueprint, request, jsonify, session
-from models.assets import Chamado, Filial, Setor, Equipamento
-from app import db
+from models import db
 from datetime import datetime
 import os
+
+# Importação segura dos modelos de ativos
+try:
+    from assets_models import Chamado, Filial, Setor, Equipamento
+    CHAMADOS_AVAILABLE = True
+except ImportError as e:
+    print(f"Erro ao importar modelos de chamados: {e}")
+    CHAMADOS_AVAILABLE = False
 
 chamados_bp = Blueprint('chamados', __name__)
 
@@ -17,6 +24,9 @@ def get_current_user():
 @chamados_bp.route('/api/chamados', methods=['POST'])
 def criar_chamado():
     """Criar um novo chamado"""
+    if not CHAMADOS_AVAILABLE:
+        return jsonify({'error': 'Funcionalidade de chamados não disponível'}), 503
+    
     try:
         if 'user_id' not in session:
             return jsonify({'error': 'Usuário não autenticado'}), 401
@@ -76,6 +86,9 @@ def criar_chamado():
 @chamados_bp.route('/api/chamados', methods=['GET'])
 def listar_chamados():
     """Listar chamados da empresa do usuário"""
+    if not CHAMADOS_AVAILABLE:
+        return jsonify({'error': 'Funcionalidade de chamados não disponível'}), 503
+    
     try:
         if 'user_id' not in session:
             return jsonify({'error': 'Usuário não autenticado'}), 401
@@ -106,6 +119,9 @@ def listar_chamados():
 @chamados_bp.route('/api/chamados/<int:chamado_id>', methods=['GET'])
 def obter_chamado(chamado_id):
     """Obter detalhes de um chamado específico"""
+    if not CHAMADOS_AVAILABLE:
+        return jsonify({'error': 'Funcionalidade de chamados não disponível'}), 503
+    
     try:
         if 'user_id' not in session:
             return jsonify({'error': 'Usuário não autenticado'}), 401
@@ -122,58 +138,14 @@ def obter_chamado(chamado_id):
         })
         
     except Exception as e:
-        return jsonify({'error': f'Erro interno do servidor: {str(e)}'}), 500
-
-@chamados_bp.route('/api/chamados/<int:chamado_id>', methods=['PUT'])
-def atualizar_chamado(chamado_id):
-    """Atualizar um chamado"""
-    try:
-        if 'user_id' not in session:
-            return jsonify({'error': 'Usuário não autenticado'}), 401
-        
-        user_info = get_current_user()
-        
-        # Verificar permissões (apenas admin e master podem atualizar)
-        if user_info['profile'] not in ['admin', 'master']:
-            return jsonify({'error': 'Sem permissão para atualizar chamados'}), 403
-        
-        chamado = Chamado.query.filter_by(id=chamado_id, empresa=user_info['company']).first()
-        if not chamado:
-            return jsonify({'error': 'Chamado não encontrado'}), 404
-        
-        data = request.get_json()
-        
-        # Atualizar campos permitidos
-        if 'status' in data:
-            status_validos = ['aberto', 'em_andamento', 'resolvido', 'fechado']
-            if data['status'] in status_validos:
-                chamado.status = data['status']
-        
-        if 'prioridade' in data:
-            prioridades_validas = ['baixa', 'media', 'alta', 'seguranca']
-            if data['prioridade'] in prioridades_validas:
-                chamado.prioridade = data['prioridade']
-        
-        if 'descricao' in data:
-            chamado.descricao = data['descricao']
-        
-        chamado.data_atualizacao = datetime.utcnow()
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Chamado atualizado com sucesso',
-            'chamado': chamado.to_dict()
-        })
-        
-    except Exception as e:
-        db.session.rollback()
         return jsonify({'error': f'Erro interno do servidor: {str(e)}'}), 500
 
 @chamados_bp.route('/api/chamados/estatisticas', methods=['GET'])
 def estatisticas_chamados():
     """Obter estatísticas dos chamados"""
+    if not CHAMADOS_AVAILABLE:
+        return jsonify({'error': 'Funcionalidade de chamados não disponível'}), 503
+    
     try:
         if 'user_id' not in session:
             return jsonify({'error': 'Usuário não autenticado'}), 401

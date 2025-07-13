@@ -6,10 +6,21 @@ Script para inicializar a tabela de chamados no banco de dados
 import os
 import sys
 from app import create_app, db
-from models.assets import Chamado
+
+# Importação segura dos modelos
+try:
+    from assets_models import Chamado
+    CHAMADOS_AVAILABLE = True
+except ImportError as e:
+    print(f"Erro ao importar modelo Chamado: {e}")
+    CHAMADOS_AVAILABLE = False
 
 def init_chamados_table():
     """Inicializa a tabela de chamados no banco de dados"""
+    
+    if not CHAMADOS_AVAILABLE:
+        print("❌ Modelo Chamado não disponível. Não é possível criar a tabela.")
+        return False
     
     app = create_app()
     
