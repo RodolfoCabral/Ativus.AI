@@ -50,15 +50,15 @@ def criar_chamado():
             return jsonify({'error': 'Prioridade inválida'}), 400
         
         # Verificar se filial, setor e equipamento existem e pertencem à empresa do usuário
-        filial = Filial.query.filter_by(id=data['filial_id'], empresa=user_info['company']).first()
+        filial = Filial.query.filter_by(id=data['filial_id']).first()
         if not filial:
             return jsonify({'error': 'Filial não encontrada'}), 404
         
-        setor = Setor.query.filter_by(id=data['setor_id'], filial_id=data['filial_id'], empresa=user_info['company']).first()
+        setor = Setor.query.filter_by(id=data['setor_id'], filial_id=data['filial_id']).first()
         if not setor:
             return jsonify({'error': 'Setor não encontrado ou não pertence à filial selecionada'}), 404
         
-        equipamento = Equipamento.query.filter_by(id=data['equipamento_id'], setor_id=data['setor_id'], empresa=user_info['company']).first()
+        equipamento = Equipamento.query.filter_by(id=data['equipamento_id'], setor_id=data['setor_id']).first()
         if not equipamento:
             return jsonify({'error': 'Equipamento não encontrado ou não pertence ao setor selecionado'}), 404
         
@@ -132,7 +132,7 @@ def obter_chamado(chamado_id):
         
         user_info = get_current_user()
         
-        chamado = Chamado.query.filter_by(id=chamado_id, empresa=user_info['company']).first()
+        chamado = Chamado.query.filter_by(id=chamado_id).first()
         if not chamado:
             return jsonify({'error': 'Chamado não encontrado'}), 404
         
