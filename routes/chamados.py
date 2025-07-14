@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, session
+from flask_login import login_required
 from models import db
 from datetime import datetime
 import os
@@ -22,6 +23,7 @@ def get_current_user():
     }
 
 @chamados_bp.route('/api/chamados', methods=['POST'])
+@login_required
 def criar_chamado():
     """Criar um novo chamado"""
     if not CHAMADOS_AVAILABLE:
