@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from flask_login import login_required
+from flask_login import current_user, login_required
 from models import db
 from datetime import datetime
 import os
@@ -25,12 +25,14 @@ def get_current_user():
 @chamados_bp.route('/api/chamados', methods=['POST'])
 @login_required
 def criar_chamado():
+    data = request.get_json()
+    print("Usuário autenticado:", current_user.email)
     """Criar um novo chamado"""
     if not CHAMADOS_AVAILABLE:
         return jsonify({'error': 'Funcionalidade de chamados não disponível'}), 503
     
     try:
-        if 'user_id' not in session:
+        if not current_user.is_authenticated:
             return jsonify({'error': 'Usuário não autenticado'}), 401
         
         data = request.get_json()
@@ -92,7 +94,7 @@ def listar_chamados():
         return jsonify({'error': 'Funcionalidade de chamados não disponível'}), 503
     
     try:
-        if 'user_id' not in session:
+        if not current_user.is_authenticated:
             return jsonify({'error': 'Usuário não autenticado'}), 401
         
         user_info = get_current_user()
@@ -125,7 +127,7 @@ def obter_chamado(chamado_id):
         return jsonify({'error': 'Funcionalidade de chamados não disponível'}), 503
     
     try:
-        if 'user_id' not in session:
+        if not current_user.is_authenticated:
             return jsonify({'error': 'Usuário não autenticado'}), 401
         
         user_info = get_current_user()
@@ -149,7 +151,7 @@ def estatisticas_chamados():
         return jsonify({'error': 'Funcionalidade de chamados não disponível'}), 503
     
     try:
-        if 'user_id' not in session:
+        if not current_user.is_authenticated:
             return jsonify({'error': 'Usuário não autenticado'}), 401
         
         user_info = get_current_user()
