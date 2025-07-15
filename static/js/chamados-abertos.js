@@ -146,6 +146,10 @@ function renderizarChamados() {
     });
     
     container.innerHTML = chamadosFiltrados.map(chamado => criarCardChamado(chamado)).join('');
+    
+    // Adicionar event listeners para botões de conversão em OS
+    adicionarEventListenersConverterOS();
+}
 }
 
 // Criar card de chamado
@@ -190,7 +194,13 @@ function criarCardChamado(chamado) {
             </div>
             
             <div class="chamado-actions">
-                <button class="btn-converter-os" onclick="abrirModalConverterOS(${JSON.stringify(chamado).replace(/"/g, '&quot;')})">
+                <button class="btn-converter-os" 
+                        data-chamado-id="${chamado.id}"
+                        data-chamado-descricao="${chamado.descricao.replace(/"/g, '&quot;')}"
+                        data-chamado-prioridade="${chamado.prioridade}"
+                        data-filial-id="${chamado.filial_id}"
+                        data-setor-id="${chamado.setor_id}"
+                        data-equipamento-id="${chamado.equipamento_id}">
                     <i class="fas fa-tools"></i>
                     Converter em OS
                 </button>
@@ -252,20 +262,77 @@ let setoresOS = [];
 let equipamentosOS = [];
 let chamadoSelecionado = null;
 
+// Adicionar event listeners para botões de conversão em OS
+function adicionarEventListenersConverterOS() {
+    const botoes = document.querySelectorAll('.btn-converter-os');
+    botoes.forEach(botao => {
+        botao.addEventListener('click', function() {
+            const chamadoData = {
+                id: this.dataset.chamadoId,
+                descricao: this.dataset.chamadoDescricao,
+                prioridade: this.dataset.chamadoPrioridade,
+                filial_id: this.dataset.filialId,
+                setor_id: this.dataset.setorId,
+                equipamento_id: this.dataset.equipamentoId
+            };
+            abrirModalConverterOS(chamadoData);
+        });
+    });
+}
+
 // Função para abrir modal de conversão em OS
 function abrirModalConverterOS(chamado) {
+    console.log('Abrindo modal para chamado:', chamado);
     chamadoSelecionado = chamado;
     
+    // Verificar se o modal existe
+    const modal = document.getElementById('converter-os-modal');
+    if (!modal) {
+        console.error('Modal converter-os-modal não encontrado!');
+        alert('Erro: Modal não encontrado. Verifique se a página foi carregada corretamente.');
+        return;
+    }
+    
+    console.log('Modal encontrado:', modal);
+    
     // Preencher dados do chamado
-    document.getElementById('chamado-id').value = chamado.id;
-    document.getElementById('os-descricao').value = chamado.descricao;
-    document.getElementById('prioridade-os').value = chamado.prioridade;
+    const chamadoIdField = document.getElementById('chamado-id');
+    const descricaoField = document.getElementById('os-descricao');
+    const prioridadeField = document.getElementById('prioridade-os');
+    
+    if (chamadoIdField) {
+        chamadoIdField.value = chamado.id;
+        console.log('Chamado ID preenchido:', chamado.id);
+    }
+    if (descricaoField) {
+        descricaoField.value = chamado.descricao;
+        console.log('Descrição preenchida:', chamado.descricao);
+    }
+    if (prioridadeField) {
+        prioridadeField.value = chamado.prioridade;
+        console.log('Prioridade preenchida:', chamado.prioridade);
+    }
     
     // Carregar dados para os selects
     carregarDadosOS();
     
-    // Mostrar modal
-    document.getElementById('converter-os-modal').style.display = 'flex';
+    // Mostrar modal com múltiplas tentativas
+    modal.style.display = 'flex';
+    modal.style.visibility = 'visible';
+    modal.style.opacity = '1';
+    
+    // Forçar reflow
+    modal.offsetHeight;
+    
+    console.log('Modal exibido - display:', modal.style.display);
+    console.log('Modal exibido - visibility:', modal.style.visibility);
+    
+    // Verificação adicional após um pequeno delay
+    setTimeout(() => {
+        const computedStyle = window.getComputedStyle(modal);
+        console.log('Computed display:', computedStyle.display);
+        console.log('Computed visibility:', computedStyle.visibility);
+    }, 100);
 }
 
 // Fechar modal de conversão em OS
