@@ -6,6 +6,7 @@ Script para inicializar a tabela de ordens de serviço no banco de dados
 import os
 import sys
 from app import create_app, db
+from sqlalchemy import inspect
 
 # Importação segura dos modelos
 try:
@@ -26,13 +27,19 @@ def init_os_table():
     
     with app.app_context():
         try:
-            # Verificar se a tabela já existe
-            if db.engine.dialect.has_table(db.engine, 'ordens_servico'):
+            # Usar inspector para verificar se a tabela existe
+            inspector = inspect(db.engine)
+            table_exists = inspector.has_table('ordens_servico')
+            
+            if table_exists:
                 print("ℹ️  Tabela 'ordens_servico' já existe")
                 
                 # Verificar se há registros
-                count = OrdemServico.query.count()
-                print(f"📊 Total de ordens de serviço existentes: {count}")
+                try:
+                    count = OrdemServico.query.count()
+                    print(f"📊 Total de ordens de serviço existentes: {count}")
+                except Exception as e:
+                    print(f"⚠️  Aviso: Não foi possível contar registros: {e}")
                 
             else:
                 print("🔨 Criando tabela 'ordens_servico'...")
@@ -43,7 +50,8 @@ def init_os_table():
                 print("✅ Tabela 'ordens_servico' criada com sucesso!")
                 
                 # Verificar se foi criada corretamente
-                if db.engine.dialect.has_table(db.engine, 'ordens_servico'):
+                inspector = inspect(db.engine)
+                if inspector.has_table('ordens_servico'):
                     print("✅ Verificação: Tabela criada corretamente")
                 else:
                     print("❌ Erro: Tabela não foi criada")
@@ -79,6 +87,8 @@ def init_os_table():
             
         except Exception as e:
             print(f"❌ Erro ao inicializar tabela de ordens de serviço: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
 if __name__ == '__main__':
