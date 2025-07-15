@@ -189,6 +189,13 @@ function criarCardChamado(chamado) {
                 </div>
             </div>
             
+            <div class="chamado-actions">
+                <button class="btn-converter-os" onclick="abrirModalConverterOS(${JSON.stringify(chamado).replace(/"/g, '&quot;')})">
+                    <i class="fas fa-tools"></i>
+                    Converter em OS
+                </button>
+            </div>
+            
             <div class="chamado-footer">
                 <div class="chamado-solicitante">
                     <i class="fas fa-user"></i> ${chamado.solicitante}
@@ -235,5 +242,289 @@ function mostrarErro(mensagem) {
             </button>
         </div>
     `;
+}
+
+
+
+// Variáveis para conversão em OS
+let filiaisOS = [];
+let setoresOS = [];
+let equipamentosOS = [];
+let chamadoSelecionado = null;
+
+// Função para abrir modal de conversão em OS
+function abrirModalConverterOS(chamado) {
+    chamadoSelecionado = chamado;
+    
+    // Preencher dados do chamado
+    document.getElementById('chamado-id').value = chamado.id;
+    document.getElementById('os-descricao').value = chamado.descricao;
+    document.getElementById('prioridade-os').value = chamado.prioridade;
+    
+    // Carregar dados para os selects
+    carregarDadosOS();
+    
+    // Mostrar modal
+    document.getElementById('converter-os-modal').style.display = 'flex';
+}
+
+// Fechar modal de conversão em OS
+function fecharModalConverterOS() {
+    document.getElementById('converter-os-modal').style.display = 'none';
+    document.getElementById('converter-os-form').reset();
+    chamadoSelecionado = null;
+}
+
+// Carregar dados para o formulário de OS
+async function carregarDadosOS() {
+    try {
+        // Carregar filiais
+        await carregarFiliaisOS();
+        
+        // Se há um chamado selecionado, pré-selecionar os dados
+        if (chamadoSelecionado) {
+            // Selecionar filial
+            document.getElementById('filial-os').value = chamadoSelecionado.filial_id;
+            
+            // Carregar setores da filial
+            await carregarSetoresOS();
+            
+            // Selecionar setor
+            document.getElementById('setor-os').value = chamadoSelecionado.setor_id;
+            
+            // Carregar equipamentos do setor
+            await carregarEquipamentosOS();
+            
+            // Selecionar equipamento
+            document.getElementById('equipamento-os').value = chamadoSelecionado.equipamento_id;
+        }
+        
+    } catch (error) {
+        console.error('Erro ao carregar dados para OS:', error);
+        showNotification('Erro ao carregar dados', 'error');
+    }
+}
+
+// Carregar filiais para OS
+async function carregarFiliaisOS() {
+    try {
+        const response = await fetch('/api/filiais');
+        if (response.ok) {
+            const data = await response.json();
+            filiaisOS = data.filiais || [];
+            
+            const select = document.getElementById('filial-os');
+            select.innerHTML = '<option value="">Selecione uma filial</option>';
+            
+            filiaisOS.forEach(filial => {
+                const option = document.createElement('option');
+                option.value = filial.id;
+                option.textContent = `${filial.tag} - ${filial.descricao}`;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Erro ao carregar filiais:', error);
+    }
+}
+
+// Carregar setores para OS
+async function carregarSetoresOS() {
+    const filialId = document.getElementById('filial-os').value;
+    const setorSelect = document.getElementById('setor-os');
+    const equipamentoSelect = document.getElementById('equipamento-os');
+    
+    // Limpar selects dependentes
+    setorSelect.innerHTML = '<option value="">Carregando setores...</option>';
+    equipamentoSelect.innerHTML = '<option value="">Selecione um setor primeiro</option>';
+    
+    if (!filialId) {
+        setorSelect.innerHTML = '<option value="">Selecione uma filial primeiro</option>';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/setores?filial_id=${filialId}`);
+        if (response.ok) {
+            const data = await response.json();
+            setoresOS = data.setores || [];
+            
+            setorSelect.innerHTML = '<option value="">Selecione um setor</option>';
+            
+            setoresOS.forEach(setor => {
+                const option = document.createElement('option');
+                option.value = setor.id;
+                option.textContent = `${setor.tag} - ${setor.descricao}`;
+                setorSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Erro ao carregar setores:', error);
+        setorSelect.innerHTML = '<option value="">Erro ao carregar setores</option>';
+    }
+}
+
+// Carregar equipamentos para OS
+async function carregarEquipamentosOS() {
+    const setorId = document.getElementById('setor-os').value;
+    const equipamentoSelect = document.getElementById('equipamento-os');
+    
+    equipamentoSelect.innerHTML = '<option value="">Carregando equipamentos...</option>';
+    
+    if (!setorId) {
+        equipamentoSelect.innerHTML = '<option value="">Selecione um setor primeiro</option>';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/equipamentos?setor_id=${setorId}`);
+        if (response.ok) {
+            const data = await response.json();
+            equipamentosOS = data.equipamentos || [];
+            
+            equipamentoSelect.innerHTML = '<option value="">Selecione um equipamento</option>';
+            
+            equipamentosOS.forEach(equipamento => {
+                const option = document.createElement('option');
+                option.value = equipamento.id;
+                option.textContent = `${equipamento.tag} - ${equipamento.descricao}`;
+                equipamentoSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Erro ao carregar equipamentos:', error);
+        equipamentoSelect.innerHTML = '<option value="">Erro ao carregar equipamentos</option>';
+    }
+}
+
+// Calcular HH (Homem-Hora)
+function calcularHH() {
+    const qtdPessoas = parseFloat(document.getElementById('qtd-pessoas').value) || 0;
+    const horas = parseFloat(document.getElementById('horas').value) || 0;
+    const hh = qtdPessoas * horas;
+    
+    document.getElementById('hh-display').textContent = hh.toFixed(1);
+}
+
+// Salvar ordem de serviço
+async function salvarOrdemServico() {
+    try {
+        const form = document.getElementById('converter-os-form');
+        const formData = new FormData(form);
+        
+        // Validar campos obrigatórios
+        const requiredFields = ['descricao', 'tipo_manutencao', 'oficina', 'condicao_ativo', 'prioridade', 'qtd_pessoas', 'horas', 'filial_id', 'setor_id', 'equipamento_id'];
+        
+        for (const field of requiredFields) {
+            if (!formData.get(field)) {
+                showNotification('Por favor, preencha todos os campos obrigatórios', 'error');
+                return;
+            }
+        }
+        
+        // Calcular HH
+        const qtdPessoas = parseFloat(formData.get('qtd_pessoas'));
+        const horas = parseFloat(formData.get('horas'));
+        const hh = qtdPessoas * horas;
+        
+        // Preparar dados para envio
+        const osData = {
+            chamado_id: parseInt(formData.get('chamado_id')),
+            descricao: formData.get('descricao'),
+            tipo_manutencao: formData.get('tipo_manutencao'),
+            oficina: formData.get('oficina'),
+            condicao_ativo: formData.get('condicao_ativo'),
+            qtd_pessoas: qtdPessoas,
+            horas: horas,
+            hh: hh,
+            prioridade: formData.get('prioridade'),
+            filial_id: parseInt(formData.get('filial_id')),
+            setor_id: parseInt(formData.get('setor_id')),
+            equipamento_id: parseInt(formData.get('equipamento_id'))
+        };
+        
+        // Enviar dados
+        const response = await fetch('/api/ordens-servico', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(osData)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showNotification('Ordem de Serviço criada com sucesso!', 'success');
+            fecharModalConverterOS();
+            
+            // Recarregar chamados para atualizar a lista
+            await carregarDados();
+        } else {
+            const error = await response.json();
+            showNotification(error.error || 'Erro ao criar Ordem de Serviço', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Erro ao salvar OS:', error);
+        showNotification('Erro interno do servidor', 'error');
+    }
+}
+
+// Função para mostrar notificações
+function showNotification(message, type = 'info') {
+    // Criar elemento de notificação
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    // Adicionar estilos se não existirem
+    if (!document.getElementById('notification-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'notification-styles';
+        styles.textContent = `
+            .notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 16px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+            }
+            .notification-success { background: #28a745; }
+            .notification-error { background: #dc3545; }
+            .notification-info { background: #17a2b8; }
+            .notification-content {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+    
+    // Adicionar ao DOM
+    document.body.appendChild(notification);
+    
+    // Remover após 5 segundos
+    setTimeout(() => {
+        notification.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 5000);
 }
 

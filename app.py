@@ -75,6 +75,18 @@ def create_app():
         print(f"Erro ao registrar blueprint de chamados: {e}")
         print("Sistema funcionará sem funcionalidades de chamados.")
     
+    # Importar e registrar blueprint de ordens de serviço
+    try:
+        from routes.ordens_servico import ordens_servico_bp
+        app.register_blueprint(ordens_servico_bp)
+        print("Blueprint de ordens de serviço registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar ordens_servico_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de OS.")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de ordens de serviço: {e}")
+        print("Sistema funcionará sem funcionalidades de OS.")
+    
     # Rotas para arquivos estáticos
     @app.route('/')
     def index():
@@ -139,6 +151,11 @@ def create_app():
     @login_required
     def chamados_historico():
         return send_from_directory('static', 'chamados-historico.html')
+    
+    @app.route('/programacao')
+    @login_required
+    def programacao():
+        return send_from_directory('static', 'programacao.html')
     
     @app.route('/materiais')
     @login_required

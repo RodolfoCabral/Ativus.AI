@@ -121,6 +121,203 @@
             font-weight: 500;
         }
         
+        .chamado-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .btn-converter-os {
+            background: linear-gradient(135deg, #9956a8, #bb8fba);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-converter-os:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(153, 86, 168, 0.3);
+        }
+        
+        .btn-converter-os:active {
+            transform: translateY(0);
+        }
+        
+        /* Modal para conversão em OS */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 0;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header {
+            padding: 24px 24px 0 24px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 24px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 16px 0;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-close:hover {
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .modal-body {
+            padding: 0 24px 24px 24px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .form-row.full-width {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        .form-control:focus {
+            border-color: #9956a8;
+            box-shadow: 0 0 0 3px rgba(153, 86, 168, 0.2);
+            outline: none;
+        }
+        
+        .form-control[readonly] {
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
+        
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+        }
+        
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #9956a8, #bb8fba);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(153, 86, 168, 0.3);
+        }
+        
+        .hh-display {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #9956a8;
+            text-align: center;
+            font-size: 18px;
+        }
+        
         .loading {
             text-align: center;
             padding: 40px;
@@ -329,6 +526,121 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Conversão em OS -->
+    <div id="converter-os-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Converter Chamado em Ordem de Serviço</h3>
+                <button class="modal-close" onclick="fecharModalConverterOS()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="converter-os-form">
+                    <input type="hidden" id="chamado-id" name="chamado_id">
+                    
+                    <div class="form-group">
+                        <label for="os-descricao">Descrição da OS *</label>
+                        <textarea id="os-descricao" name="descricao" class="form-control" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tipo-manutencao">Tipo de Manutenção *</label>
+                            <select id="tipo-manutencao" name="tipo_manutencao" class="form-control" required>
+                                <option value="">Selecione o tipo</option>
+                                <option value="corretiva">Corretiva</option>
+                                <option value="melhoria">Melhoria</option>
+                                <option value="setup">Setup</option>
+                                <option value="pmoc">PMOC</option>
+                                <option value="inspecao">Inspeção</option>
+                                <option value="assistencia_tecnica">Assistência Técnica</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="oficina">Oficina *</label>
+                            <select id="oficina" name="oficina" class="form-control" required>
+                                <option value="">Selecione a oficina</option>
+                                <option value="mecanica">Mecânica</option>
+                                <option value="eletrica">Elétrica</option>
+                                <option value="automacao">Automação</option>
+                                <option value="eletromecanico">Eletromecânico</option>
+                                <option value="operacional">Operacional</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="condicao-ativo">Condição do Ativo *</label>
+                            <select id="condicao-ativo" name="condicao_ativo" class="form-control" required>
+                                <option value="">Selecione a condição</option>
+                                <option value="parado">Parado</option>
+                                <option value="funcionando">Funcionando</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="prioridade-os">Prioridade *</label>
+                            <select id="prioridade-os" name="prioridade" class="form-control" required>
+                                <option value="baixa">Baixa</option>
+                                <option value="media">Média</option>
+                                <option value="alta">Alta</option>
+                                <option value="seguranca">Segurança</option>
+                                <option value="preventiva">Preventiva</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="qtd-pessoas">Quantidade de Pessoas *</label>
+                            <input type="number" id="qtd-pessoas" name="qtd_pessoas" class="form-control" min="1" value="1" required onchange="calcularHH()">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="horas">Horas *</label>
+                            <input type="number" id="horas" name="horas" class="form-control" min="0.5" step="0.5" value="1" required onchange="calcularHH()">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>HH (Homem-Hora)</label>
+                        <div class="hh-display" id="hh-display">1.0</div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="filial-os">Filial *</label>
+                            <select id="filial-os" name="filial_id" class="form-control" required onchange="carregarSetoresOS()">
+                                <option value="">Carregando filiais...</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="setor-os">Setor *</label>
+                            <select id="setor-os" name="setor_id" class="form-control" required onchange="carregarEquipamentosOS()">
+                                <option value="">Selecione uma filial primeiro</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="equipamento-os">Equipamento *</label>
+                        <select id="equipamento-os" name="equipamento_id" class="form-control" required>
+                            <option value="">Selecione um setor primeiro</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="fecharModalConverterOS()">Cancelar</button>
+                <button type="button" class="btn-primary" onclick="salvarOrdemServico()">
+                    <i class="fas fa-save"></i> Criar Ordem de Serviço
+                </button>
             </div>
         </div>
     </div>

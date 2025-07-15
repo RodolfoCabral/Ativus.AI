@@ -154,3 +154,85 @@ class Chamado(db.Model):
             'usuario_criacao': self.usuario_criacao
         }
 
+
+class OrdemServico(db.Model):
+    __tablename__ = 'ordens_servico'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    chamado_id = db.Column(db.Integer, db.ForeignKey('chamados.id'), nullable=True)  # Pode ser criada sem chamado
+    descricao = db.Column(db.Text, nullable=False)
+    tipo_manutencao = db.Column(db.String(50), nullable=False)  # corretiva, melhoria, setup, pmoc, inspecao, assistencia_tecnica
+    oficina = db.Column(db.String(50), nullable=False)  # mecanica, eletrica, automacao, eletromecanico, operacional
+    condicao_ativo = db.Column(db.String(20), nullable=False)  # parado, funcionando
+    qtd_pessoas = db.Column(db.Integer, nullable=False, default=1)
+    horas = db.Column(db.Float, nullable=False, default=1.0)
+    hh = db.Column(db.Float, nullable=False)  # qtd_pessoas * horas (calculado automaticamente)
+    prioridade = db.Column(db.String(20), nullable=False)  # baixa, media, alta, seguranca, preventiva
+    status = db.Column(db.String(20), nullable=False, default='aberta')  # aberta, programada, em_andamento, concluida, cancelada
+    
+    # Dados do ativo (podem ser alterados)
+    filial_id = db.Column(db.Integer, db.ForeignKey('filiais.id'), nullable=False)
+    setor_id = db.Column(db.Integer, db.ForeignKey('setores.id'), nullable=False)
+    equipamento_id = db.Column(db.Integer, db.ForeignKey('equipamentos.id'), nullable=False)
+    
+    # Dados da empresa e usuário
+    empresa = db.Column(db.String(100), nullable=False)
+    usuario_criacao = db.Column(db.String(100), nullable=False)
+    usuario_responsavel = db.Column(db.String(100), nullable=True)  # Usuário que executará a OS
+    
+    # Datas
+    data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
+    data_programada = db.Column(db.Date, nullable=True)  # Data programada para execução
+    data_inicio = db.Column(db.DateTime, nullable=True)
+    data_conclusao = db.Column(db.DateTime, nullable=True)
+    data_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relacionamentos
+    chamado_origem = db.relationship('Chamado', backref='ordem_servico', lazy=True)
+    filial_os = db.relationship('Filial', backref='ordens_servico', lazy=True)
+    setor_os = db.relationship('Setor', backref='ordens_servico', lazy=True)
+    equipamento_os = db.relationship('Equipamento', backref='ordens_servico', lazy=True)
+    
+    def __init__(self, **kwargs):
+        super(OrdemServico, self).__init__(**kwargs)
+        # Calcular HH automaticamente
+        if self.qtd_pessoas and self.horas:
+            self.hh = self.qtd_pessoas * self.horas
+    
+    def calcular_hh(self):
+        """Recalcula o HH baseado na quantidade de pessoas e horas"""
+        self.hh = self.qtd_pessoas * self.horas
+        return self.hh
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'chamado_id': self.chamado_id,
+            'descricao': self.descricao,
+            'tipo_manutencao': self.tipo_manutencao,
+            'oficina': self.oficina,
+            'condicao_ativo': self.condicao_ativo,
+            'qtd_pessoas': self.qtd_pessoas,
+            'horas': self.horas,
+            'hh': self.hh,
+            'prioridade': self.prioridade,
+            'status': self.status,
+            'filial_id': self.filial_id,
+            'filial_tag': self.filial_os.tag if self.filial_os else None,
+            'filial_descricao': self.filial_os.descricao if self.filial_os else None,
+            'setor_id': self.setor_id,
+            'setor_tag': self.setor_os.tag if self.setor_os else None,
+            'setor_descricao': self.setor_os.descricao if self.setor_os else None,
+            'equipamento_id': self.equipamento_id,
+            'equipamento_tag': self.equipamento_os.tag if self.equipamento_os else None,
+            'equipamento_descricao': self.equipamento_os.descricao if self.equipamento_os else None,
+            'empresa': self.empresa,
+            'usuario_criacao': self.usuario_criacao,
+            'usuario_responsavel': self.usuario_responsavel,
+            'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
+            'data_programada': self.data_programada.isoformat() if self.data_programada else None,
+            'data_inicio': self.data_inicio.isoformat() if self.data_inicio else None,
+            'data_conclusao': self.data_conclusao.isoformat() if self.data_conclusao else None,
+            'data_atualizacao': self.data_atualizacao.isoformat() if self.data_atualizacao else None
+        }
+
