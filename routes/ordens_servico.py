@@ -30,7 +30,7 @@ def criar_ordem_servico():
         return jsonify({'error': 'Funcionalidade de OS não disponível'}), 503
     
     try:
-        if 'user_id' not in session:
+        if not current_user.is_authenticated:
             return jsonify({'error': 'Usuário não autenticado'}), 401
         
         data = request.get_json()
@@ -141,7 +141,7 @@ def listar_ordens_servico():
         return jsonify({'error': 'Funcionalidade de OS não disponível'}), 503
     
     try:
-        if 'user_id' not in session:
+        if not current_user.is_authenticated:
             return jsonify({'error': 'Usuário não autenticado'}), 401
         
         user_info = get_current_user()
@@ -184,7 +184,7 @@ def obter_ordem_servico(os_id):
         return jsonify({'error': 'Funcionalidade de OS não disponível'}), 503
     
     try:
-        if 'user_id' not in session:
+        if not current_user.is_authenticated:
             return jsonify({'error': 'Usuário não autenticado'}), 401
         
         user_info = get_current_user()
@@ -210,7 +210,7 @@ def programar_ordem_servico(os_id):
         return jsonify({'error': 'Funcionalidade de OS não disponível'}), 503
     
     try:
-        if 'user_id' not in session:
+        if not current_user.is_authenticated:
             return jsonify({'error': 'Usuário não autenticado'}), 401
         
         data = request.get_json()
@@ -258,7 +258,7 @@ def estatisticas_ordens_servico():
         return jsonify({'error': 'Funcionalidade de OS não disponível'}), 503
     
     try:
-        if 'user_id' not in session:
+        if not current_user.is_authenticated:
             return jsonify({'error': 'Usuário não autenticado'}), 401
         
         user_info = get_current_user()
