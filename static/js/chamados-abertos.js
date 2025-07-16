@@ -111,24 +111,25 @@ function aplicarFiltros() {
         console.log('Total de chamados:', chamados.length);
         
         chamadosFiltrados = chamados.filter(chamado => {
-            // Filtrar apenas chamados abertos ou em andamento
-            if (!['aberto', 'em_andamento'].includes(chamado.status)) {
+            // ✅ Agora inclui chamados com status "os_criada" e "os_programada"
+            const statusVisiveis = ['aberto', 'em_andamento', 'os_criada', 'os_programada'];
+            if (!statusVisiveis.includes(chamado.status)) {
                 return false;
             }
-            
+
             // Filtro de prioridade
             if (filtroPrioridade && chamado.prioridade !== filtroPrioridade) {
                 return false;
             }
-            
+
             // Filtro de filial
             if (filtroFilial && chamado.filial_id.toString() !== filtroFilial) {
                 return false;
             }
-            
+
             return true;
         });
-        
+
         console.log('Chamados filtrados:', chamadosFiltrados.length);
         renderizarChamados();
         
@@ -137,6 +138,20 @@ function aplicarFiltros() {
         mostrarErro('Erro ao filtrar chamados. Tente recarregar a página.');
     }
 }
+
+// Formatar status para exibição amigável
+function formatarStatus(status) {
+    const statusMap = {
+        'aberto': 'Aberto',
+        'em_andamento': 'Em Andamento',
+        'resolvido': 'Resolvido',
+        'fechado': 'Fechado',
+        'os_criada': 'OS Criada',
+        'os_programada': 'OS Programada'
+    };
+    return statusMap[status] || status;
+}
+
 
 // Renderizar chamados na interface
 function renderizarChamados() {
