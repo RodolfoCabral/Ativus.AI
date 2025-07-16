@@ -320,12 +320,14 @@ function makeDroppable(element) {
 // Programar OS
 async function programarOS(osId, date, userId) {
     try {
+        // Encontrar o usuário pelo ID
         const usuario = usuarios.find(u => u.id.toString() === userId);
         if (!usuario) {
             showNotification('Usuário não encontrado', 'error');
             return;
         }
-        
+
+        // Fazer a requisição para atualizar a OS no backend
         const response = await fetch(`/api/ordens-servico/${osId}/programar`, {
             method: 'PUT',
             headers: {
@@ -333,25 +335,27 @@ async function programarOS(osId, date, userId) {
             },
             body: JSON.stringify({
                 data_programada: date,
-                usuario_responsavel: usuario.name
+                usuario_responsavel: usuario.id  // Aqui está a correção: envia o ID, não o nome
             })
         });
-        
+
+        // Verificar se deu certo
         if (response.ok) {
             showNotification('OS programada com sucesso!', 'success');
-            await loadData();
-            renderPriorityLines();
-            renderUsuarios();
+            await loadData();              // Recarrega os dados do backend
+            renderPriorityLines();        // Re-renderiza as linhas de prioridade
+            renderUsuarios();             // Re-renderiza o grid de usuários
         } else {
             const error = await response.json();
             showNotification(error.error || 'Erro ao programar OS', 'error');
         }
-        
+
     } catch (error) {
         console.error('Erro ao programar OS:', error);
         showNotification('Erro interno do servidor', 'error');
     }
 }
+
 
 // Navegação de semanas
 function previousWeek() {

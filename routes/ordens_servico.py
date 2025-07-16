@@ -233,7 +233,7 @@ def programar_ordem_servico(os_id):
         
         # Atualizar dados
         ordem_servico.data_programada = data_programada
-        ordem_servico.usuario_responsavel = data['usuario_responsavel']
+        ordem_servico.usuario_responsavel = str(data['usuario_responsavel'])
         ordem_servico.status = 'programada'
         ordem_servico.data_atualizacao = datetime.utcnow()
         
