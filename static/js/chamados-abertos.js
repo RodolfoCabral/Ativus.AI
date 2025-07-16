@@ -11,18 +11,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Carregar dados
 async function carregarDados() {
+    console.log('Iniciando carregamento de dados...');
+    
     try {
+        // Mostrar indicador de carregamento
+        mostrarCarregando();
+        
         await Promise.all([
             carregarChamados(),
             carregarEstatisticas(),
             carregarFiliais()
         ]);
         
+        console.log('Dados carregados com sucesso');
         aplicarFiltros();
+        
+        // Esconder indicador de carregamento
+        esconderCarregando();
         
     } catch (error) {
         console.error('Erro ao carregar dados:', error);
-        mostrarErro('Erro ao carregar dados dos chamados');
+        esconderCarregando();
+        mostrarErro('Erro ao carregar dados dos chamados. Tente recarregar a página.');
     }
 }
 
@@ -91,29 +101,41 @@ function atualizarEstatisticas() {
 
 // Aplicar filtros
 function aplicarFiltros() {
-    const filtroPrioridade = document.getElementById('filtro-prioridade').value;
-    const filtroFilial = document.getElementById('filtro-filial').value;
-    
-    chamadosFiltrados = chamados.filter(chamado => {
-        // Filtrar apenas chamados abertos ou em andamento
-        if (!['aberto', 'em_andamento'].includes(chamado.status)) {
-            return false;
-        }
+    try {
+        console.log('Aplicando filtros...');
         
-        // Filtro de prioridade
-        if (filtroPrioridade && chamado.prioridade !== filtroPrioridade) {
-            return false;
-        }
+        const filtroPrioridade = document.getElementById('filtro-prioridade')?.value || '';
+        const filtroFilial = document.getElementById('filtro-filial')?.value || '';
         
-        // Filtro de filial
-        if (filtroFilial && chamado.filial_id.toString() !== filtroFilial) {
-            return false;
-        }
+        console.log('Filtros:', { prioridade: filtroPrioridade, filial: filtroFilial });
+        console.log('Total de chamados:', chamados.length);
         
-        return true;
-    });
-    
-    renderizarChamados();
+        chamadosFiltrados = chamados.filter(chamado => {
+            // Filtrar apenas chamados abertos ou em andamento
+            if (!['aberto', 'em_andamento'].includes(chamado.status)) {
+                return false;
+            }
+            
+            // Filtro de prioridade
+            if (filtroPrioridade && chamado.prioridade !== filtroPrioridade) {
+                return false;
+            }
+            
+            // Filtro de filial
+            if (filtroFilial && chamado.filial_id.toString() !== filtroFilial) {
+                return false;
+            }
+            
+            return true;
+        });
+        
+        console.log('Chamados filtrados:', chamadosFiltrados.length);
+        renderizarChamados();
+        
+    } catch (error) {
+        console.error('Erro ao aplicar filtros:', error);
+        mostrarErro('Erro ao filtrar chamados. Tente recarregar a página.');
+    }
 }
 
 // Renderizar chamados na interface
@@ -149,7 +171,6 @@ function renderizarChamados() {
     
     // Adicionar event listeners para botões de conversão em OS
     adicionarEventListenersConverterOS();
-}
 }
 
 // Criar card de chamado
@@ -593,5 +614,110 @@ function showNotification(message, type = 'info') {
             }
         }, 300);
     }, 5000);
+}
+
+
+// Funções de feedback visual
+function mostrarCarregando() {
+    const container = document.getElementById('chamados-grid');
+    if (container) {
+        container.innerHTML = `
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Carregando chamados...</p>
+            </div>
+        `;
+    }
+    
+    // Adicionar estilos de carregamento se não existirem
+    if (!document.getElementById('loading-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'loading-styles';
+        styles.textContent = `
+            .loading-state {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 60px 20px;
+                color: #666;
+            }
+            .loading-spinner {
+                width: 40px;
+                height: 40px;
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #007bff;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin-bottom: 16px;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            .error-state {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 60px 20px;
+                color: #dc3545;
+                text-align: center;
+            }
+            .error-state i {
+                font-size: 48px;
+                margin-bottom: 16px;
+                opacity: 0.7;
+            }
+            .error-state h3 {
+                margin: 0 0 8px 0;
+                font-size: 18px;
+            }
+            .error-state p {
+                margin: 0 0 20px 0;
+                opacity: 0.8;
+            }
+            .btn-retry {
+                background: #007bff;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .btn-retry:hover {
+                background: #0056b3;
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+}
+
+function esconderCarregando() {
+    // A função renderizarChamados já substitui o conteúdo do container
+    console.log('Carregamento concluído');
+}
+
+function mostrarErro(mensagem) {
+    const container = document.getElementById('chamados-grid');
+    if (container) {
+        container.innerHTML = `
+            <div class="error-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Erro ao carregar chamados</h3>
+                <p>${mensagem}</p>
+                <button class="btn-retry" onclick="carregarDados()">
+                    <i class="fas fa-redo"></i> Tentar Novamente
+                </button>
+            </div>
+        `;
+    }
+    
+    // Também mostrar notificação
+    showNotification(mensagem, 'error');
 }
 
