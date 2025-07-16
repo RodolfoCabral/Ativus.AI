@@ -139,20 +139,6 @@ function aplicarFiltros() {
     }
 }
 
-// Formatar status para exibição amigável
-function formatarStatus(status) {
-    const statusMap = {
-        'aberto': 'Aberto',
-        'em_andamento': 'Em Andamento',
-        'resolvido': 'Resolvido',
-        'fechado': 'Fechado',
-        'os_criada': 'OS Criada',
-        'os_programada': 'OS Programada'
-    };
-    return statusMap[status] || status;
-}
-
-
 // Renderizar chamados na interface
 function renderizarChamados() {
     const container = document.getElementById('chamados-grid');
@@ -264,13 +250,15 @@ function formatarData(dataString) {
     });
 }
 
-// Formatar status
+// Formatar status para exibição amigável
 function formatarStatus(status) {
     const statusMap = {
         'aberto': 'Aberto',
         'em_andamento': 'Em Andamento',
         'resolvido': 'Resolvido',
-        'fechado': 'Fechado'
+        'fechado': 'Fechado',
+        'os_criada': 'OS Criada',
+        'os_programada': 'OS Programada'
     };
     return statusMap[status] || status;
 }
