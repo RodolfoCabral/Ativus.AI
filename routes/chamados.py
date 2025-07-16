@@ -104,7 +104,7 @@ def listar_chamados():
         
         if status != 'todos':
             if status == 'abertos':
-                query = query.filter(Chamado.status.in_(['aberto', 'em_andamento']))
+                chamados = Chamado.query.filter(Chamado.status.in_(['aberto', 'em_andamento', 'os_criada', 'os_programada'])).all()
             elif status == 'fechados':
                 query = query.filter(Chamado.status.in_(['resolvido', 'fechado']))
             else:
