@@ -94,10 +94,24 @@ def criar_ordem_servico():
         # Verificar se o chamado existe (se fornecido)
         chamado_id = data.get('chamado_id')
         chamado = None
+
         if chamado_id:
             chamado = Chamado.query.filter_by(id=chamado_id).first()
             if not chamado:
                 return jsonify({'error': 'Chamado não encontrado'}), 404
+
+            # Verificar se já existe OS vinculada a esse chamado com status relevante
+            os_existente = OrdemServico.query.filter_by(chamado_id=chamado_id).filter(
+                OrdemServico.status.in_(['aberta', 'programada', 'em_andamento'])
+            ).first()
+
+            if os_existente:
+                # Retorna erro com a mensagem e o número (id) da OS existente
+                return jsonify({
+                    'error': 'Ordem de serviço já criada para este chamado.',
+                    'ordem_servico_id': os_existente.id,
+                    'message': f'Ordem de serviço criada - número {os_existente.id}'
+                }), 400
 
         # Calcular HH
         hh = qtd_pessoas * horas
