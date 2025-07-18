@@ -519,5 +519,5 @@ function createOSAgendada(os) {
 }
 
 function abrirExecucaoOS(osId) {
-    window.location.href = `/executar-os.html?id=${osId}`;
+    
 }
