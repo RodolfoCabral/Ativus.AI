@@ -477,15 +477,15 @@ async function verificarExecucaoOS(osId) {
         console.log('Responsável da OS:', os.usuario_responsavel);
         
         // Lógica corrigida de verificação
-        if (os.status === 'programada' && string(os.usuario_responsavel) === string(currentUser.username)) {
+        if (os.status === 'programada' && String(os.usuario_responsavel) === String(currentUser.username)) {
             // Usuário é o responsável pela OS programada - pode executar
             console.log('Usuário autorizado a executar OS');
             window.location.href = `/executar-os?id=${osId}`;
-        } else if (os.status === 'programada' && string(os.usuario_responsavel) === strng(currentUser.name)) {
+        } else if (os.status === 'programada' && String(os.usuario_responsavel) === String(currentUser.name)) {
             // Verificar também pelo nome completo
             console.log('Usuário autorizado a executar OS (por nome)');
             window.location.href = `/executar-os?id=${osId}`;
-        } else if (os.status === 'em_andamento' && (string(os.usuario_responsavel) === string(currentUser.username) || string(os.usuario_responsavel) === string(currentUser.name))) {
+        } else if (os.status === 'em_andamento' && (String(os.usuario_responsavel) === String(currentUser.username) || String(os.usuario_responsavel) === String(currentUser.name))) {
             // OS já em andamento pelo usuário - pode continuar execução
             console.log('Usuário pode continuar execução da OS');
             window.location.href = `/executar-os?id=${osId}`;
@@ -493,7 +493,7 @@ async function verificarExecucaoOS(osId) {
             showNotification('Esta OS ainda não foi programada para nenhum executor', 'info');
         } else if (os.status === 'concluida') {
             showNotification('Esta OS já foi concluída', 'info');
-        } else if (string(os.usuario_responsavel) && string(os.usuario_responsavel) !== string(currentUser.username) && string(os.usuario_responsavel) !== string(currentUser.name)) {
+        } else if (String(os.usuario_responsavel) && String(os.usuario_responsavel) !== String(currentUser.username) && String(os.usuario_responsavel) !== String(currentUser.name)) {
             showNotification(`Esta OS está programada para ${os.usuario_responsavel}`, 'info');
         } else {
             // Fallback: permitir execução se não houver responsável definido
