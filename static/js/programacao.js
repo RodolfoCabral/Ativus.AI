@@ -450,6 +450,8 @@ function showNotification(message, type = 'info') {
 // Verificar se usuário pode executar OS
 async function verificarExecucaoOS(osId) {
     try {
+        console.log('Verificando execução de OS:', osId);
+        
         // Obter dados do usuário atual
         const userResponse = await fetch('/api/user');
         if (!userResponse.ok) {
@@ -459,6 +461,7 @@ async function verificarExecucaoOS(osId) {
         
         const userData = await userResponse.json();
         const currentUser = userData.user;
+        console.log('Usuário atual:', currentUser.username);
         
         // Buscar OS específica
         const osResponse = await fetch(`/api/ordens-servico/${osId}`);
@@ -469,17 +472,33 @@ async function verificarExecucaoOS(osId) {
         
         const osData = await osResponse.json();
         const os = osData.ordem_servico;
+        console.log('OS encontrada:', os);
+        console.log('Status da OS:', os.status);
+        console.log('Responsável da OS:', os.usuario_responsavel);
         
-        // Verificar se a OS está programada para o usuário atual
+        // Lógica corrigida de verificação
         if (os.status === 'programada' && os.usuario_responsavel === currentUser.username) {
-            // Usuário pode executar a OS
+            // Usuário é o responsável pela OS programada - pode executar
+            console.log('Usuário autorizado a executar OS');
+            window.location.href = `/executar-os?id=${osId}`;
+        } else if (os.status === 'programada' && os.usuario_responsavel === currentUser.name) {
+            // Verificar também pelo nome completo
+            console.log('Usuário autorizado a executar OS (por nome)');
+            window.location.href = `/executar-os?id=${osId}`;
+        } else if (os.status === 'em_andamento' && (os.usuario_responsavel === currentUser.username || os.usuario_responsavel === currentUser.name)) {
+            // OS já em andamento pelo usuário - pode continuar execução
+            console.log('Usuário pode continuar execução da OS');
             window.location.href = `/executar-os?id=${osId}`;
         } else if (os.status === 'aberta') {
             showNotification('Esta OS ainda não foi programada para nenhum executor', 'info');
-        } else if (os.usuario_responsavel && os.usuario_responsavel !== currentUser.username) {
+        } else if (os.status === 'concluida') {
+            showNotification('Esta OS já foi concluída', 'info');
+        } else if (os.usuario_responsavel && os.usuario_responsavel !== currentUser.username && os.usuario_responsavel !== currentUser.name) {
             showNotification(`Esta OS está programada para ${os.usuario_responsavel}`, 'info');
         } else {
-            showNotification('Você não tem permissão para executar esta OS', 'warning');
+            // Fallback: permitir execução se não houver responsável definido
+            console.log('Permitindo execução por fallback');
+            window.location.href = `/executar-os?id=${osId}`;
         }
         
     } catch (error) {
