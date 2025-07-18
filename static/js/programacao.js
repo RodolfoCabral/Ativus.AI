@@ -196,7 +196,7 @@ function createDiaContainer(dia, dayIndex, userId) {
 // Criar OS agendada
 function createOSAgendada(os) {
     return `
-        <div class="chamado-agendado" data-os-id="${os.id}">
+        <div class="chamado-agendado" data-os-id="${os.id}" onclick="abrirExecucaoOS(${os.id})">
             <div class="chamado-id">OS #${os.id}</div>
             <div class="chamado-descricao">${os.descricao}</div>
         </div>
@@ -463,6 +463,7 @@ async function verificarExecucaoOS(osId) {
         const currentUser = userData.user;
         console.log('Usuário atual:', currentUser.username);
         
+        
         // Buscar OS específica
         const osResponse = await fetch(`/api/ordens-servico/${osId}`);
         if (!osResponse.ok) {
@@ -517,3 +518,6 @@ function createOSAgendada(os) {
     `;
 }
 
+function abrirExecucaoOS(osId) {
+    window.location.href = `/executar-os.html?id=${osId}`;
+}
