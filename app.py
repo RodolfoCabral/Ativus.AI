@@ -87,6 +87,18 @@ def create_app():
         print(f"Erro ao registrar blueprint de ordens de serviço: {e}")
         print("Sistema funcionará sem funcionalidades de OS.")
     
+    # Importar e registrar blueprint de execução de OS
+    try:
+        from routes.execucao_os import execucao_bp
+        app.register_blueprint(execucao_bp)
+        print("Blueprint de execução de OS registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar execucao_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de execução de OS.")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de execução de OS: {e}")
+        print("Sistema funcionará sem funcionalidades de execução de OS.")
+    
     # Rotas para arquivos estáticos
     @app.route('/')
     def index():
@@ -156,6 +168,11 @@ def create_app():
     @login_required
     def programacao():
         return send_from_directory('static', 'programacao.html')
+    
+    @app.route('/executar-os')
+    @login_required
+    def executar_os():
+        return send_from_directory('static', 'executar-os.html')
     
     @app.route('/materiais')
     @login_required

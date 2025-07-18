@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executar Ordem de Serviço - Ativus.AI</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .execucao-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .os-header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .os-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .os-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #666;
+            text-transform: uppercase;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .execucao-form {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .form-section {
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .form-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-control {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+        
+        .status-toggle {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .status-option {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        
+        .status-option.conforme {
+            border-color: #28a745;
+            background: #f8fff9;
+            color: #28a745;
+        }
+        
+        .status-option.nao-conforme {
+            border-color: #dc3545;
+            background: #fff8f8;
+            color: #dc3545;
+        }
+        
+        .status-option:hover {
+            transform: translateY(-1px);
+        }
+        
+        .materiais-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 16px;
+        }
+        
+        .material-item {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #ddd;
+        }
+        
+        .material-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .material-type-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .type-option {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .type-option.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .valor-display {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+        }
+        
+        .btn-add-material {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        
+        .btn-add-material:hover {
+            background: #218838;
+        }
+        
+        .btn-remove-material {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .btn-remove-material:hover {
+            background: #c82333;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: flex-end;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #eee;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-primary:hover { background: #0056b3; }
+        .btn-success:hover { background: #218838; }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .status-programada { background: #fff3cd; color: #856404; }
+        .status-em-andamento { background: #d4edda; color: #155724; }
+        .status-concluida { background: #d1ecf1; color: #0c5460; }
+        
+        .prioridade-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .prioridade-baixa { background: #d4edda; color: #155724; }
+        .prioridade-media { background: #fff3cd; color: #856404; }
+        .prioridade-alta { background: #f8d7da; color: #721c24; }
+        .prioridade-seguranca { background: #f5c6cb; color: #721c24; }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .os-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <img src="/static/images/Ativus.png" alt="Ativus.AI" class="logo">
+                <h2>Ativus.AI</h2>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="/dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/programacao">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Programação</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <!-- Conteúdo Principal -->
+        <div class="main-content">
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+                
+                <div class="top-bar-right">
+                    <div class="user-info">
+                        <span id="user-name">Carregando...</span>
+                        <span id="user-company">Carregando...</span>
+                    </div>
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Área de Conteúdo -->
+            <div class="content">
+                <div class="execucao-container">
+                    <!-- Cabeçalho da OS -->
+                    <div class="os-header">
+                        <div class="os-title">
+                            <i class="fas fa-tools"></i>
+                            <span>Executar Ordem de Serviço #<span id="os-numero">-</span></span>
+                            <span class="status-badge" id="os-status">-</span>
+                        </div>
+                        
+                        <div class="os-info">
+                            <div class="info-item">
+                                <span class="info-label">Descrição</span>
+                                <span class="info-value" id="os-descricao">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Tipo de Manutenção</span>
+                                <span class="info-value" id="os-tipo">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Oficina</span>
+                                <span class="info-value" id="os-oficina">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Prioridade</span>
+                                <span class="prioridade-badge" id="os-prioridade">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Equipamento</span>
+                                <span class="info-value" id="os-equipamento">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Localização</span>
+                                <span class="info-value" id="os-localizacao">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Formulário de Execução -->
+                    <div class="execucao-form">
+                        <form id="execucao-form">
+                            <input type="hidden" id="os-id" name="os_id">
+                            
+                            <!-- Seção de Tempo -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="fas fa-clock"></i>
+                                    Controle de Tempo
+                                </h3>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="data-inicio">Data e Hora de Início *</label>
+                                        <input type="datetime-local" id="data-inicio" name="data_inicio" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="data-fim">Data e Hora de Fim</label>
+                                        <input type="datetime-local" id="data-fim" name="data_fim" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Seção de Lista de Execução -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="fas fa-list-check"></i>
+                                    Lista de Execução
+                                </h3>
+                                
+                                <div class="form-group full-width">
+                                    <label class="form-label">Descrição da Atividade</label>
+                                    <div class="info-value" id="atividade-descricao" style="padding: 12px; background: #f8f9fa; border-radius: 8px; margin-bottom: 12px;">-</div>
+                                    
+                                    <label class="form-label">Status de Execução *</label>
+                                    <div class="status-toggle">
+                                        <div class="status-option conforme" data-status="C">
+                                            <i class="fas fa-check"></i>
+                                            Conforme (C)
+                                        </div>
+                                        <div class="status-option nao-conforme" data-status="NC">
+                                            <i class="fas fa-times"></i>
+                                            Não Conforme (NC)
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="lista-execucao-status" name="lista_execucao_status" value="C" required>
+                                </div>
+                            </div>
+                            
+                            <!-- Seção de Observações -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="fas fa-comment"></i>
+                                    Observações
+                                </h3>
+                                
+                                <div class="form-group full-width">
+                                    <label class="form-label" for="observacoes">Observações Adicionais</label>
+                                    <textarea id="observacoes" name="observacoes" class="form-control" rows="4" placeholder="Digite informações adicionais sobre a execução..."></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Seção de Materiais -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="fas fa-box"></i>
+                                    Materiais Utilizados
+                                </h3>
+                                
+                                <div class="materiais-section">
+                                    <div id="materiais-container">
+                                        <!-- Materiais serão adicionados dinamicamente -->
+                                    </div>
+                                    
+                                    <button type="button" class="btn-add-material" onclick="adicionarMaterial()">
+                                        <i class="fas fa-plus"></i>
+                                        Adicionar Material
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Botões de Ação -->
+                            <div class="action-buttons">
+                                <button type="button" class="btn-secondary" onclick="voltarProgramacao()">
+                                    <i class="fas fa-arrow-left"></i>
+                                    Voltar
+                                </button>
+                                <button type="button" class="btn-primary" onclick="salvarExecucao()">
+                                    <i class="fas fa-save"></i>
+                                    Salvar Progresso
+                                </button>
+                                <button type="button" class="btn-success" onclick="encerrarOS()">
+                                    <i class="fas fa-check-circle"></i>
+                                    Encerrar OS
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/user_info.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/executar-os.js"></script>
+</body>
+</html>
+

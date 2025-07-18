@@ -107,7 +107,7 @@ function renderPriorityLines() {
 // Criar card de OS
 function createOSCard(os) {
     return `
-        <div class="chamado-card" data-os-id="${os.id}" draggable="true">
+        <div class="chamado-card" data-os-id="${os.id}" draggable="true" onclick="verificarExecucaoOS(${os.id})">
             <div class="chamado-id">OS #${os.id}</div>
             <div class="chamado-descricao">${os.descricao}</div>
             <div class="chamado-info">
@@ -444,5 +444,57 @@ function showNotification(message, type = 'info') {
             }
         }, 300);
     }, 5000);
+}
+
+
+// Verificar se usuário pode executar OS
+async function verificarExecucaoOS(osId) {
+    try {
+        // Obter dados do usuário atual
+        const userResponse = await fetch('/api/user');
+        if (!userResponse.ok) {
+            showNotification('Erro ao verificar usuário', 'error');
+            return;
+        }
+        
+        const userData = await userResponse.json();
+        const currentUser = userData.user;
+        
+        // Buscar OS específica
+        const osResponse = await fetch(`/api/ordens-servico/${osId}`);
+        if (!osResponse.ok) {
+            showNotification('Erro ao carregar OS', 'error');
+            return;
+        }
+        
+        const osData = await osResponse.json();
+        const os = osData.ordem_servico;
+        
+        // Verificar se a OS está programada para o usuário atual
+        if (os.status === 'programada' && os.usuario_responsavel === currentUser.username) {
+            // Usuário pode executar a OS
+            window.location.href = `/executar-os?id=${osId}`;
+        } else if (os.status === 'aberta') {
+            showNotification('Esta OS ainda não foi programada para nenhum executor', 'info');
+        } else if (os.usuario_responsavel && os.usuario_responsavel !== currentUser.username) {
+            showNotification(`Esta OS está programada para ${os.usuario_responsavel}`, 'info');
+        } else {
+            showNotification('Você não tem permissão para executar esta OS', 'warning');
+        }
+        
+    } catch (error) {
+        console.error('Erro ao verificar execução de OS:', error);
+        showNotification('Erro ao verificar OS', 'error');
+    }
+}
+
+// Modificar função createOSAgendada para também permitir clique
+function createOSAgendada(os) {
+    return `
+        <div class="chamado-agendado" data-os-id="${os.id}" onclick="verificarExecucaoOS(${os.id})">
+            <div class="chamado-id">OS #${os.id}</div>
+            <div class="chamado-descricao-mini">${os.descricao.substring(0, 30)}...</div>
+        </div>
+    `;
 }
 

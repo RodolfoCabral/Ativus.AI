@@ -236,3 +236,158 @@ class OrdemServico(db.Model):
             'data_atualizacao': self.data_atualizacao.isoformat() if self.data_atualizacao else None
         }
 
+
+class MaterialEstoque(db.Model):
+    __tablename__ = 'materiais_estoque'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(200), nullable=False)
+    codigo = db.Column(db.String(50), nullable=True)
+    descricao = db.Column(db.Text, nullable=True)
+    unidade = db.Column(db.String(20), nullable=False, default='UN')  # UN, KG, L, M, etc.
+    valor_unitario = db.Column(db.Float, nullable=False, default=0.0)
+    quantidade_estoque = db.Column(db.Float, nullable=False, default=0.0)
+    estoque_minimo = db.Column(db.Float, nullable=False, default=0.0)
+    categoria = db.Column(db.String(100), nullable=True)
+    fornecedor = db.Column(db.String(200), nullable=True)
+    ativo = db.Column(db.Boolean, nullable=False, default=True)
+    
+    # Dados da empresa
+    empresa = db.Column(db.String(100), nullable=False)
+    usuario_criacao = db.Column(db.String(100), nullable=False)
+    
+    # Datas
+    data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
+    data_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'nome': self.nome,
+            'codigo': self.codigo,
+            'descricao': self.descricao,
+            'unidade': self.unidade,
+            'valor_unitario': self.valor_unitario,
+            'quantidade_estoque': self.quantidade_estoque,
+            'estoque_minimo': self.estoque_minimo,
+            'categoria': self.categoria,
+            'fornecedor': self.fornecedor,
+            'ativo': self.ativo,
+            'empresa': self.empresa,
+            'usuario_criacao': self.usuario_criacao,
+            'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
+            'data_atualizacao': self.data_atualizacao.isoformat() if self.data_atualizacao else None
+        }
+
+
+class ExecucaoOS(db.Model):
+    __tablename__ = 'execucoes_os'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    os_id = db.Column(db.Integer, db.ForeignKey('ordens_servico.id'), nullable=False)
+    
+    # Dados de execução
+    data_inicio = db.Column(db.DateTime, nullable=True)
+    data_fim = db.Column(db.DateTime, nullable=True)
+    lista_execucao_status = db.Column(db.String(2), nullable=False, default='C')  # C = Conforme, NC = Não Conforme
+    observacoes = db.Column(db.Text, nullable=True)
+    
+    # Dados do executor
+    executor = db.Column(db.String(100), nullable=False)
+    empresa = db.Column(db.String(100), nullable=False)
+    
+    # Datas de controle
+    data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
+    data_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relacionamentos
+    ordem_servico = db.relationship('OrdemServico', backref='execucoes', lazy=True)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'os_id': self.os_id,
+            'data_inicio': self.data_inicio.isoformat() if self.data_inicio else None,
+            'data_fim': self.data_fim.isoformat() if self.data_fim else None,
+            'lista_execucao_status': self.lista_execucao_status,
+            'observacoes': self.observacoes,
+            'executor': self.executor,
+            'empresa': self.empresa,
+            'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
+            'data_atualizacao': self.data_atualizacao.isoformat() if self.data_atualizacao else None
+        }
+
+
+class MaterialUtilizado(db.Model):
+    __tablename__ = 'materiais_utilizados'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    execucao_id = db.Column(db.Integer, db.ForeignKey('execucoes_os.id'), nullable=False)
+    
+    # Tipo de material
+    tipo_material = db.Column(db.String(20), nullable=False)  # 'estoque' ou 'avulso'
+    
+    # Para material de estoque
+    material_estoque_id = db.Column(db.Integer, db.ForeignKey('materiais_estoque.id'), nullable=True)
+    
+    # Para material avulso
+    nome_material = db.Column(db.String(200), nullable=True)
+    valor_unitario = db.Column(db.Float, nullable=True)
+    
+    # Campos comuns
+    quantidade = db.Column(db.Float, nullable=False)
+    valor_total = db.Column(db.Float, nullable=False)  # quantidade * valor_unitario
+    
+    # Dados de controle
+    empresa = db.Column(db.String(100), nullable=False)
+    usuario_criacao = db.Column(db.String(100), nullable=False)
+    data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relacionamentos
+    execucao = db.relationship('ExecucaoOS', backref='materiais_utilizados', lazy=True)
+    material_estoque = db.relationship('MaterialEstoque', backref='utilizacoes', lazy=True)
+    
+    def __init__(self, **kwargs):
+        super(MaterialUtilizado, self).__init__(**kwargs)
+        # Calcular valor total automaticamente
+        if self.quantidade and self.valor_unitario:
+            self.valor_total = self.quantidade * self.valor_unitario
+    
+    def calcular_valor_total(self):
+        """Recalcula o valor total baseado na quantidade e valor unitário"""
+        if self.tipo_material == 'estoque' and self.material_estoque:
+            self.valor_unitario = self.material_estoque.valor_unitario
+        
+        if self.quantidade and self.valor_unitario:
+            self.valor_total = self.quantidade * self.valor_unitario
+        return self.valor_total
+    
+    def to_dict(self):
+        material_info = {}
+        if self.tipo_material == 'estoque' and self.material_estoque:
+            material_info = {
+                'nome_material': self.material_estoque.nome,
+                'codigo_material': self.material_estoque.codigo,
+                'unidade': self.material_estoque.unidade
+            }
+        else:
+            material_info = {
+                'nome_material': self.nome_material,
+                'codigo_material': None,
+                'unidade': 'UN'
+            }
+        
+        return {
+            'id': self.id,
+            'execucao_id': self.execucao_id,
+            'tipo_material': self.tipo_material,
+            'material_estoque_id': self.material_estoque_id,
+            'quantidade': self.quantidade,
+            'valor_unitario': self.valor_unitario,
+            'valor_total': self.valor_total,
+            'empresa': self.empresa,
+            'usuario_criacao': self.usuario_criacao,
+            'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
+            **material_info
+        }
+
