@@ -196,7 +196,7 @@ function createDiaContainer(dia, dayIndex, userId) {
 // Criar OS agendada
 function createOSAgendada(os) {
     return `
-        <div class="chamado-agendado" data-os-id="${os.id}" onclick="abrirExecucaoOS(${os.id})">
+        <div class="chamado-agendado" data-os-id="${os.id}">
             <div class="chamado-id">OS #${os.id}</div>
             <div class="chamado-descricao">${os.descricao}</div>
         </div>
@@ -463,7 +463,6 @@ async function verificarExecucaoOS(osId) {
         const currentUser = userData.user;
         console.log('Usuário atual:', currentUser.username);
         
-        
         // Buscar OS específica
         const osResponse = await fetch(`/api/ordens-servico/${osId}`);
         if (!osResponse.ok) {
@@ -478,15 +477,15 @@ async function verificarExecucaoOS(osId) {
         console.log('Responsável da OS:', os.usuario_responsavel);
         
         // Lógica corrigida de verificação
-        if (os.status === 'programada' && String(os.usuario_responsavel) === String(currentUser.username)) {
+        if (os.status === 'programada' && os.usuario_responsavel === currentUser.username) {
             // Usuário é o responsável pela OS programada - pode executar
             console.log('Usuário autorizado a executar OS');
             window.location.href = `/executar-os?id=${osId}`;
-        } else if (os.status === 'programada' && String(os.usuario_responsavel) === String(currentUser.name)) {
+        } else if (os.status === 'programada' && os.usuario_responsavel === currentUser.name) {
             // Verificar também pelo nome completo
             console.log('Usuário autorizado a executar OS (por nome)');
             window.location.href = `/executar-os?id=${osId}`;
-        } else if (os.status === 'em_andamento' && (String(os.usuario_responsavel) === String(currentUser.username) || String(os.usuario_responsavel) === String(currentUser.name))) {
+        } else if (os.status === 'em_andamento' && (os.usuario_responsavel === currentUser.username || os.usuario_responsavel === currentUser.name)) {
             // OS já em andamento pelo usuário - pode continuar execução
             console.log('Usuário pode continuar execução da OS');
             window.location.href = `/executar-os?id=${osId}`;
@@ -494,7 +493,7 @@ async function verificarExecucaoOS(osId) {
             showNotification('Esta OS ainda não foi programada para nenhum executor', 'info');
         } else if (os.status === 'concluida') {
             showNotification('Esta OS já foi concluída', 'info');
-        } else if (String(os.usuario_responsavel) && String(os.usuario_responsavel) !== String(currentUser.username) && String(os.usuario_responsavel) !== String(currentUser.name)) {
+        } else if (os.usuario_responsavel && os.usuario_responsavel !== currentUser.username && os.usuario_responsavel !== currentUser.name) {
             showNotification(`Esta OS está programada para ${os.usuario_responsavel}`, 'info');
         } else {
             // Fallback: permitir execução se não houver responsável definido
@@ -518,6 +517,3 @@ function createOSAgendada(os) {
     `;
 }
 
-function abrirExecucaoOS(osId) {
-    
-}
