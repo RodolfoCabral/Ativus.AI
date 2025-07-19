@@ -98,11 +98,8 @@ function renderPriorityLines() {
         container.innerHTML = osFiltered.map(os => createOSCard(os)).join('');
         
         // Adicionar funcionalidade de drag
-        osFiltered.forEach(os => {
-            const element = container.querySelector(`[data-os-id="${os.id}"]`);
-            if (element) {
-                addDragListeners(element);
-            }
+        container.querySelectorAll('.chamado-card').forEach(card => {
+            makeDraggable(card);
         });
     });
 }
@@ -146,8 +143,10 @@ function renderUsuarios() {
     
     container.innerHTML = usuarios.map(usuario => createUsuarioRow(usuario)).join('');
     
-    // Adicionar event listeners para drop zones
-    addDropZoneListeners();
+    // Adicionar funcionalidade de drop nos dias
+    container.querySelectorAll('.dia-container').forEach(dia => {
+        makeDroppable(dia);
+    });
 }
 
 // Criar linha de usuário com calendário
@@ -197,255 +196,70 @@ function createDiaContainer(dia, dayIndex, userId) {
 // Criar OS agendada
 function createOSAgendada(os) {
     return `
-        <div class="chamado-agendado" data-os-id="${os.id}" onclick="verificarExecucaoOS(${os.id})">
+        <div class="chamado-agendado" data-os-id="${os.id}">
             <div class="chamado-id">OS #${os.id}</div>
-            <div class="chamado-descricao-mini">${os.descricao.substring(0, 30)}...</div>
+            <div class="chamado-descricao">${os.descricao}</div>
         </div>
     `;
 }
 
-// Verificar se usuário pode executar OS - VERSÃO SIMPLIFICADA
-async function verificarExecucaoOS(osId) {
-    try {
-        console.log('Clicou na OS:', osId);
-        
-        // Simplificar: sempre permitir acesso ao formulário
-        // A verificação de permissões será feita na página de execução
-        console.log('Redirecionando para formulário de execução');
-        window.location.href = `/executar-os?id=${osId}`;
-        
-    } catch (error) {
-        console.error('Erro ao abrir execução de OS:', error);
-        showNotification('Erro ao abrir formulário de execução', 'error');
-    }
+// Funções auxiliares
+function getCurrentWeek() {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    const diff = now - start;
+    const oneWeek = 1000 * 60 * 60 * 24 * 7;
+    return Math.ceil(diff / oneWeek);
 }
 
-// Obter OS agendadas para uma data e usuário
+function getDaysOfWeek(week, year) {
+    const firstDayOfYear = new Date(year, 0, 1);
+    const daysToAdd = (week - 1) * 7;
+    const startOfWeek = new Date(firstDayOfYear.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+    
+    // Ajustar para segunda-feira
+    const dayOfWeek = startOfWeek.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(startOfWeek.getTime() + mondayOffset * 24 * 60 * 60 * 1000);
+    
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+        const day = new Date(monday.getTime() + i * 24 * 60 * 60 * 1000);
+        days.push({
+            date: day.toISOString().split('T')[0],
+            day: day.getDate()
+        });
+    }
+    
+    return days;
+}
+
+function getInitials(name) {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+}
+
 function getOSAgendadas(date, userId) {
     return ordensServico.filter(os => 
         os.data_programada === date && 
-        os.usuario_responsavel === getUserById(userId)?.name
+        os.usuario_responsavel === userId.toString() &&
+        os.status === 'programada'
     );
 }
 
-// Obter usuário por ID
-function getUserById(userId) {
-    return usuarios.find(u => u.id === userId);
-}
-
-// Obter classe de workload
 function getWorkloadClass(osAgendadas) {
     const totalHH = osAgendadas.reduce((sum, os) => sum + (os.hh || 0), 0);
-    
-    if (totalHH === 0) return 'workload-empty';
-    if (totalHH <= 4) return 'workload-light';
-    if (totalHH <= 8) return 'workload-medium';
-    return 'workload-heavy';
+    if (totalHH > 16) return 'high-workload';
+    if (totalHH > 8) return 'medium-workload';
+    return 'low-workload';
 }
 
-// Obter indicador de workload
 function getWorkloadIndicator(osAgendadas) {
     const totalHH = osAgendadas.reduce((sum, os) => sum + (os.hh || 0), 0);
-    
-    if (totalHH === 0) return 'indicator-empty';
-    if (totalHH <= 4) return 'indicator-light';
-    if (totalHH <= 8) return 'indicator-medium';
-    return 'indicator-heavy';
+    if (totalHH > 16) return 'high';
+    if (totalHH > 8) return 'medium';
+    return 'low';
 }
 
-// Obter iniciais do nome
-function getInitials(name) {
-    return name.split(' ')
-        .map(word => word.charAt(0))
-        .join('')
-        .substring(0, 2)
-        .toUpperCase();
-}
-
-// Obter semana atual
-function getCurrentWeek() {
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    const monday = new Date(today.setDate(diff));
-    
-    const weekNumber = getWeekNumber(monday);
-    return weekNumber;
-}
-
-// Obter número da semana
-function getWeekNumber(date) {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-}
-
-// Obter dias da semana
-function getDaysOfWeek(weekNumber, year) {
-    const jan1 = new Date(year, 0, 1);
-    const days = (weekNumber - 1) * 7;
-    const monday = new Date(jan1.getTime() + days * 24 * 60 * 60 * 1000);
-    
-    // Ajustar para segunda-feira
-    const dayOfWeek = monday.getDay();
-    const diff = monday.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    monday.setDate(diff);
-    
-    const weekDays = [];
-    for (let i = 0; i < 7; i++) {
-        const day = new Date(monday);
-        day.setDate(monday.getDate() + i);
-        weekDays.push({
-            date: day.toISOString().split('T')[0],
-            day: day.getDate(),
-            month: day.getMonth() + 1
-        });
-    }
-    
-    return weekDays;
-}
-
-// Atualizar display da semana
-function updateWeekDisplay() {
-    const weekDays = getDaysOfWeek(currentWeek, currentYear);
-    const firstDay = weekDays[0];
-    const lastDay = weekDays[6];
-    
-    const weekDisplay = document.getElementById('current-week');
-    if (weekDisplay) {
-        weekDisplay.textContent = `Semana ${currentWeek} - ${firstDay.day}/${firstDay.month} a ${lastDay.day}/${lastDay.month}/${currentYear}`;
-    }
-}
-
-// Navegação de semanas
-function previousWeek() {
-    if (currentWeek > 1) {
-        currentWeek--;
-    } else {
-        currentWeek = 52;
-        currentYear--;
-    }
-    updateWeekDisplay();
-    renderUsuarios();
-}
-
-function nextWeek() {
-    if (currentWeek < 52) {
-        currentWeek++;
-    } else {
-        currentWeek = 1;
-        currentYear++;
-    }
-    updateWeekDisplay();
-    renderUsuarios();
-}
-
-// Adicionar listeners de drag
-function addDragListeners(element) {
-    element.addEventListener('dragstart', handleDragStart);
-    element.addEventListener('dragend', handleDragEnd);
-}
-
-// Adicionar listeners de drop zones
-function addDropZoneListeners() {
-    const dropZones = document.querySelectorAll('.dia-container');
-    
-    dropZones.forEach(zone => {
-        zone.addEventListener('dragover', handleDragOver);
-        zone.addEventListener('drop', handleDrop);
-        zone.addEventListener('dragenter', handleDragEnter);
-        zone.addEventListener('dragleave', handleDragLeave);
-    });
-}
-
-// Handlers de drag and drop
-let draggedElement = null;
-
-function handleDragStart(e) {
-    draggedElement = this;
-    this.style.opacity = '0.5';
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', this.outerHTML);
-}
-
-function handleDragEnd(e) {
-    this.style.opacity = '';
-    draggedElement = null;
-}
-
-function handleDragOver(e) {
-    if (e.preventDefault) {
-        e.preventDefault();
-    }
-    e.dataTransfer.dropEffect = 'move';
-    return false;
-}
-
-function handleDragEnter(e) {
-    this.classList.add('drag-over');
-}
-
-function handleDragLeave(e) {
-    this.classList.remove('drag-over');
-}
-
-function handleDrop(e) {
-    if (e.stopPropagation) {
-        e.stopPropagation();
-    }
-    
-    this.classList.remove('drag-over');
-    
-    if (draggedElement !== this) {
-        const osId = draggedElement.dataset.osId;
-        const userId = this.dataset.userId;
-        const date = this.dataset.date;
-        
-        programarOS(osId, userId, date);
-    }
-    
-    return false;
-}
-
-// Programar OS
-async function programarOS(osId, userId, date) {
-    try {
-        const usuario = getUserById(parseInt(userId));
-        if (!usuario) {
-            showNotification('Usuário não encontrado', 'error');
-            return;
-        }
-        
-        const response = await fetch(`/api/ordens-servico/${osId}/programar`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                usuario_responsavel: usuario.name,
-                data_programada: date
-            })
-        });
-        
-        if (response.ok) {
-            showNotification(`OS #${osId} programada para ${usuario.name} em ${formatDate(date)}`, 'success');
-            
-            // Recarregar dados
-            await loadOrdensServico();
-            renderPriorityLines();
-            renderUsuarios();
-        } else {
-            throw new Error('Erro ao programar OS');
-        }
-    } catch (error) {
-        console.error('Erro ao programar OS:', error);
-        showNotification('Erro ao programar OS', 'error');
-    }
-}
-
-// Formatação
 function formatTipoManutencao(tipo) {
     const tipos = {
         'corretiva': 'Corretiva',
@@ -469,16 +283,110 @@ function formatOficina(oficina) {
     return oficinas[oficina] || oficina;
 }
 
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
+// Funcionalidades de drag and drop
+function makeDraggable(element) {
+    element.addEventListener('dragstart', function(e) {
+        e.dataTransfer.setData('text/plain', element.dataset.osId);
+        element.classList.add('dragging');
+    });
+    
+    element.addEventListener('dragend', function(e) {
+        element.classList.remove('dragging');
+    });
 }
 
-// Função de notificação
+function makeDroppable(element) {
+    element.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        element.classList.add('drag-over');
+    });
+    
+    element.addEventListener('dragleave', function(e) {
+        element.classList.remove('drag-over');
+    });
+    
+    element.addEventListener('drop', function(e) {
+        e.preventDefault();
+        element.classList.remove('drag-over');
+        
+        const osId = e.dataTransfer.getData('text/plain');
+        const date = element.dataset.date;
+        const userId = element.dataset.userId;
+        
+        programarOS(osId, date, userId);
+    });
+}
+
+// Programar OS
+async function programarOS(osId, date, userId) {
+    try {
+        // Encontrar o usuário pelo ID
+        const usuario = usuarios.find(u => u.id.toString() === userId);
+        if (!usuario) {
+            showNotification('Usuário não encontrado', 'error');
+            return;
+        }
+
+        // Fazer a requisição para atualizar a OS no backend
+        const response = await fetch(`/api/ordens-servico/${osId}/programar`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                data_programada: date,
+                usuario_responsavel: usuario.id  // Aqui está a correção: envia o ID, não o nome
+            })
+        });
+
+        // Verificar se deu certo
+        if (response.ok) {
+            showNotification('OS programada com sucesso!', 'success');
+            await loadData();              // Recarrega os dados do backend
+            renderPriorityLines();        // Re-renderiza as linhas de prioridade
+            renderUsuarios();             // Re-renderiza o grid de usuários
+        } else {
+            const error = await response.json();
+            showNotification(error.error || 'Erro ao programar OS', 'error');
+        }
+
+    } catch (error) {
+        console.error('Erro ao programar OS:', error);
+        showNotification('Erro interno do servidor', 'error');
+    }
+}
+
+
+// Navegação de semanas
+function previousWeek() {
+    currentWeek--;
+    if (currentWeek < 1) {
+        currentWeek = 52;
+        currentYear--;
+    }
+    updateWeekDisplay();
+    renderUsuarios();
+}
+
+function nextWeek() {
+    currentWeek++;
+    if (currentWeek > 52) {
+        currentWeek = 1;
+        currentYear++;
+    }
+    updateWeekDisplay();
+    renderUsuarios();
+}
+
+function updateWeekDisplay() {
+    document.getElementById('week-info').textContent = `Semana: ${currentWeek} | Ano: ${currentYear}`;
+}
+
+// Função para mostrar notificações
 function showNotification(message, type = 'info') {
+    // Criar elemento de notificação
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
-    
     notification.innerHTML = `
         <div class="notification-content">
             <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
@@ -514,12 +422,20 @@ function showNotification(message, type = 'info') {
                 from { transform: translateX(100%); opacity: 0; }
                 to { transform: translateX(0); opacity: 1; }
             }
+            .empty-priority {
+                padding: 20px;
+                text-align: center;
+                color: #666;
+                font-style: italic;
+            }
         `;
         document.head.appendChild(styles);
     }
     
+    // Adicionar ao DOM
     document.body.appendChild(notification);
     
+    // Remover após 5 segundos
     setTimeout(() => {
         notification.style.animation = 'slideIn 0.3s ease reverse';
         setTimeout(() => {
@@ -528,5 +444,79 @@ function showNotification(message, type = 'info') {
             }
         }, 300);
     }, 5000);
+}
+
+
+// Verificar se usuário pode executar OS
+async function verificarExecucaoOS(osId) {
+    try {
+        console.log('Clicou na OS:', osId);
+        
+        // Simplificar: sempre permitir acesso ao formulário
+        // A verificação de permissões será feita na página de execução
+        console.log('Redirecionando para formulário de execução');
+        window.location.href = `/executar-os?id=${osId}`;
+        
+    } catch (error) {
+        console.error('Erro ao abrir execução de OS:', error);
+        showNotification('Erro ao abrir formulário de execução', 'error');
+    }
+        
+        const userData = await userResponse.json();
+        const currentUser = userData.user;
+        console.log('Usuário atual:', currentUser.username);
+        
+        // Buscar OS específica
+        const osResponse = await fetch(`/api/ordens-servico/${osId}`);
+        if (!osResponse.ok) {
+            showNotification('Erro ao carregar OS', 'error');
+            return;
+        }
+        
+        const osData = await osResponse.json();
+        const os = osData.ordem_servico;
+        console.log('OS encontrada:', os);
+        console.log('Status da OS:', os.status);
+        console.log('Responsável da OS:', os.usuario_responsavel);
+        
+        // Lógica corrigida de verificação
+        if (os.status === 'programada' && os.usuario_responsavel === currentUser.username) {
+            // Usuário é o responsável pela OS programada - pode executar
+            console.log('Usuário autorizado a executar OS');
+            window.location.href = `/executar-os?id=${osId}`;
+        } else if (os.status === 'programada' && os.usuario_responsavel === currentUser.name) {
+            // Verificar também pelo nome completo
+            console.log('Usuário autorizado a executar OS (por nome)');
+            window.location.href = `/executar-os?id=${osId}`;
+        } else if (os.status === 'em_andamento' && (os.usuario_responsavel === currentUser.username || os.usuario_responsavel === currentUser.name)) {
+            // OS já em andamento pelo usuário - pode continuar execução
+            console.log('Usuário pode continuar execução da OS');
+            window.location.href = `/executar-os?id=${osId}`;
+        } else if (os.status === 'aberta') {
+            showNotification('Esta OS ainda não foi programada para nenhum executor', 'info');
+        } else if (os.status === 'concluida') {
+            showNotification('Esta OS já foi concluída', 'info');
+        } else if (os.usuario_responsavel && os.usuario_responsavel !== currentUser.username && os.usuario_responsavel !== currentUser.name) {
+            showNotification(`Esta OS está programada para ${os.usuario_responsavel}`, 'info');
+        } else {
+            // Fallback: permitir execução se não houver responsável definido
+            console.log('Permitindo execução por fallback');
+            window.location.href = `/executar-os?id=${osId}`;
+        }
+        
+    } catch (error) {
+        console.error('Erro ao verificar execução de OS:', error);
+        showNotification('Erro ao verificar OS', 'error');
+    }
+}
+
+// Modificar função createOSAgendada para também permitir clique
+function createOSAgendada(os) {
+    return `
+        <div class="chamado-agendado" data-os-id="${os.id}" onclick="verificarExecucaoOS(${os.id})">
+            <div class="chamado-id">OS #${os.id}</div>
+            <div class="chamado-descricao-mini">${os.descricao.substring(0, 30)}...</div>
+        </div>
+    `;
 }
 
