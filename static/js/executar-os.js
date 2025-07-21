@@ -45,7 +45,9 @@ async function carregarOS(osId) {
     try {
         console.log('Carregando OS:', osId);
         
-        const response = await fetch(`/api/ordens-servico/${osId}`);
+        const response = await fetch(`/api/ordens-servico/${osId}`, {
+            credentials: 'include'
+        });
         if (response.ok) {
             const data = await response.json();
             ordemServico = data.ordem_servico;
@@ -95,7 +97,9 @@ function preencherDadosOS() {
 // Carregar execução existente (se houver)
 async function carregarExecucaoExistente() {
     try {
-        const response = await fetch(`/api/execucoes-os/por-os/${ordemServico.id}`);
+        const response = await fetch(`/api/execucoes-os/por-os/${ordemServico.id}`, {
+            credentials: 'include'
+        });
         if (response.ok) {
             const data = await response.json();
             if (data.execucao) {
@@ -137,7 +141,9 @@ function preencherDadosExecucao() {
 // Carregar materiais de estoque
 async function carregarMateriaisEstoque() {
     try {
-        const response = await fetch('/api/materiais-estoque');
+        const response = await fetch('/api/materiais-estoque', {
+            credentials: 'include'
+        });
         if (response.ok) {
             const data = await response.json();
             materiaisEstoque = data.materiais || [];
@@ -153,7 +159,9 @@ async function carregarMateriaisUtilizados() {
     if (!execucaoAtual) return;
     
     try {
-        const response = await fetch(`/api/materiais-utilizados/por-execucao/${execucaoAtual.id}`);
+        const response = await fetch(`/api/materiais-utilizados/por-execucao/${execucaoAtual.id}`, {
+            credentials: 'include'
+        });
         if (response.ok) {
             const data = await response.json();
             materiaisUtilizados = data.materiais || [];
@@ -421,6 +429,7 @@ async function salvarExecucao() {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify(dadosExecucao)
         });
         
@@ -464,7 +473,8 @@ async function encerrarOS() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            credentials: 'include'
         });
         
         if (response.ok) {
@@ -520,6 +530,7 @@ async function salvarMateriais() {
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    credentials: 'include',
                     body: JSON.stringify(materialData)
                 });
                 
