@@ -315,20 +315,18 @@
                     <div class="user-info">
                         <span id="user-name">Carregando...</span>
                         <span id="user-company">Carregando...</span>
-                    </div>
-                    <div class="user-avatar user-dropdown-btn">
-                        <i class="fas fa-user"></i>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="user-dropdown-content">
-                        <a href="/users" class="dropdown-item">
-                            <i class="fas fa-user-cog"></i>
-                            Gerenciar Usuários
-                        </a>
-                        <a href="/logout" class="dropdown-item">
-                            <i class="fas fa-sign-out-alt"></i>
-                            Sair
-                        </a>
+                        <div class="user-dropdown">
+                            <button class="user-dropdown-btn">
+                                <i class="fas fa-user-circle"></i>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="user-dropdown-content">
+                                <a href="#"><i class="fas fa-user"></i> Minha Conta</a>
+                                <a href="#"><i class="fas fa-key"></i> Redefinir Senha</a>
+                                <a href="#"><i class="fas fa-question-circle"></i> Suporte</a>
+                                <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -373,6 +371,7 @@
         </div>
     </div>
 
+    <script src="/static/js/user_info.js"></script>
     <script src="/static/js/dashboard.js"></script>
     <script src="/static/js/arvore-ativos-fixed.js"></script>
 </body>
