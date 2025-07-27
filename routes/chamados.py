@@ -16,11 +16,18 @@ chamados_bp = Blueprint('chamados', __name__)
 
 def get_current_user():
     """Obtém informações do usuário atual da sessão"""
-    return {
-        'name': session.get('user_name', 'Usuário'),
-        'company': session.get('user_company', 'Empresa'),
-        'profile': session.get('user_profile', 'user')
-    }
+    if current_user.is_authenticated:
+        return {
+            'name': current_user.name or current_user.email.split('@')[0],
+            'company': current_user.company or 'Empresa',
+            'profile': current_user.profile or 'user'
+        }
+    else:
+        return {
+            'name': session.get('user_name', 'Usuário'),
+            'company': session.get('user_company', 'Empresa'),
+            'profile': session.get('user_profile', 'user')
+        }
 
 @chamados_bp.route('/api/chamados', methods=['POST'])
 @login_required
