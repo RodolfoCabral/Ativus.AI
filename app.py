@@ -211,33 +211,53 @@ def create_app():
     def categorias_ativos():
         return send_from_directory('static', 'categorias-ativos.html')
     
-    # APIs simplificadas para ativos
+    # APIs simplificadas para ativos com filtros sequenciais
     @app.route('/api/filiais', methods=['GET'])
     @login_required
     def api_get_filiais():
-        """API simplificada para filiais"""
+        """API para filiais do usuário"""
         try:
-            # Simular dados para teste
-            filiais_mock = [
-                {
-                    'id': 1,
-                    'tag': 'F01',
-                    'descricao': 'Unidade olinda',
-                    'endereco': 'Rua Principal, 123',
-                    'cidade': 'Olinda',
-                    'estado': 'PE',
-                    'email': 'filial@empresa.com',
-                    'telefone': '(81) 99999-9999',
-                    'cnpj': '12.345.678/0001-90',
-                    'empresa': current_user.company,
-                    'data_criacao': '2024-06-26T10:00:00',
-                    'usuario_criacao': current_user.email
-                }
-            ]
+            # Tentar usar dados reais se disponível
+            try:
+                from assets_models import Filial
+                filiais = Filial.query.filter_by(empresa=current_user.company).all()
+                filiais_data = [filial.to_dict() for filial in filiais]
+            except:
+                # Fallback para dados mock se não houver tabela
+                filiais_data = [
+                    {
+                        'id': 1,
+                        'tag': 'F01',
+                        'descricao': 'Unidade Olinda',
+                        'endereco': 'Rua Principal, 123',
+                        'cidade': 'Olinda',
+                        'estado': 'PE',
+                        'email': 'filial@empresa.com',
+                        'telefone': '(81) 99999-9999',
+                        'cnpj': '12.345.678/0001-90',
+                        'empresa': current_user.company,
+                        'data_criacao': '2024-06-26T10:00:00',
+                        'usuario_criacao': current_user.email
+                    },
+                    {
+                        'id': 2,
+                        'tag': 'F02',
+                        'descricao': 'Unidade Recife',
+                        'endereco': 'Av. Boa Viagem, 456',
+                        'cidade': 'Recife',
+                        'estado': 'PE',
+                        'email': 'recife@empresa.com',
+                        'telefone': '(81) 88888-8888',
+                        'cnpj': '12.345.678/0002-71',
+                        'empresa': current_user.company,
+                        'data_criacao': '2024-06-26T10:00:00',
+                        'usuario_criacao': current_user.email
+                    }
+                ]
             
             return jsonify({
                 'success': True,
-                'filiais': filiais_mock
+                'filiais': filiais_data
             })
         except Exception as e:
             return jsonify({'success': False, 'message': str(e)}), 500
@@ -245,23 +265,59 @@ def create_app():
     @app.route('/api/setores', methods=['GET'])
     @login_required
     def api_get_setores():
-        """API simplificada para setores"""
+        """API para setores filtrados por filial"""
         try:
-            setores_mock = [
-                {
-                    'id': 1,
-                    'tag': 'PM',
-                    'descricao': 'Pré-moldagem',
-                    'filial_id': 1,
-                    'empresa': current_user.company,
-                    'data_criacao': '2024-06-26T10:00:00',
-                    'usuario_criacao': current_user.email
-                }
-            ]
+            filial_id = request.args.get('filial_id')
+            
+            # Tentar usar dados reais se disponível
+            try:
+                from assets_models import Setor
+                if filial_id:
+                    setores = Setor.query.filter_by(filial_id=filial_id).all()
+                else:
+                    setores = Setor.query.all()
+                setores_data = [setor.to_dict() for setor in setores]
+            except:
+                # Fallback para dados mock se não houver tabela
+                setores_mock = [
+                    {
+                        'id': 1,
+                        'tag': 'PM',
+                        'descricao': 'Pré-moldagem',
+                        'filial_id': 1,
+                        'empresa': current_user.company,
+                        'data_criacao': '2024-06-26T10:00:00',
+                        'usuario_criacao': current_user.email
+                    },
+                    {
+                        'id': 2,
+                        'tag': 'MT',
+                        'descricao': 'Manutenção',
+                        'filial_id': 1,
+                        'empresa': current_user.company,
+                        'data_criacao': '2024-06-26T10:00:00',
+                        'usuario_criacao': current_user.email
+                    },
+                    {
+                        'id': 3,
+                        'tag': 'AD',
+                        'descricao': 'Administrativo',
+                        'filial_id': 2,
+                        'empresa': current_user.company,
+                        'data_criacao': '2024-06-26T10:00:00',
+                        'usuario_criacao': current_user.email
+                    }
+                ]
+                
+                # Filtrar por filial se especificado
+                if filial_id:
+                    setores_data = [s for s in setores_mock if s['filial_id'] == int(filial_id)]
+                else:
+                    setores_data = setores_mock
             
             return jsonify({
                 'success': True,
-                'setores': setores_mock
+                'setores': setores_data
             })
         except Exception as e:
             return jsonify({'success': False, 'message': str(e)}), 500
@@ -269,23 +325,101 @@ def create_app():
     @app.route('/api/equipamentos', methods=['GET'])
     @login_required
     def api_get_equipamentos():
-        """API simplificada para equipamentos"""
+        """API para equipamentos filtrados por setor"""
         try:
-            equipamentos_mock = [
-                {
-                    'id': 1,
-                    'tag': 'EQP001',
-                    'descricao': 'Máquina de Corte',
-                    'setor_id': 1,
-                    'empresa': current_user.company,
-                    'data_criacao': '2024-06-26T10:00:00',
-                    'usuario_criacao': current_user.email
-                }
-            ]
+            setor_id = request.args.get('setor_id')
+            
+            # Tentar usar dados reais se disponível
+            try:
+                from assets_models import Equipamento
+                if setor_id:
+                    equipamentos = Equipamento.query.filter_by(setor_id=setor_id).all()
+                else:
+                    equipamentos = Equipamento.query.all()
+                equipamentos_data = [equipamento.to_dict() for equipamento in equipamentos]
+            except:
+                # Fallback para dados mock se não houver tabela
+                equipamentos_mock = [
+                    {
+                        'id': 1,
+                        'tag': 'EQP001',
+                        'descricao': 'Máquina de Corte',
+                        'setor_id': 1,
+                        'empresa': current_user.company,
+                        'data_criacao': '2024-06-26T10:00:00',
+                        'usuario_criacao': current_user.email
+                    },
+                    {
+                        'id': 2,
+                        'tag': 'EQP002',
+                        'descricao': 'Prensa Hidráulica',
+                        'setor_id': 1,
+                        'empresa': current_user.company,
+                        'data_criacao': '2024-06-26T10:00:00',
+                        'usuario_criacao': current_user.email
+                    },
+                    {
+                        'id': 3,
+                        'tag': 'EQP003',
+                        'descricao': 'Soldadora',
+                        'setor_id': 2,
+                        'empresa': current_user.company,
+                        'data_criacao': '2024-06-26T10:00:00',
+                        'usuario_criacao': current_user.email
+                    },
+                    {
+                        'id': 4,
+                        'tag': 'EQP004',
+                        'descricao': 'Computador',
+                        'setor_id': 3,
+                        'empresa': current_user.company,
+                        'data_criacao': '2024-06-26T10:00:00',
+                        'usuario_criacao': current_user.email
+                    }
+                ]
+                
+                # Filtrar por setor se especificado
+                if setor_id:
+                    equipamentos_data = [e for e in equipamentos_mock if e['setor_id'] == int(setor_id)]
+                else:
+                    equipamentos_data = equipamentos_mock
             
             return jsonify({
                 'success': True,
-                'equipamentos': equipamentos_mock
+                'equipamentos': equipamentos_data
+            })
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    # API para informações do usuário
+    @app.route('/api/user', methods=['GET'])
+    @login_required
+    def api_get_user():
+        """Retorna informações do usuário logado"""
+        try:
+            return jsonify({
+                'success': True,
+                'user': {
+                    'id': current_user.id,
+                    'name': current_user.name or current_user.email.split('@')[0],
+                    'email': current_user.email,
+                    'company': current_user.company or 'Empresa',
+                    'profile': current_user.profile or 'user'
+                }
+            })
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    # API para logout
+    @app.route('/api/logout', methods=['POST'])
+    @login_required
+    def api_logout():
+        """Realiza logout do usuário"""
+        try:
+            logout_user()
+            return jsonify({
+                'success': True,
+                'message': 'Logout realizado com sucesso'
             })
         except Exception as e:
             return jsonify({'success': False, 'message': str(e)}), 500
