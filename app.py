@@ -274,12 +274,14 @@ def create_app():
             try:
                 from assets_models import Setor
                 if filial_id:
-                    setores = Setor.query.filter_by(filial_id=filial_id).all()
+                    # CORREÇÃO: Converter para int e filtrar corretamente
+                    setores = Setor.query.filter_by(filial_id=int(filial_id)).all()
                     print(f"📊 Encontrados {len(setores)} setores reais para filial {filial_id}")
                 else:
-                    setores = Setor.query.all()
-                    print(f"📊 Encontrados {len(setores)} setores reais (todos)")
+                    setores = Setor.query.filter_by(empresa=current_user.company).all()
+                    print(f"📊 Encontrados {len(setores)} setores reais (todos da empresa)")
                 setores_data = [setor.to_dict() for setor in setores]
+                print(f"✅ Dados reais: Retornando {len(setores_data)} setores")
             except Exception as e:
                 print(f"⚠️ Usando dados mock para setores: {e}")
                 # Fallback para dados mock se não houver tabela
@@ -288,7 +290,7 @@ def create_app():
                         'id': 1,
                         'tag': 'PM',
                         'descricao': 'Pré-moldagem',
-                        'filial_id': 1,
+                        'filial_id': 100,  # Ajustado para filial 100
                         'empresa': current_user.company,
                         'data_criacao': '2024-06-26T10:00:00',
                         'usuario_criacao': current_user.email
@@ -297,7 +299,7 @@ def create_app():
                         'id': 2,
                         'tag': 'MT',
                         'descricao': 'Manutenção',
-                        'filial_id': 1,
+                        'filial_id': 100,  # Ajustado para filial 100
                         'empresa': current_user.company,
                         'data_criacao': '2024-06-26T10:00:00',
                         'usuario_criacao': current_user.email
@@ -306,14 +308,14 @@ def create_app():
                         'id': 3,
                         'tag': 'AD',
                         'descricao': 'Administrativo',
-                        'filial_id': 2,
+                        'filial_id': 101,  # Filial diferente para teste
                         'empresa': current_user.company,
                         'data_criacao': '2024-06-26T10:00:00',
                         'usuario_criacao': current_user.email
                     }
                 ]
                 
-                # Filtrar por filial se especificado
+                # CORREÇÃO: Filtrar por filial se especificado
                 if filial_id:
                     setores_data = [s for s in setores_mock if s['filial_id'] == int(filial_id)]
                     print(f"📊 Filtrados {len(setores_data)} setores mock para filial {filial_id}")
@@ -321,7 +323,7 @@ def create_app():
                     setores_data = setores_mock
                     print(f"📊 Retornando {len(setores_data)} setores mock (todos)")
             
-            print(f"✅ Retornando {len(setores_data)} setores")
+            print(f"✅ FINAL: Retornando {len(setores_data)} setores para filial {filial_id}")
             return jsonify({
                 'success': True,
                 'setores': setores_data
@@ -342,12 +344,14 @@ def create_app():
             try:
                 from assets_models import Equipamento
                 if setor_id:
-                    equipamentos = Equipamento.query.filter_by(setor_id=setor_id).all()
+                    # CORREÇÃO: Converter para int e filtrar corretamente
+                    equipamentos = Equipamento.query.filter_by(setor_id=int(setor_id)).all()
                     print(f"📊 Encontrados {len(equipamentos)} equipamentos reais para setor {setor_id}")
                 else:
-                    equipamentos = Equipamento.query.all()
-                    print(f"📊 Encontrados {len(equipamentos)} equipamentos reais (todos)")
+                    equipamentos = Equipamento.query.filter_by(empresa=current_user.company).all()
+                    print(f"📊 Encontrados {len(equipamentos)} equipamentos reais (todos da empresa)")
                 equipamentos_data = [equipamento.to_dict() for equipamento in equipamentos]
+                print(f"✅ Dados reais: Retornando {len(equipamentos_data)} equipamentos")
             except Exception as e:
                 print(f"⚠️ Usando dados mock para equipamentos: {e}")
                 # Fallback para dados mock se não houver tabela
@@ -356,7 +360,7 @@ def create_app():
                         'id': 1,
                         'tag': 'EQP001',
                         'descricao': 'Máquina de Corte',
-                        'setor_id': 1,
+                        'setor_id': 100,  # Ajustado para setor 100
                         'empresa': current_user.company,
                         'data_criacao': '2024-06-26T10:00:00',
                         'usuario_criacao': current_user.email
@@ -365,7 +369,7 @@ def create_app():
                         'id': 2,
                         'tag': 'EQP002',
                         'descricao': 'Prensa Hidráulica',
-                        'setor_id': 1,
+                        'setor_id': 100,  # Ajustado para setor 100
                         'empresa': current_user.company,
                         'data_criacao': '2024-06-26T10:00:00',
                         'usuario_criacao': current_user.email
@@ -374,7 +378,7 @@ def create_app():
                         'id': 3,
                         'tag': 'EQP003',
                         'descricao': 'Soldadora',
-                        'setor_id': 2,
+                        'setor_id': 101,  # Setor diferente para teste
                         'empresa': current_user.company,
                         'data_criacao': '2024-06-26T10:00:00',
                         'usuario_criacao': current_user.email
@@ -383,14 +387,14 @@ def create_app():
                         'id': 4,
                         'tag': 'EQP004',
                         'descricao': 'Computador',
-                        'setor_id': 3,
+                        'setor_id': 102,  # Setor diferente para teste
                         'empresa': current_user.company,
                         'data_criacao': '2024-06-26T10:00:00',
                         'usuario_criacao': current_user.email
                     }
                 ]
                 
-                # Filtrar por setor se especificado
+                # CORREÇÃO: Filtrar por setor se especificado
                 if setor_id:
                     equipamentos_data = [e for e in equipamentos_mock if e['setor_id'] == int(setor_id)]
                     print(f"📊 Filtrados {len(equipamentos_data)} equipamentos mock para setor {setor_id}")
@@ -398,7 +402,7 @@ def create_app():
                     equipamentos_data = equipamentos_mock
                     print(f"📊 Retornando {len(equipamentos_data)} equipamentos mock (todos)")
             
-            print(f"✅ Retornando {len(equipamentos_data)} equipamentos")
+            print(f"✅ FINAL: Retornando {len(equipamentos_data)} equipamentos para setor {setor_id}")
             return jsonify({
                 'success': True,
                 'equipamentos': equipamentos_data
