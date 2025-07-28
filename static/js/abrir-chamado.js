@@ -104,7 +104,25 @@ async function carregarSetores() {
         if (response.ok) {
             const data = await response.json();
             console.log('Dados de setores recebidos:', data);
-            setores = data.setores || [];
+            
+            // FILTRO DE SEGURANÇA: Filtrar apenas setores da filial selecionada
+            const filialIdInt = parseInt(filialId);
+            const todosSetores = data.setores || [];
+            const setoresFiltrados = todosSetores.filter(setor => setor.filial_id === filialIdInt);
+            
+            console.log(`Total de setores recebidos da API: ${todosSetores.length}`);
+            console.log(`Setores filtrados para filial ${filialIdInt}: ${setoresFiltrados.length}`);
+            
+            // Debug: mostrar setores filtrados vs não filtrados
+            todosSetores.forEach(setor => {
+                if (setor.filial_id === filialIdInt) {
+                    console.log(`✅ Setor INCLUÍDO: ${setor.tag} (filial_id: ${setor.filial_id})`);
+                } else {
+                    console.log(`❌ Setor EXCLUÍDO: ${setor.tag} (filial_id: ${setor.filial_id})`);
+                }
+            });
+            
+            setores = setoresFiltrados;
             
             if (setores.length > 0) {
                 setores.forEach(setor => {
@@ -114,9 +132,9 @@ async function carregarSetores() {
                     selectSetor.appendChild(option);
                 });
                 selectSetor.disabled = false;
-                console.log(`${setores.length} setores carregados com sucesso`);
+                console.log(`${setores.length} setores carregados com sucesso após filtro`);
             } else {
-                console.warn('Nenhum setor encontrado para esta filial');
+                console.warn('Nenhum setor encontrado para esta filial após filtro');
                 showNotification('Nenhum setor encontrado para esta filial', 'warning');
             }
         } else {
@@ -159,7 +177,25 @@ async function carregarEquipamentos() {
         if (response.ok) {
             const data = await response.json();
             console.log('Dados de equipamentos recebidos:', data);
-            equipamentos = data.equipamentos || [];
+            
+            // FILTRO DE SEGURANÇA: Filtrar apenas equipamentos do setor selecionado
+            const setorIdInt = parseInt(setorId);
+            const todosEquipamentos = data.equipamentos || [];
+            const equipamentosFiltrados = todosEquipamentos.filter(equipamento => equipamento.setor_id === setorIdInt);
+            
+            console.log(`Total de equipamentos recebidos da API: ${todosEquipamentos.length}`);
+            console.log(`Equipamentos filtrados para setor ${setorIdInt}: ${equipamentosFiltrados.length}`);
+            
+            // Debug: mostrar equipamentos filtrados vs não filtrados
+            todosEquipamentos.forEach(equipamento => {
+                if (equipamento.setor_id === setorIdInt) {
+                    console.log(`✅ Equipamento INCLUÍDO: ${equipamento.tag} (setor_id: ${equipamento.setor_id})`);
+                } else {
+                    console.log(`❌ Equipamento EXCLUÍDO: ${equipamento.tag} (setor_id: ${equipamento.setor_id})`);
+                }
+            });
+            
+            equipamentos = equipamentosFiltrados;
             
             if (equipamentos.length > 0) {
                 equipamentos.forEach(equipamento => {
@@ -169,9 +205,9 @@ async function carregarEquipamentos() {
                     selectEquipamento.appendChild(option);
                 });
                 selectEquipamento.disabled = false;
-                console.log(`${equipamentos.length} equipamentos carregados com sucesso`);
+                console.log(`${equipamentos.length} equipamentos carregados com sucesso após filtro`);
             } else {
-                console.warn('Nenhum equipamento encontrado para este setor');
+                console.warn('Nenhum equipamento encontrado para este setor após filtro');
                 showNotification('Nenhum equipamento encontrado para este setor', 'warning');
             }
         } else {
