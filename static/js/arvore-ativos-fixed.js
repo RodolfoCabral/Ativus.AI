@@ -430,8 +430,8 @@
             alert(`Erro ao excluir ${type}: ${error.message || 'Erro desconhecido'}`);
         }
     };
-
-    // Função para mostrar modal de loading
+    
+    // Funções auxiliares para indicador de carregamento
     function showLoadingModal(message) {
         const modal = document.createElement('div');
         modal.className = 'loading-modal';
@@ -530,62 +530,16 @@
                 break;
         }
 
-        // Criar modal centralizado
+        // Criar modal
         const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        `;
-        
+        modal.className = 'modal';
         modal.innerHTML = `
-            <div class="modal-content" style="
-                background: white;
-                border-radius: 12px;
-                padding: 0;
-                max-width: 500px;
-                width: 90%;
-                max-height: 80vh;
-                overflow-y: auto;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-                transform: scale(0.9);
-                transition: transform 0.3s ease;
-            ">
-                <div class="modal-header" style="
-                    padding: 20px;
-                    border-bottom: 1px solid #eee;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                ">
-                    <h2 style="margin: 0; color: #333;">Informações do Ativo</h2>
-                    <button class="close-btn" style="
-                        background: none;
-                        border: none;
-                        font-size: 24px;
-                        cursor: pointer;
-                        color: #999;
-                        padding: 0;
-                        width: 30px;
-                        height: 30px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    ">&times;</button>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Informações do Ativo</h2>
+                    <button class="close-btn">&times;</button>
                 </div>
-                <div class="modal-body" style="
-                    padding: 20px;
-                    line-height: 1.6;
-                ">
+                <div class="modal-body">
                     ${content}
                 </div>
             </div>
@@ -594,30 +548,17 @@
         // Adicionar ao body
         document.body.appendChild(modal);
 
-        // Mostrar modal com animação
+        // Mostrar modal
         setTimeout(() => {
-            modal.style.opacity = '1';
-            const modalContent = modal.querySelector('.modal-content');
-            modalContent.style.transform = 'scale(1)';
+            modal.classList.add('show');
         }, 10);
 
         // Fechar modal
-        const closeModal = () => {
-            modal.style.opacity = '0';
-            const modalContent = modal.querySelector('.modal-content');
-            modalContent.style.transform = 'scale(0.9)';
+        modal.querySelector('.close-btn').addEventListener('click', () => {
+            modal.classList.remove('show');
             setTimeout(() => {
-                if (document.body.contains(modal)) {
-                    document.body.removeChild(modal);
-                }
+                document.body.removeChild(modal);
             }, 300);
-        };
-
-        modal.querySelector('.close-btn').addEventListener('click', closeModal);
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeModal();
-            }
         });
     }
 
@@ -936,116 +877,34 @@
     }
     
     function openEditEquipamentoModal(equipamento) {
-        // Criar modal centralizado
+        // Criar modal
         const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        `;
-        
+        modal.className = 'modal';
         modal.innerHTML = `
-            <div class="modal-content" style="
-                background: white;
-                border-radius: 12px;
-                padding: 0;
-                max-width: 500px;
-                width: 90%;
-                max-height: 80vh;
-                overflow-y: auto;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-                transform: scale(0.9);
-                transition: transform 0.3s ease;
-            ">
-                <div class="modal-header" style="
-                    padding: 20px;
-                    border-bottom: 1px solid #eee;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                ">
-                    <h2 style="margin: 0; color: #333;">Editar Equipamento</h2>
-                    <button class="close-btn" style="
-                        background: none;
-                        border: none;
-                        font-size: 24px;
-                        cursor: pointer;
-                        color: #999;
-                        padding: 0;
-                        width: 30px;
-                        height: 30px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    ">&times;</button>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Editar Equipamento</h2>
+                    <button class="close-btn">&times;</button>
                 </div>
-                <div class="modal-body" style="padding: 20px;">
+                <div class="modal-body">
                     <form id="edit-equipamento-form">
-                        <div class="form-group" style="margin-bottom: 15px;">
-                            <label for="tag" style="display: block; margin-bottom: 5px; font-weight: 600;">Tag</label>
-                            <input type="text" id="tag" name="tag" value="${equipamento.tag}" required style="
-                                width: 100%;
-                                padding: 10px;
-                                border: 1px solid #ddd;
-                                border-radius: 6px;
-                                font-size: 14px;
-                                box-sizing: border-box;
-                            ">
+                        <div class="form-group">
+                            <label for="tag">Tag</label>
+                            <input type="text" id="tag" name="tag" value="${equipamento.tag}" required>
                         </div>
-                        <div class="form-group" style="margin-bottom: 15px;">
-                            <label for="descricao" style="display: block; margin-bottom: 5px; font-weight: 600;">Descrição</label>
-                            <input type="text" id="descricao" name="descricao" value="${equipamento.descricao}" required style="
-                                width: 100%;
-                                padding: 10px;
-                                border: 1px solid #ddd;
-                                border-radius: 6px;
-                                font-size: 14px;
-                                box-sizing: border-box;
-                            ">
+                        <div class="form-group">
+                            <label for="descricao">Descrição</label>
+                            <input type="text" id="descricao" name="descricao" value="${equipamento.descricao}" required>
                         </div>
-                        <div class="form-group" style="margin-bottom: 20px;">
-                            <label for="setor_id" style="display: block; margin-bottom: 5px; font-weight: 600;">Setor</label>
-                            <select id="setor_id" name="setor_id" required style="
-                                width: 100%;
-                                padding: 10px;
-                                border: 1px solid #ddd;
-                                border-radius: 6px;
-                                font-size: 14px;
-                                box-sizing: border-box;
-                            ">
+                        <div class="form-group">
+                            <label for="setor_id">Setor</label>
+                            <select id="setor_id" name="setor_id" required>
                                 ${assetsData.setores.map(s => `<option value="${s.id}" ${s.id === equipamento.setor_id ? 'selected' : ''}>${s.tag} - ${s.descricao}</option>`).join('')}
                             </select>
                         </div>
-                        <div class="form-actions" style="
-                            display: flex;
-                            gap: 10px;
-                            justify-content: flex-end;
-                        ">
-                            <button type="button" class="btn btn-secondary close-modal" style="
-                                padding: 10px 20px;
-                                border: 1px solid #ddd;
-                                background: white;
-                                color: #666;
-                                border-radius: 6px;
-                                cursor: pointer;
-                            ">Cancelar</button>
-                            <button type="submit" class="btn btn-primary" style="
-                                padding: 10px 20px;
-                                border: none;
-                                background: #9956a8;
-                                color: white;
-                                border-radius: 6px;
-                                cursor: pointer;
-                            ">Salvar Alterações</button>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
                         </div>
                     </form>
                 </div>
@@ -1055,76 +914,16 @@
         // Adicionar ao body
         document.body.appendChild(modal);
 
-        // Mostrar modal com animação
+        // Mostrar modal
         setTimeout(() => {
-            modal.style.opacity = '1';
-            const modalContent = modal.querySelector('.modal-content');
-            modalContent.style.transform = 'scale(1)';
+            modal.classList.add('show');
         }, 10);
 
         // Fechar modal
         const closeModal = () => {
-            modal.style.opacity = '0';
-            const modalContent = modal.querySelector('.modal-content');
-            modalContent.style.transform = 'scale(0.9)';
+            modal.classList.remove('show');
             setTimeout(() => {
-                if (document.body.contains(modal)) {
-                    document.body.removeChild(modal);
-                }
-            }, 300);
-        };
-
-        modal.querySelector('.close-btn').addEventListener('click', closeModal);
-        modal.querySelector('.close-modal').addEventListener('click', closeModal);
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeModal();
-            }
-        });
-
-        // Submeter formulário
-        modal.querySelector('#edit-equipamento-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = {
-                tag: modal.querySelector('#tag').value,
-                descricao: modal.querySelector('#descricao').value,
-                setor_id: parseInt(modal.querySelector('#setor_id').value)
-            };
-            
-            try {
-                const response = await fetch(`/api/equipamentos/${equipamento.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result.success) {
-                        // Atualizar dados locais
-                        const index = assetsData.equipamentos.findIndex(e => e.id === equipamento.id);
-                        if (index !== -1) {
-                            assetsData.equipamentos[index] = { ...assetsData.equipamentos[index], ...formData };
-                        }
-                        
-                        closeModal();
-                        loadAssetsData(); // Recarregar dados
-                        alert('Equipamento atualizado com sucesso!');
-                    } else {
-                        throw new Error(result.message || 'Erro ao atualizar equipamento');
-                    }
-                } else {
-                    throw new Error('Erro na requisição');
-                }
-            } catch (error) {
-                console.error('Erro ao atualizar equipamento:', error);
-                alert('Erro ao atualizar equipamento: ' + error.message);
-            }
-        });
-    }
+                document.body.removeChild(modal);
             }, 300);
         };
 

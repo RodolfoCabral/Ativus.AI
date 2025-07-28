@@ -265,38 +265,45 @@ def create_app():
     @app.route('/api/setores', methods=['GET'])
     @login_required
     def api_get_setores():
-        """API para setores filtrados por filial ou todos se não há filtro"""
+        """API para setores filtrados por filial"""
         try:
             filial_id = request.args.get('filial_id')
             print(f"🔍 API setores chamada com filial_id: {filial_id}")
             
+            # Se não há filial especificada, retornar vazio
+            if not filial_id:
+                print("❌ Nenhuma filial especificada")
+                return jsonify({
+                    'success': True,
+                    'setores': []
+                })
+            
             try:
+                # Converter filial_id para inteiro
+                filial_id_int = int(filial_id)
+                print(f"🔢 Filial ID convertido para int: {filial_id_int}")
+                
                 # Importar modelo
                 from assets_models import Setor
                 
-                if filial_id:
-                    # FILTRO ESPECÍFICO: Apenas setores da filial especificada
-                    filial_id_int = int(filial_id)
-                    print(f"🔢 Filial ID convertido para int: {filial_id_int}")
-                    setores = Setor.query.filter(Setor.filial_id == filial_id_int).all()
-                    print(f"📊 Setores encontrados para filial {filial_id_int}: {len(setores)}")
-                else:
-                    # SEM FILTRO: Todos os setores da empresa (para árvore de ativos)
-                    print("📊 Carregando TODOS os setores da empresa")
-                    setores = Setor.query.filter(Setor.empresa == current_user.company).all()
-                    print(f"📊 Total de setores da empresa: {len(setores)}")
+                # FILTRO SIMPLIFICADO: Apenas por filial_id (sem filtro por empresa)
+                # O usuário já tem acesso apenas às suas filiais pelo frontend
+                setores = Setor.query.filter(Setor.filial_id == filial_id_int).all()
                 
-                # Debug: mostrar setores encontrados
-                for setor in setores[:3]:  # Mostrar apenas os primeiros 3
-                    print(f"   🔍 Setor: ID={setor.id}, filial_id={setor.filial_id}, tag={setor.tag}, empresa={setor.empresa}")
+                print(f"📊 Setores encontrados para filial {filial_id_int}: {len(setores)}")
+                
+                # Debug: mostrar todos os setores encontrados
+                for setor in setores:
+                    print(f"   🔍 Setor encontrado: ID={setor.id}, filial_id={setor.filial_id}, tag={setor.tag}, empresa={setor.empresa}")
                 
                 # Converter para dict
                 setores_data = []
                 for setor in setores:
                     setor_dict = setor.to_dict()
                     setores_data.append(setor_dict)
+                    print(f"   ✅ Setor adicionado: ID={setor_dict['id']}, filial_id={setor_dict['filial_id']}, tag={setor_dict['tag']}")
                 
-                print(f"✅ Retornando {len(setores_data)} setores")
+                print(f"✅ Retornando {len(setores_data)} setores filtrados")
                 
                 return jsonify({
                     'success': True,
@@ -331,38 +338,45 @@ def create_app():
     @app.route('/api/equipamentos', methods=['GET'])
     @login_required
     def api_get_equipamentos():
-        """API para equipamentos filtrados por setor ou todos se não há filtro"""
+        """API para equipamentos filtrados por setor"""
         try:
             setor_id = request.args.get('setor_id')
             print(f"🔍 API equipamentos chamada com setor_id: {setor_id}")
             
+            # Se não há setor especificado, retornar vazio
+            if not setor_id:
+                print("❌ Nenhum setor especificado")
+                return jsonify({
+                    'success': True,
+                    'equipamentos': []
+                })
+            
             try:
+                # Converter setor_id para inteiro
+                setor_id_int = int(setor_id)
+                print(f"🔢 Setor ID convertido para int: {setor_id_int}")
+                
                 # Importar modelo
                 from assets_models import Equipamento
                 
-                if setor_id:
-                    # FILTRO ESPECÍFICO: Apenas equipamentos do setor especificado
-                    setor_id_int = int(setor_id)
-                    print(f"🔢 Setor ID convertido para int: {setor_id_int}")
-                    equipamentos = Equipamento.query.filter(Equipamento.setor_id == setor_id_int).all()
-                    print(f"📊 Equipamentos encontrados para setor {setor_id_int}: {len(equipamentos)}")
-                else:
-                    # SEM FILTRO: Todos os equipamentos da empresa (para árvore de ativos)
-                    print("📊 Carregando TODOS os equipamentos da empresa")
-                    equipamentos = Equipamento.query.filter(Equipamento.empresa == current_user.company).all()
-                    print(f"📊 Total de equipamentos da empresa: {len(equipamentos)}")
+                # FILTRO SIMPLIFICADO: Apenas por setor_id (sem filtro por empresa)
+                # O usuário já tem acesso apenas aos seus setores pelo filtro anterior
+                equipamentos = Equipamento.query.filter(Equipamento.setor_id == setor_id_int).all()
                 
-                # Debug: mostrar equipamentos encontrados
-                for equipamento in equipamentos[:3]:  # Mostrar apenas os primeiros 3
-                    print(f"   🔍 Equipamento: ID={equipamento.id}, setor_id={equipamento.setor_id}, tag={equipamento.tag}, empresa={equipamento.empresa}")
+                print(f"📊 Equipamentos encontrados para setor {setor_id_int}: {len(equipamentos)}")
+                
+                # Debug: mostrar todos os equipamentos encontrados
+                for equipamento in equipamentos:
+                    print(f"   🔍 Equipamento encontrado: ID={equipamento.id}, setor_id={equipamento.setor_id}, tag={equipamento.tag}, empresa={equipamento.empresa}")
                 
                 # Converter para dict
                 equipamentos_data = []
                 for equipamento in equipamentos:
                     equipamento_dict = equipamento.to_dict()
                     equipamentos_data.append(equipamento_dict)
+                    print(f"   ✅ Equipamento adicionado: ID={equipamento_dict['id']}, setor_id={equipamento_dict['setor_id']}, tag={equipamento_dict['tag']}")
                 
-                print(f"✅ Retornando {len(equipamentos_data)} equipamentos")
+                print(f"✅ Retornando {len(equipamentos_data)} equipamentos filtrados")
                 
                 return jsonify({
                     'success': True,
