@@ -268,29 +268,65 @@ def create_app():
         """API para setores filtrados por filial"""
         try:
             filial_id = request.args.get('filial_id')
-            print(f"🔍 API setores chamada com filial_id: {filial_id}")
+            print(f"🔍 API setores chamada com filial_id: {filial_id} (tipo: {type(filial_id)})")
             
             # Tentar usar dados reais se disponível
             try:
                 from assets_models import Setor
+                
                 if filial_id:
-                    # CORREÇÃO: Converter para int e filtrar corretamente
-                    setores = Setor.query.filter_by(filial_id=int(filial_id)).all()
-                    print(f"📊 Encontrados {len(setores)} setores reais para filial {filial_id}")
+                    # CORREÇÃO RIGOROSA: Converter para int e filtrar
+                    filial_id_int = int(filial_id)
+                    print(f"🔢 Convertido filial_id para int: {filial_id_int}")
+                    
+                    # Buscar todos os setores primeiro para debug
+                    todos_setores = Setor.query.all()
+                    print(f"📊 Total de setores no banco: {len(todos_setores)}")
+                    
+                    # Mostrar alguns exemplos para debug
+                    for i, setor in enumerate(todos_setores[:5]):
+                        print(f"   Setor {i+1}: ID={setor.id}, filial_id={setor.filial_id} (tipo: {type(setor.filial_id)}), tag={setor.tag}")
+                    
+                    # Filtrar por filial_id específico
+                    setores = Setor.query.filter(Setor.filial_id == filial_id_int).all()
+                    print(f"📊 Setores encontrados para filial {filial_id_int}: {len(setores)}")
+                    
+                    # Mostrar setores filtrados
+                    for setor in setores:
+                        print(f"   ✅ Setor filtrado: ID={setor.id}, filial_id={setor.filial_id}, tag={setor.tag}")
+                    
                 else:
+                    # Sem filtro específico - buscar todos da empresa
                     setores = Setor.query.filter_by(empresa=current_user.company).all()
-                    print(f"📊 Encontrados {len(setores)} setores reais (todos da empresa)")
+                    print(f"📊 Setores encontrados para empresa {current_user.company}: {len(setores)}")
+                
+                # Converter para dict
                 setores_data = [setor.to_dict() for setor in setores]
-                print(f"✅ Dados reais: Retornando {len(setores_data)} setores")
+                print(f"✅ Dados reais: Convertidos {len(setores_data)} setores para dict")
+                
+                # Verificar se o filtro funcionou nos dados convertidos
+                if filial_id:
+                    filial_id_int = int(filial_id)
+                    setores_filtrados_verificacao = [s for s in setores_data if s['filial_id'] == filial_id_int]
+                    print(f"🔍 Verificação pós-conversão: {len(setores_filtrados_verificacao)} setores com filial_id={filial_id_int}")
+                    
+                    # Se ainda há setores de outras filiais, forçar filtro manual
+                    if len(setores_filtrados_verificacao) != len(setores_data):
+                        print(f"⚠️ FORÇANDO FILTRO MANUAL - Dados inconsistentes detectados")
+                        setores_data = setores_filtrados_verificacao
+                        print(f"✅ Filtro manual aplicado: {len(setores_data)} setores restantes")
+                
             except Exception as e:
-                print(f"⚠️ Usando dados mock para setores: {e}")
-                # Fallback para dados mock se não houver tabela
+                print(f"❌ Erro ao acessar dados reais: {e}")
+                print(f"⚠️ Usando dados mock para setores")
+                
+                # Fallback para dados mock
                 setores_mock = [
                     {
                         'id': 1,
                         'tag': 'PM',
                         'descricao': 'Pré-moldagem',
-                        'filial_id': 100,  # Ajustado para filial 100
+                        'filial_id': 100,
                         'empresa': current_user.company,
                         'data_criacao': '2024-06-26T10:00:00',
                         'usuario_criacao': current_user.email
@@ -299,23 +335,13 @@ def create_app():
                         'id': 2,
                         'tag': 'MT',
                         'descricao': 'Manutenção',
-                        'filial_id': 100,  # Ajustado para filial 100
-                        'empresa': current_user.company,
-                        'data_criacao': '2024-06-26T10:00:00',
-                        'usuario_criacao': current_user.email
-                    },
-                    {
-                        'id': 3,
-                        'tag': 'AD',
-                        'descricao': 'Administrativo',
-                        'filial_id': 101,  # Filial diferente para teste
+                        'filial_id': 100,
                         'empresa': current_user.company,
                         'data_criacao': '2024-06-26T10:00:00',
                         'usuario_criacao': current_user.email
                     }
                 ]
                 
-                # CORREÇÃO: Filtrar por filial se especificado
                 if filial_id:
                     setores_data = [s for s in setores_mock if s['filial_id'] == int(filial_id)]
                     print(f"📊 Filtrados {len(setores_data)} setores mock para filial {filial_id}")
@@ -324,12 +350,19 @@ def create_app():
                     print(f"📊 Retornando {len(setores_data)} setores mock (todos)")
             
             print(f"✅ FINAL: Retornando {len(setores_data)} setores para filial {filial_id}")
+            
+            # Log final dos dados que serão retornados
+            for setor in setores_data:
+                print(f"   📤 Retornando: ID={setor['id']}, filial_id={setor['filial_id']}, tag={setor['tag']}")
+            
             return jsonify({
                 'success': True,
                 'setores': setores_data
             })
         except Exception as e:
             print(f"❌ Erro na API setores: {e}")
+            import traceback
+            traceback.print_exc()
             return jsonify({'success': False, 'message': str(e)}), 500
 
     @app.route('/api/equipamentos', methods=['GET'])
