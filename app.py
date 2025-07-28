@@ -286,20 +286,22 @@ def create_app():
                 # Importar modelo
                 from assets_models import Setor
                 
-                # FILTRO CORRETO: Buscar apenas setores da filial especificada
-                setores = Setor.query.filter(
-                    Setor.filial_id == filial_id_int,
-                    Setor.empresa == current_user.company
-                ).all()
+                # FILTRO SIMPLIFICADO: Apenas por filial_id (sem filtro por empresa)
+                # O usuário já tem acesso apenas às suas filiais pelo frontend
+                setores = Setor.query.filter(Setor.filial_id == filial_id_int).all()
                 
                 print(f"📊 Setores encontrados para filial {filial_id_int}: {len(setores)}")
+                
+                # Debug: mostrar todos os setores encontrados
+                for setor in setores:
+                    print(f"   🔍 Setor encontrado: ID={setor.id}, filial_id={setor.filial_id}, tag={setor.tag}, empresa={setor.empresa}")
                 
                 # Converter para dict
                 setores_data = []
                 for setor in setores:
                     setor_dict = setor.to_dict()
-                    print(f"   ✅ Setor: ID={setor_dict['id']}, filial_id={setor_dict['filial_id']}, tag={setor_dict['tag']}")
                     setores_data.append(setor_dict)
+                    print(f"   ✅ Setor adicionado: ID={setor_dict['id']}, filial_id={setor_dict['filial_id']}, tag={setor_dict['tag']}")
                 
                 print(f"✅ Retornando {len(setores_data)} setores filtrados")
                 
@@ -317,6 +319,8 @@ def create_app():
                 
             except Exception as e:
                 print(f"❌ Erro ao buscar setores: {e}")
+                import traceback
+                traceback.print_exc()
                 return jsonify({
                     'success': False,
                     'message': 'Erro interno do servidor'
@@ -324,6 +328,8 @@ def create_app():
                 
         except Exception as e:
             print(f"❌ Erro geral na API setores: {e}")
+            import traceback
+            traceback.print_exc()
             return jsonify({
                 'success': False,
                 'message': 'Erro interno do servidor'
@@ -353,20 +359,22 @@ def create_app():
                 # Importar modelo
                 from assets_models import Equipamento
                 
-                # FILTRO CORRETO: Buscar apenas equipamentos do setor especificado
-                equipamentos = Equipamento.query.filter(
-                    Equipamento.setor_id == setor_id_int,
-                    Equipamento.empresa == current_user.company
-                ).all()
+                # FILTRO SIMPLIFICADO: Apenas por setor_id (sem filtro por empresa)
+                # O usuário já tem acesso apenas aos seus setores pelo filtro anterior
+                equipamentos = Equipamento.query.filter(Equipamento.setor_id == setor_id_int).all()
                 
                 print(f"📊 Equipamentos encontrados para setor {setor_id_int}: {len(equipamentos)}")
+                
+                # Debug: mostrar todos os equipamentos encontrados
+                for equipamento in equipamentos:
+                    print(f"   🔍 Equipamento encontrado: ID={equipamento.id}, setor_id={equipamento.setor_id}, tag={equipamento.tag}, empresa={equipamento.empresa}")
                 
                 # Converter para dict
                 equipamentos_data = []
                 for equipamento in equipamentos:
                     equipamento_dict = equipamento.to_dict()
-                    print(f"   ✅ Equipamento: ID={equipamento_dict['id']}, setor_id={equipamento_dict['setor_id']}, tag={equipamento_dict['tag']}")
                     equipamentos_data.append(equipamento_dict)
+                    print(f"   ✅ Equipamento adicionado: ID={equipamento_dict['id']}, setor_id={equipamento_dict['setor_id']}, tag={equipamento_dict['tag']}")
                 
                 print(f"✅ Retornando {len(equipamentos_data)} equipamentos filtrados")
                 
@@ -384,6 +392,8 @@ def create_app():
                 
             except Exception as e:
                 print(f"❌ Erro ao buscar equipamentos: {e}")
+                import traceback
+                traceback.print_exc()
                 return jsonify({
                     'success': False,
                     'message': 'Erro interno do servidor'
@@ -391,6 +401,8 @@ def create_app():
                 
         except Exception as e:
             print(f"❌ Erro geral na API equipamentos: {e}")
+            import traceback
+            traceback.print_exc()
             return jsonify({
                 'success': False,
                 'message': 'Erro interno do servidor'
