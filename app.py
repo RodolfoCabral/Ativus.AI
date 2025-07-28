@@ -144,6 +144,11 @@ def create_app():
     def cadastro_ativos():
         return send_from_directory('static', 'cadastro-ativos.html')
     
+    @app.route('/manutencao-preventiva')
+    @login_required
+    def manutencao_preventiva():
+        return send_from_directory('static', 'manutencao-preventiva.html')
+
     @app.route('/plano-manutencao')
     @login_required
     def plano_manutencao():

@@ -116,52 +116,103 @@
                     <p>Planejamento e controle de manutenções</p>
                 </div>
                 
-                <div class="buttons-container" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; padding: 40px 20px; max-width: 800px; margin: 0 auto;">
+                <div class="cards-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; padding: 40px 20px; max-width: 1000px; margin: 0 auto;">
                     
-                    <button onclick="navigateTo('/manutencao/preventiva')" style="
-                        background: linear-gradient(135deg, #9956a8, #bb8fba);
-                        color: white;
-                        border: none;
-                        padding: 20px 30px;
-                        border-radius: 12px;
-                        font-size: 18px;
-                        font-weight: 600;
+                    <!-- Card Cadastrar Preventiva -->
+                    <div class="card" onclick="navigateTo('/manutencao-preventiva')" style="
+                        background: white;
+                        border-radius: 16px;
+                        padding: 30px;
+                        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
                         cursor: pointer;
-                        min-width: 200px;
-                        min-height: 80px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 12px;
-                        box-shadow: 0 4px 15px rgba(153, 86, 152, 0.3);
                         transition: all 0.3s ease;
-                        text-decoration: none;
-                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(153, 86, 152, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(153, 86, 152, 0.3)'">
-                        <i class="fas fa-calendar-plus" style="font-size: 24px;"></i>
-                        Cadastrar Preventiva
-                    </button>
-                    <button onclick="navigateTo('/manutencao/corretiva')" style="
-                        background: linear-gradient(135deg, #9956a8, #bb8fba);
-                        color: white;
-                        border: none;
-                        padding: 20px 30px;
-                        border-radius: 12px;
-                        font-size: 18px;
-                        font-weight: 600;
+                        border: 2px solid transparent;
+                        text-align: center;
+                        min-height: 200px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        gap: 20px;
+                    " onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='0 15px 35px rgba(153, 86, 152, 0.2)'; this.style.borderColor='#9956a8'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 25px rgba(0, 0, 0, 0.1)'; this.style.borderColor='transparent'">
+                        
+                        <div class="card-icon" style="
+                            width: 80px;
+                            height: 80px;
+                            background: linear-gradient(135deg, #9956a8, #bb8fba);
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            margin-bottom: 10px;
+                        ">
+                            <i class="fas fa-calendar-plus" style="font-size: 36px; color: white;"></i>
+                        </div>
+                        
+                        <div class="card-content">
+                            <h3 style="
+                                font-size: 24px;
+                                font-weight: 600;
+                                color: #333;
+                                margin: 0 0 10px 0;
+                            ">Cadastrar Preventiva</h3>
+                            
+                            <p style="
+                                color: #666;
+                                font-size: 16px;
+                                line-height: 1.5;
+                                margin: 0;
+                            ">Planeje e configure manutenções preventivas para seus equipamentos</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Card Criar OS Corretiva -->
+                    <div class="card" onclick="navigateTo('/manutencao/corretiva')" style="
+                        background: white;
+                        border-radius: 16px;
+                        padding: 30px;
+                        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
                         cursor: pointer;
-                        min-width: 200px;
-                        min-height: 80px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 12px;
-                        box-shadow: 0 4px 15px rgba(153, 86, 152, 0.3);
                         transition: all 0.3s ease;
-                        text-decoration: none;
-                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(153, 86, 152, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(153, 86, 152, 0.3)'">
-                        <i class="fas fa-wrench" style="font-size: 24px;"></i>
-                        Criar OS Corretiva
-                    </button>
+                        border: 2px solid transparent;
+                        text-align: center;
+                        min-height: 200px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        gap: 20px;
+                    " onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='0 15px 35px rgba(153, 86, 152, 0.2)'; this.style.borderColor='#9956a8'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 25px rgba(0, 0, 0, 0.1)'; this.style.borderColor='transparent'">
+                        
+                        <div class="card-icon" style="
+                            width: 80px;
+                            height: 80px;
+                            background: linear-gradient(135deg, #e74c3c, #f39c12);
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            margin-bottom: 10px;
+                        ">
+                            <i class="fas fa-wrench" style="font-size: 36px; color: white;"></i>
+                        </div>
+                        
+                        <div class="card-content">
+                            <h3 style="
+                                font-size: 24px;
+                                font-weight: 600;
+                                color: #333;
+                                margin: 0 0 10px 0;
+                            ">Criar OS Corretiva</h3>
+                            
+                            <p style="
+                                color: #666;
+                                font-size: 16px;
+                                line-height: 1.5;
+                                margin: 0;
+                            ">Crie ordens de serviço para manutenções corretivas urgentes</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
