@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             showLoading();
             
-            console.log('Carregando dados dos ativos...');
+            console.log('🔄 Carregando dados dos ativos...');
             
             // Carregar todos os dados em paralelo
             const [filiaisResponse, setoresResponse, equipamentosResponse] = await Promise.all([
@@ -27,43 +27,61 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetch('/api/equipamentos')
             ]);
 
-            console.log('Respostas recebidas:', {
+            console.log('📡 Respostas recebidas:', {
                 filiais: filiaisResponse.status,
                 setores: setoresResponse.status,
                 equipamentos: equipamentosResponse.status
             });
 
+            // Processar filiais
             if (filiaisResponse.ok) {
                 const filiaisData = await filiaisResponse.json();
-                console.log('Dados de filiais:', filiaisData);
-                if (filiaisData.success) {
-                    assetsData.filiais = filiaisData.filiais || [];
+                console.log('🏢 Dados de filiais:', filiaisData);
+                if (filiaisData.success && filiaisData.filiais) {
+                    assetsData.filiais = filiaisData.filiais;
+                    console.log(`✅ ${assetsData.filiais.length} filiais carregadas`);
+                } else {
+                    console.warn('⚠️ API de filiais retornou success=false ou sem dados');
+                    assetsData.filiais = [];
                 }
             } else {
-                console.error('Erro na API de filiais:', filiaisResponse.status);
+                console.error('❌ Erro na API de filiais:', filiaisResponse.status);
+                assetsData.filiais = [];
             }
 
+            // Processar setores (sem filtro por filial para carregar todos)
             if (setoresResponse.ok) {
                 const setoresData = await setoresResponse.json();
-                console.log('Dados de setores:', setoresData);
-                if (setoresData.success) {
-                    assetsData.setores = setoresData.setores || [];
+                console.log('🏭 Dados de setores:', setoresData);
+                if (setoresData.success && setoresData.setores) {
+                    assetsData.setores = setoresData.setores;
+                    console.log(`✅ ${assetsData.setores.length} setores carregados`);
+                } else {
+                    console.warn('⚠️ API de setores retornou success=false ou sem dados');
+                    assetsData.setores = [];
                 }
             } else {
-                console.error('Erro na API de setores:', setoresResponse.status);
+                console.error('❌ Erro na API de setores:', setoresResponse.status);
+                assetsData.setores = [];
             }
 
+            // Processar equipamentos (sem filtro por setor para carregar todos)
             if (equipamentosResponse.ok) {
                 const equipamentosData = await equipamentosResponse.json();
-                console.log('Dados de equipamentos:', equipamentosData);
-                if (equipamentosData.success) {
-                    assetsData.equipamentos = equipamentosData.equipamentos || [];
+                console.log('⚙️ Dados de equipamentos:', equipamentosData);
+                if (equipamentosData.success && equipamentosData.equipamentos) {
+                    assetsData.equipamentos = equipamentosData.equipamentos;
+                    console.log(`✅ ${assetsData.equipamentos.length} equipamentos carregados`);
+                } else {
+                    console.warn('⚠️ API de equipamentos retornou success=false ou sem dados');
+                    assetsData.equipamentos = [];
                 }
             } else {
-                console.error('Erro na API de equipamentos:', equipamentosResponse.status);
+                console.error('❌ Erro na API de equipamentos:', equipamentosResponse.status);
+                assetsData.equipamentos = [];
             }
 
-            console.log('Dados carregados:', {
+            console.log('📊 Resumo dos dados carregados:', {
                 filiais: assetsData.filiais.length,
                 setores: assetsData.setores.length,
                 equipamentos: assetsData.equipamentos.length
@@ -73,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
             renderAssetsTree();
 
         } catch (error) {
-            console.error('Erro ao carregar dados:', error);
+            console.error('💥 Erro crítico ao carregar dados:', error);
             hideLoading();
             showError('Erro ao carregar dados dos ativos. Verifique sua conexão e tente novamente.');
         }
