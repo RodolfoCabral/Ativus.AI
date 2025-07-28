@@ -268,16 +268,20 @@ def create_app():
         """API para setores filtrados por filial"""
         try:
             filial_id = request.args.get('filial_id')
+            print(f"🔍 API setores chamada com filial_id: {filial_id}")
             
             # Tentar usar dados reais se disponível
             try:
                 from assets_models import Setor
                 if filial_id:
                     setores = Setor.query.filter_by(filial_id=filial_id).all()
+                    print(f"📊 Encontrados {len(setores)} setores reais para filial {filial_id}")
                 else:
                     setores = Setor.query.all()
+                    print(f"📊 Encontrados {len(setores)} setores reais (todos)")
                 setores_data = [setor.to_dict() for setor in setores]
-            except:
+            except Exception as e:
+                print(f"⚠️ Usando dados mock para setores: {e}")
                 # Fallback para dados mock se não houver tabela
                 setores_mock = [
                     {
@@ -312,14 +316,18 @@ def create_app():
                 # Filtrar por filial se especificado
                 if filial_id:
                     setores_data = [s for s in setores_mock if s['filial_id'] == int(filial_id)]
+                    print(f"📊 Filtrados {len(setores_data)} setores mock para filial {filial_id}")
                 else:
                     setores_data = setores_mock
+                    print(f"📊 Retornando {len(setores_data)} setores mock (todos)")
             
+            print(f"✅ Retornando {len(setores_data)} setores")
             return jsonify({
                 'success': True,
                 'setores': setores_data
             })
         except Exception as e:
+            print(f"❌ Erro na API setores: {e}")
             return jsonify({'success': False, 'message': str(e)}), 500
 
     @app.route('/api/equipamentos', methods=['GET'])
@@ -328,16 +336,20 @@ def create_app():
         """API para equipamentos filtrados por setor"""
         try:
             setor_id = request.args.get('setor_id')
+            print(f"🔍 API equipamentos chamada com setor_id: {setor_id}")
             
             # Tentar usar dados reais se disponível
             try:
                 from assets_models import Equipamento
                 if setor_id:
                     equipamentos = Equipamento.query.filter_by(setor_id=setor_id).all()
+                    print(f"📊 Encontrados {len(equipamentos)} equipamentos reais para setor {setor_id}")
                 else:
                     equipamentos = Equipamento.query.all()
+                    print(f"📊 Encontrados {len(equipamentos)} equipamentos reais (todos)")
                 equipamentos_data = [equipamento.to_dict() for equipamento in equipamentos]
-            except:
+            except Exception as e:
+                print(f"⚠️ Usando dados mock para equipamentos: {e}")
                 # Fallback para dados mock se não houver tabela
                 equipamentos_mock = [
                     {
@@ -381,14 +393,18 @@ def create_app():
                 # Filtrar por setor se especificado
                 if setor_id:
                     equipamentos_data = [e for e in equipamentos_mock if e['setor_id'] == int(setor_id)]
+                    print(f"📊 Filtrados {len(equipamentos_data)} equipamentos mock para setor {setor_id}")
                 else:
                     equipamentos_data = equipamentos_mock
+                    print(f"📊 Retornando {len(equipamentos_data)} equipamentos mock (todos)")
             
+            print(f"✅ Retornando {len(equipamentos_data)} equipamentos")
             return jsonify({
                 'success': True,
                 'equipamentos': equipamentos_data
             })
         except Exception as e:
+            print(f"❌ Erro na API equipamentos: {e}")
             return jsonify({'success': False, 'message': str(e)}), 500
 
     # API para informações do usuário

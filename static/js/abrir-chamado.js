@@ -76,6 +76,8 @@ async function carregarSetores() {
     const selectSetor = document.getElementById('setor');
     const selectEquipamento = document.getElementById('equipamento');
     
+    console.log('Carregando setores para filial:', filialId);
+    
     // Limpar setores e equipamentos
     selectSetor.innerHTML = '<option value="">Selecione um setor</option>';
     selectEquipamento.innerHTML = '<option value="">Selecione um equipamento</option>';
@@ -83,13 +85,25 @@ async function carregarSetores() {
     selectEquipamento.disabled = true;
     
     if (!filialId) {
+        console.log('Nenhuma filial selecionada');
         return;
     }
     
     try {
-        const response = await fetch(`/api/setores?filial_id=${filialId}`);
+        console.log('Fazendo requisição para:', `/api/setores?filial_id=${filialId}`);
+        const response = await fetch(`/api/setores?filial_id=${filialId}`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        console.log('Resposta da API setores:', response.status);
+        
         if (response.ok) {
             const data = await response.json();
+            console.log('Dados de setores recebidos:', data);
             setores = data.setores || [];
             
             if (setores.length > 0) {
@@ -100,15 +114,17 @@ async function carregarSetores() {
                     selectSetor.appendChild(option);
                 });
                 selectSetor.disabled = false;
+                console.log(`${setores.length} setores carregados com sucesso`);
             } else {
+                console.warn('Nenhum setor encontrado para esta filial');
                 showNotification('Nenhum setor encontrado para esta filial', 'warning');
             }
         } else {
-            throw new Error('Erro ao carregar setores');
+            throw new Error(`Erro HTTP: ${response.status}`);
         }
     } catch (error) {
         console.error('Erro ao carregar setores:', error);
-        showNotification('Erro ao carregar setores', 'error');
+        showNotification('Erro ao carregar setores: ' + error.message, 'error');
     }
 }
 
@@ -117,18 +133,32 @@ async function carregarEquipamentos() {
     const setorId = document.getElementById('setor').value;
     const selectEquipamento = document.getElementById('equipamento');
     
+    console.log('Carregando equipamentos para setor:', setorId);
+    
     // Limpar equipamentos
     selectEquipamento.innerHTML = '<option value="">Selecione um equipamento</option>';
     selectEquipamento.disabled = true;
     
     if (!setorId) {
+        console.log('Nenhum setor selecionado');
         return;
     }
     
     try {
-        const response = await fetch(`/api/equipamentos?setor_id=${setorId}`);
+        console.log('Fazendo requisição para:', `/api/equipamentos?setor_id=${setorId}`);
+        const response = await fetch(`/api/equipamentos?setor_id=${setorId}`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        console.log('Resposta da API equipamentos:', response.status);
+        
         if (response.ok) {
             const data = await response.json();
+            console.log('Dados de equipamentos recebidos:', data);
             equipamentos = data.equipamentos || [];
             
             if (equipamentos.length > 0) {
@@ -139,15 +169,17 @@ async function carregarEquipamentos() {
                     selectEquipamento.appendChild(option);
                 });
                 selectEquipamento.disabled = false;
+                console.log(`${equipamentos.length} equipamentos carregados com sucesso`);
             } else {
+                console.warn('Nenhum equipamento encontrado para este setor');
                 showNotification('Nenhum equipamento encontrado para este setor', 'warning');
             }
         } else {
-            throw new Error('Erro ao carregar equipamentos');
+            throw new Error(`Erro HTTP: ${response.status}`);
         }
     } catch (error) {
         console.error('Erro ao carregar equipamentos:', error);
-        showNotification('Erro ao carregar equipamentos', 'error');
+        showNotification('Erro ao carregar equipamentos: ' + error.message, 'error');
     }
 }
 
