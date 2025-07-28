@@ -266,137 +266,67 @@ def create_app():
     @login_required
     def api_get_setores():
         """API para setores filtrados por filial"""
-        import sys
-        
         try:
             filial_id = request.args.get('filial_id')
+            print(f"🔍 API setores chamada com filial_id: {filial_id}")
             
-            # LOGS FORÇADOS - SEMPRE APARECEM
-            print(f"🔍🔍🔍 API SETORES CHAMADA - filial_id: {filial_id}", flush=True)
-            sys.stdout.flush()
-            
+            # Se não há filial especificada, retornar vazio
             if not filial_id:
-                print(f"❌❌❌ NENHUMA FILIAL ESPECIFICADA", flush=True)
-                sys.stdout.flush()
+                print("❌ Nenhuma filial especificada")
                 return jsonify({
                     'success': True,
-                    'setores': [],
-                    'debug': 'Nenhuma filial especificada'
+                    'setores': []
                 })
             
-            # Converter para int
             try:
+                # Converter filial_id para inteiro
                 filial_id_int = int(filial_id)
-                print(f"🔢🔢🔢 FILIAL_ID CONVERTIDO PARA INT: {filial_id_int}", flush=True)
-                sys.stdout.flush()
-            except ValueError as e:
-                print(f"❌❌❌ ERRO AO CONVERTER FILIAL_ID: {e}", flush=True)
-                sys.stdout.flush()
-                return jsonify({
-                    'success': False,
-                    'message': f'Erro ao converter filial_id: {e}',
-                    'debug': f'filial_id recebido: {filial_id}'
-                })
-            
-            # Tentar usar dados reais
-            try:
+                print(f"🔢 Filial ID convertido para int: {filial_id_int}")
+                
+                # Importar modelo
                 from assets_models import Setor
-                print(f"✅✅✅ MODELO SETOR IMPORTADO COM SUCESSO", flush=True)
-                sys.stdout.flush()
                 
-                # Buscar TODOS os setores primeiro
-                todos_setores = Setor.query.all()
-                print(f"📊📊📊 TOTAL DE SETORES NO BANCO: {len(todos_setores)}", flush=True)
-                sys.stdout.flush()
+                # FILTRO CORRETO: Buscar apenas setores da filial especificada
+                setores = Setor.query.filter(
+                    Setor.filial_id == filial_id_int,
+                    Setor.empresa == current_user.company
+                ).all()
                 
-                # Mostrar alguns setores para debug
-                for i, setor in enumerate(todos_setores[:3]):
-                    print(f"   🔍 Setor {i+1}: ID={setor.id}, filial_id={setor.filial_id}, tag={setor.tag}", flush=True)
-                    sys.stdout.flush()
-                
-                # Filtrar por filial específica
-                setores_filtrados = Setor.query.filter(Setor.filial_id == filial_id_int).all()
-                print(f"🎯🎯🎯 SETORES FILTRADOS PARA FILIAL {filial_id_int}: {len(setores_filtrados)}", flush=True)
-                sys.stdout.flush()
-                
-                # Mostrar setores filtrados
-                for setor in setores_filtrados:
-                    print(f"   ✅ Filtrado: ID={setor.id}, filial_id={setor.filial_id}, tag={setor.tag}", flush=True)
-                    sys.stdout.flush()
+                print(f"📊 Setores encontrados para filial {filial_id_int}: {len(setores)}")
                 
                 # Converter para dict
-                setores_data = [setor.to_dict() for setor in setores_filtrados]
-                print(f"📤📤📤 CONVERTIDOS PARA DICT: {len(setores_data)} setores", flush=True)
-                sys.stdout.flush()
+                setores_data = []
+                for setor in setores:
+                    setor_dict = setor.to_dict()
+                    print(f"   ✅ Setor: ID={setor_dict['id']}, filial_id={setor_dict['filial_id']}, tag={setor_dict['tag']}")
+                    setores_data.append(setor_dict)
                 
-                # Verificação final
-                for setor in setores_data:
-                    print(f"   📋 Final: ID={setor['id']}, filial_id={setor['filial_id']}, tag={setor['tag']}", flush=True)
-                    sys.stdout.flush()
+                print(f"✅ Retornando {len(setores_data)} setores filtrados")
                 
                 return jsonify({
                     'success': True,
-                    'setores': setores_data,
-                    'debug': {
-                        'total_no_banco': len(todos_setores),
-                        'filtrados': len(setores_filtrados),
-                        'filial_id_solicitado': filial_id_int,
-                        'retornados': len(setores_data)
-                    }
+                    'setores': setores_data
                 })
+                
+            except ValueError as e:
+                print(f"❌ Erro ao converter filial_id: {e}")
+                return jsonify({
+                    'success': False,
+                    'message': f'Filial ID inválido: {filial_id}'
+                }), 400
                 
             except Exception as e:
-                print(f"❌❌❌ ERRO AO ACESSAR BANCO: {str(e)}", flush=True)
-                sys.stdout.flush()
-                
-                # Fallback para dados mock
-                print(f"⚠️⚠️⚠️ USANDO DADOS MOCK", flush=True)
-                sys.stdout.flush()
-                
-                setores_mock = [
-                    {
-                        'id': 1,
-                        'tag': 'PM',
-                        'descricao': 'Pré-moldagem MOCK',
-                        'filial_id': filial_id_int,
-                        'empresa': current_user.company,
-                        'data_criacao': '2024-06-26T10:00:00',
-                        'usuario_criacao': current_user.email
-                    },
-                    {
-                        'id': 2,
-                        'tag': 'MT',
-                        'descricao': 'Manutenção MOCK',
-                        'filial_id': filial_id_int,
-                        'empresa': current_user.company,
-                        'data_criacao': '2024-06-26T10:00:00',
-                        'usuario_criacao': current_user.email
-                    }
-                ]
-                
-                print(f"📤📤📤 RETORNANDO {len(setores_mock)} SETORES MOCK", flush=True)
-                sys.stdout.flush()
-                
+                print(f"❌ Erro ao buscar setores: {e}")
                 return jsonify({
-                    'success': True,
-                    'setores': setores_mock,
-                    'debug': {
-                        'modo': 'mock',
-                        'erro_banco': str(e),
-                        'filial_id_solicitado': filial_id_int,
-                        'retornados': len(setores_mock)
-                    }
-                })
+                    'success': False,
+                    'message': 'Erro interno do servidor'
+                }), 500
                 
         except Exception as e:
-            print(f"❌❌❌ ERRO GERAL NA API: {str(e)}", flush=True)
-            sys.stdout.flush()
-            import traceback
-            traceback.print_exc()
+            print(f"❌ Erro geral na API setores: {e}")
             return jsonify({
                 'success': False,
-                'message': str(e),
-                'debug': 'Erro geral na API'
+                'message': 'Erro interno do servidor'
             }), 500
 
     @app.route('/api/equipamentos', methods=['GET'])
@@ -407,76 +337,64 @@ def create_app():
             setor_id = request.args.get('setor_id')
             print(f"🔍 API equipamentos chamada com setor_id: {setor_id}")
             
-            # Tentar usar dados reais se disponível
-            try:
-                from assets_models import Equipamento
-                if setor_id:
-                    # CORREÇÃO: Converter para int e filtrar corretamente
-                    equipamentos = Equipamento.query.filter_by(setor_id=int(setor_id)).all()
-                    print(f"📊 Encontrados {len(equipamentos)} equipamentos reais para setor {setor_id}")
-                else:
-                    equipamentos = Equipamento.query.filter_by(empresa=current_user.company).all()
-                    print(f"📊 Encontrados {len(equipamentos)} equipamentos reais (todos da empresa)")
-                equipamentos_data = [equipamento.to_dict() for equipamento in equipamentos]
-                print(f"✅ Dados reais: Retornando {len(equipamentos_data)} equipamentos")
-            except Exception as e:
-                print(f"⚠️ Usando dados mock para equipamentos: {e}")
-                # Fallback para dados mock se não houver tabela
-                equipamentos_mock = [
-                    {
-                        'id': 1,
-                        'tag': 'EQP001',
-                        'descricao': 'Máquina de Corte',
-                        'setor_id': 100,  # Ajustado para setor 100
-                        'empresa': current_user.company,
-                        'data_criacao': '2024-06-26T10:00:00',
-                        'usuario_criacao': current_user.email
-                    },
-                    {
-                        'id': 2,
-                        'tag': 'EQP002',
-                        'descricao': 'Prensa Hidráulica',
-                        'setor_id': 100,  # Ajustado para setor 100
-                        'empresa': current_user.company,
-                        'data_criacao': '2024-06-26T10:00:00',
-                        'usuario_criacao': current_user.email
-                    },
-                    {
-                        'id': 3,
-                        'tag': 'EQP003',
-                        'descricao': 'Soldadora',
-                        'setor_id': 101,  # Setor diferente para teste
-                        'empresa': current_user.company,
-                        'data_criacao': '2024-06-26T10:00:00',
-                        'usuario_criacao': current_user.email
-                    },
-                    {
-                        'id': 4,
-                        'tag': 'EQP004',
-                        'descricao': 'Computador',
-                        'setor_id': 102,  # Setor diferente para teste
-                        'empresa': current_user.company,
-                        'data_criacao': '2024-06-26T10:00:00',
-                        'usuario_criacao': current_user.email
-                    }
-                ]
-                
-                # CORREÇÃO: Filtrar por setor se especificado
-                if setor_id:
-                    equipamentos_data = [e for e in equipamentos_mock if e['setor_id'] == int(setor_id)]
-                    print(f"📊 Filtrados {len(equipamentos_data)} equipamentos mock para setor {setor_id}")
-                else:
-                    equipamentos_data = equipamentos_mock
-                    print(f"📊 Retornando {len(equipamentos_data)} equipamentos mock (todos)")
+            # Se não há setor especificado, retornar vazio
+            if not setor_id:
+                print("❌ Nenhum setor especificado")
+                return jsonify({
+                    'success': True,
+                    'equipamentos': []
+                })
             
-            print(f"✅ FINAL: Retornando {len(equipamentos_data)} equipamentos para setor {setor_id}")
-            return jsonify({
-                'success': True,
-                'equipamentos': equipamentos_data
-            })
+            try:
+                # Converter setor_id para inteiro
+                setor_id_int = int(setor_id)
+                print(f"🔢 Setor ID convertido para int: {setor_id_int}")
+                
+                # Importar modelo
+                from assets_models import Equipamento
+                
+                # FILTRO CORRETO: Buscar apenas equipamentos do setor especificado
+                equipamentos = Equipamento.query.filter(
+                    Equipamento.setor_id == setor_id_int,
+                    Equipamento.empresa == current_user.company
+                ).all()
+                
+                print(f"📊 Equipamentos encontrados para setor {setor_id_int}: {len(equipamentos)}")
+                
+                # Converter para dict
+                equipamentos_data = []
+                for equipamento in equipamentos:
+                    equipamento_dict = equipamento.to_dict()
+                    print(f"   ✅ Equipamento: ID={equipamento_dict['id']}, setor_id={equipamento_dict['setor_id']}, tag={equipamento_dict['tag']}")
+                    equipamentos_data.append(equipamento_dict)
+                
+                print(f"✅ Retornando {len(equipamentos_data)} equipamentos filtrados")
+                
+                return jsonify({
+                    'success': True,
+                    'equipamentos': equipamentos_data
+                })
+                
+            except ValueError as e:
+                print(f"❌ Erro ao converter setor_id: {e}")
+                return jsonify({
+                    'success': False,
+                    'message': f'Setor ID inválido: {setor_id}'
+                }), 400
+                
+            except Exception as e:
+                print(f"❌ Erro ao buscar equipamentos: {e}")
+                return jsonify({
+                    'success': False,
+                    'message': 'Erro interno do servidor'
+                }), 500
+                
         except Exception as e:
-            print(f"❌ Erro na API equipamentos: {e}")
-            return jsonify({'success': False, 'message': str(e)}), 500
+            print(f"❌ Erro geral na API equipamentos: {e}")
+            return jsonify({
+                'success': False,
+                'message': 'Erro interno do servidor'
+            }), 500
 
     # API para informações do usuário
     @app.route('/api/user', methods=['GET'])
