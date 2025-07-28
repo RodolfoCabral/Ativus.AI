@@ -880,31 +880,110 @@
         // Criar modal
         const modal = document.createElement('div');
         modal.className = 'modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
         modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Editar Equipamento</h2>
-                    <button class="close-btn">&times;</button>
+            <div class="modal-content" style="
+                background: white;
+                border-radius: 12px;
+                padding: 0;
+                max-width: 500px;
+                width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                transform: scale(0.9);
+                transition: transform 0.3s ease;
+            ">
+                <div class="modal-header" style="
+                    padding: 20px;
+                    border-bottom: 1px solid #eee;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <h2 style="margin: 0; color: #333;">Editar Equipamento</h2>
+                    <button class="close-btn" style="
+                        background: none;
+                        border: none;
+                        font-size: 24px;
+                        cursor: pointer;
+                        color: #999;
+                        padding: 0;
+                        width: 30px;
+                        height: 30px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">&times;</button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" style="padding: 20px;">
                     <form id="edit-equipamento-form">
-                        <div class="form-group">
-                            <label for="tag">Tag</label>
-                            <input type="text" id="tag" name="tag" value="${equipamento.tag}" required>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="tag" style="display: block; margin-bottom: 5px; font-weight: 600;">Tag</label>
+                            <input type="text" id="tag" name="tag" value="${equipamento.tag}" required style="
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                font-size: 14px;
+                            ">
                         </div>
-                        <div class="form-group">
-                            <label for="descricao">Descrição</label>
-                            <input type="text" id="descricao" name="descricao" value="${equipamento.descricao}" required>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="descricao" style="display: block; margin-bottom: 5px; font-weight: 600;">Descrição</label>
+                            <input type="text" id="descricao" name="descricao" value="${equipamento.descricao}" required style="
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                font-size: 14px;
+                            ">
                         </div>
-                        <div class="form-group">
-                            <label for="setor_id">Setor</label>
-                            <select id="setor_id" name="setor_id" required>
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label for="setor_id" style="display: block; margin-bottom: 5px; font-weight: 600;">Setor</label>
+                            <select id="setor_id" name="setor_id" required style="
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                font-size: 14px;
+                            ">
                                 ${assetsData.setores.map(s => `<option value="${s.id}" ${s.id === equipamento.setor_id ? 'selected' : ''}>${s.tag} - ${s.descricao}</option>`).join('')}
                             </select>
                         </div>
-                        <div class="form-actions">
-                            <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        <div class="form-actions" style="
+                            display: flex;
+                            gap: 10px;
+                            justify-content: flex-end;
+                        ">
+                            <button type="button" class="btn btn-secondary close-modal" style="
+                                padding: 10px 20px;
+                                border: 1px solid #ddd;
+                                background: white;
+                                color: #666;
+                                border-radius: 6px;
+                                cursor: pointer;
+                            ">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" style="
+                                padding: 10px 20px;
+                                border: none;
+                                background: #9956a8;
+                                color: white;
+                                border-radius: 6px;
+                                cursor: pointer;
+                            ">Salvar Alterações</button>
                         </div>
                     </form>
                 </div>
