@@ -717,52 +717,169 @@
     // ==================== MODAIS DE EDIÇÃO ====================
     
     function openEditFilialModal(filial) {
-        // Criar modal
+        // Criar modal centralizado
         const modal = document.createElement('div');
-        modal.className = 'modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+        
         modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Editar Filial</h2>
-                    <button class="close-btn">&times;</button>
+            <div class="modal-content" style="
+                background: white;
+                border-radius: 12px;
+                padding: 0;
+                max-width: 600px;
+                width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                transform: scale(0.9);
+                transition: transform 0.3s ease;
+            ">
+                <div class="modal-header" style="
+                    padding: 20px;
+                    border-bottom: 1px solid #eee;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <h2 style="margin: 0; color: #333;">Editar Filial</h2>
+                    <button class="close-btn" style="
+                        background: none;
+                        border: none;
+                        font-size: 24px;
+                        cursor: pointer;
+                        color: #999;
+                        padding: 0;
+                        width: 30px;
+                        height: 30px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">&times;</button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" style="padding: 20px;">
                     <form id="edit-filial-form">
-                        <div class="form-group">
-                            <label for="tag">Tag</label>
-                            <input type="text" id="tag" name="tag" value="${filial.tag}" required>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="tag" style="display: block; margin-bottom: 5px; font-weight: 600;">Tag</label>
+                            <input type="text" id="tag" name="tag" value="${filial.tag}" required style="
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                            ">
                         </div>
-                        <div class="form-group">
-                            <label for="descricao">Descrição</label>
-                            <input type="text" id="descricao" name="descricao" value="${filial.descricao}" required>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="descricao" style="display: block; margin-bottom: 5px; font-weight: 600;">Descrição</label>
+                            <input type="text" id="descricao" name="descricao" value="${filial.descricao}" required style="
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                            ">
                         </div>
-                        <div class="form-group">
-                            <label for="endereco">Endereço</label>
-                            <input type="text" id="endereco" name="endereco" value="${filial.endereco}" required>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="endereco" style="display: block; margin-bottom: 5px; font-weight: 600;">Endereço</label>
+                            <input type="text" id="endereco" name="endereco" value="${filial.endereco}" required style="
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                            ">
                         </div>
-                        <div class="form-group">
-                            <label for="cidade">Cidade</label>
-                            <input type="text" id="cidade" name="cidade" value="${filial.cidade}" required>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="cidade" style="display: block; margin-bottom: 5px; font-weight: 600;">Cidade</label>
+                            <input type="text" id="cidade" name="cidade" value="${filial.cidade}" required style="
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                            ">
                         </div>
-                        <div class="form-group">
-                            <label for="estado">Estado</label>
-                            <input type="text" id="estado" name="estado" value="${filial.estado}" required>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="estado" style="display: block; margin-bottom: 5px; font-weight: 600;">Estado</label>
+                            <input type="text" id="estado" name="estado" value="${filial.estado}" required style="
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                            ">
                         </div>
-                        <div class="form-group">
-                            <label for="email">E-mail</label>
-                            <input type="email" id="email" name="email" value="${filial.email}" required>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="email" style="display: block; margin-bottom: 5px; font-weight: 600;">E-mail</label>
+                            <input type="email" id="email" name="email" value="${filial.email}" required style="
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                            ">
                         </div>
-                        <div class="form-group">
-                            <label for="telefone">Telefone</label>
-                            <input type="text" id="telefone" name="telefone" value="${filial.telefone}" required>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="telefone" style="display: block; margin-bottom: 5px; font-weight: 600;">Telefone</label>
+                            <input type="text" id="telefone" name="telefone" value="${filial.telefone}" required style="
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                            ">
                         </div>
-                        <div class="form-group">
-                            <label for="cnpj">CNPJ</label>
-                            <input type="text" id="cnpj" name="cnpj" value="${filial.cnpj}" required>
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label for="cnpj" style="display: block; margin-bottom: 5px; font-weight: 600;">CNPJ</label>
+                            <input type="text" id="cnpj" name="cnpj" value="${filial.cnpj}" required style="
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                            ">
                         </div>
-                        <div class="form-actions">
-                            <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        <div class="form-actions" style="
+                            display: flex;
+                            gap: 10px;
+                            justify-content: flex-end;
+                        ">
+                            <button type="button" class="btn btn-secondary close-modal" style="
+                                padding: 10px 20px;
+                                border: 1px solid #ddd;
+                                background: white;
+                                color: #666;
+                                border-radius: 6px;
+                                cursor: pointer;
+                            ">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" style="
+                                padding: 10px 20px;
+                                border: none;
+                                background: #9956a8;
+                                color: white;
+                                border-radius: 6px;
+                                cursor: pointer;
+                            ">Salvar Alterações</button>
                         </div>
                     </form>
                 </div>
@@ -772,21 +889,32 @@
         // Adicionar ao body
         document.body.appendChild(modal);
 
-        // Mostrar modal
+        // Mostrar modal com animação
         setTimeout(() => {
-            modal.classList.add('show');
+            modal.style.opacity = '1';
+            const modalContent = modal.querySelector('.modal-content');
+            modalContent.style.transform = 'scale(1)';
         }, 10);
 
         // Fechar modal
         const closeModal = () => {
-            modal.classList.remove('show');
+            modal.style.opacity = '0';
+            const modalContent = modal.querySelector('.modal-content');
+            modalContent.style.transform = 'scale(0.9)';
             setTimeout(() => {
-                document.body.removeChild(modal);
+                if (document.body.contains(modal)) {
+                    document.body.removeChild(modal);
+                }
             }, 300);
         };
 
         modal.querySelector('.close-btn').addEventListener('click', closeModal);
         modal.querySelector('.close-modal').addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
 
         // Submeter formulário
         modal.querySelector('#edit-filial-form').addEventListener('submit', async (e) => {
@@ -838,34 +966,116 @@
     }
     
     function openEditSetorModal(setor) {
-        // Criar modal
+        // Criar modal centralizado
         const modal = document.createElement('div');
-        modal.className = 'modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+        
         modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Editar Setor</h2>
-                    <button class="close-btn">&times;</button>
+            <div class="modal-content" style="
+                background: white;
+                border-radius: 12px;
+                padding: 0;
+                max-width: 500px;
+                width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                transform: scale(0.9);
+                transition: transform 0.3s ease;
+            ">
+                <div class="modal-header" style="
+                    padding: 20px;
+                    border-bottom: 1px solid #eee;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <h2 style="margin: 0; color: #333;">Editar Setor</h2>
+                    <button class="close-btn" style="
+                        background: none;
+                        border: none;
+                        font-size: 24px;
+                        cursor: pointer;
+                        color: #999;
+                        padding: 0;
+                        width: 30px;
+                        height: 30px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">&times;</button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" style="padding: 20px;">
                     <form id="edit-setor-form">
-                        <div class="form-group">
-                            <label for="tag">Tag</label>
-                            <input type="text" id="tag" name="tag" value="${setor.tag}" required>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="tag" style="display: block; margin-bottom: 5px; font-weight: 600;">Tag</label>
+                            <input type="text" id="tag" name="tag" value="${setor.tag}" required style="
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                            ">
                         </div>
-                        <div class="form-group">
-                            <label for="descricao">Descrição</label>
-                            <input type="text" id="descricao" name="descricao" value="${setor.descricao}" required>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="descricao" style="display: block; margin-bottom: 5px; font-weight: 600;">Descrição</label>
+                            <input type="text" id="descricao" name="descricao" value="${setor.descricao}" required style="
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                            ">
                         </div>
-                        <div class="form-group">
-                            <label for="filial_id">Filial</label>
-                            <select id="filial_id" name="filial_id" required>
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label for="filial_id" style="display: block; margin-bottom: 5px; font-weight: 600;">Filial</label>
+                            <select id="filial_id" name="filial_id" required style="
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                            ">
                                 ${assetsData.filiais.map(f => `<option value="${f.id}" ${f.id === setor.filial_id ? 'selected' : ''}>${f.tag} - ${f.descricao}</option>`).join('')}
                             </select>
                         </div>
-                        <div class="form-actions">
-                            <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        <div class="form-actions" style="
+                            display: flex;
+                            gap: 10px;
+                            justify-content: flex-end;
+                        ">
+                            <button type="button" class="btn btn-secondary close-modal" style="
+                                padding: 10px 20px;
+                                border: 1px solid #ddd;
+                                background: white;
+                                color: #666;
+                                border-radius: 6px;
+                                cursor: pointer;
+                            ">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" style="
+                                padding: 10px 20px;
+                                border: none;
+                                background: #9956a8;
+                                color: white;
+                                border-radius: 6px;
+                                cursor: pointer;
+                            ">Salvar Alterações</button>
                         </div>
                     </form>
                 </div>
@@ -875,21 +1085,32 @@
         // Adicionar ao body
         document.body.appendChild(modal);
 
-        // Mostrar modal
+        // Mostrar modal com animação
         setTimeout(() => {
-            modal.classList.add('show');
+            modal.style.opacity = '1';
+            const modalContent = modal.querySelector('.modal-content');
+            modalContent.style.transform = 'scale(1)';
         }, 10);
 
         // Fechar modal
         const closeModal = () => {
-            modal.classList.remove('show');
+            modal.style.opacity = '0';
+            const modalContent = modal.querySelector('.modal-content');
+            modalContent.style.transform = 'scale(0.9)';
             setTimeout(() => {
-                document.body.removeChild(modal);
+                if (document.body.contains(modal)) {
+                    document.body.removeChild(modal);
+                }
             }, 300);
         };
 
         modal.querySelector('.close-btn').addEventListener('click', closeModal);
         modal.querySelector('.close-modal').addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
 
         // Submeter formulário
         modal.querySelector('#edit-setor-form').addEventListener('submit', async (e) => {
