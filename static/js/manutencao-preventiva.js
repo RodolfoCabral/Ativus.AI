@@ -264,24 +264,47 @@ function abrirDadosTecnicos(equipamentoId) {
         return;
     }
     
-    // Criar modal de dados técnicos
+    // Criar modal de dados técnicos com QR Code
     const modal = criarModal('Dados Técnicos', `
         <div style="padding: 20px;">
-            <h3 style="margin-top: 0; color: #333;">${equipamento.tag}</h3>
-            <p><strong>Descrição:</strong> ${equipamento.descricao}</p>
-            <p><strong>ID:</strong> ${equipamento.id}</p>
-            <p><strong>Setor:</strong> ${getSetorNome(equipamento.setor_id)}</p>
-            <p><strong>Criado por:</strong> ${equipamento.usuario_criacao || 'Sistema'}</p>
-            <p><strong>Data de criação:</strong> ${formatarData(equipamento.data_criacao)}</p>
-            
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-                <h4 style="color: #666; margin-bottom: 15px;">Especificações Técnicas</h4>
-                <p><em>Dados técnicos detalhados serão implementados aqui...</em></p>
+            <div style="display: flex; gap: 30px; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <h3 style="margin-top: 0; color: #333;">${equipamento.tag}</h3>
+                    <p><strong>Descrição:</strong> ${equipamento.descricao}</p>
+                    <p><strong>ID:</strong> ${equipamento.id}</p>
+                    <p><strong>Setor:</strong> ${getSetorNome(equipamento.setor_id)}</p>
+                    <p><strong>Criado por:</strong> ${equipamento.usuario_criacao || 'Sistema'}</p>
+                    <p><strong>Data de criação:</strong> ${formatarData(equipamento.data_criacao)}</p>
+                    
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                        <h4 style="color: #666; margin-bottom: 15px;">Especificações Técnicas</h4>
+                        <p><em>Dados técnicos detalhados serão implementados aqui...</em></p>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; min-width: 200px;">
+                    <h4 style="color: #9956a8; margin-bottom: 15px;">QR Code do Equipamento</h4>
+                    <div id="qrcode-${equipamentoId}" style="
+                        background: white;
+                        padding: 15px;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        display: inline-block;
+                    "></div>
+                    <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                        Escaneie para acessar rapidamente
+                    </p>
+                </div>
             </div>
         </div>
     `);
     
     document.body.appendChild(modal);
+    
+    // Gerar QR Code após o modal ser adicionado ao DOM
+    setTimeout(() => {
+        gerarQRCode(equipamentoId, equipamento);
+    }, 100);
 }
 
 function abrirPlanoManutencao(equipamentoId) {
@@ -560,6 +583,95 @@ function mostrarErro(mensagem) {
                 cursor: pointer;
                 margin-top: 15px;
             ">Tentar Novamente</button>
+        </div>
+    `;
+}
+
+
+
+// Função para gerar QR Code do equipamento
+function gerarQRCode(equipamentoId, equipamento) {
+    try {
+        console.log(`🔲 Gerando QR Code para equipamento ${equipamentoId}`);
+        
+        // Dados do equipamento para o QR Code
+        const dadosQR = {
+            id: equipamento.id,
+            tag: equipamento.tag,
+            descricao: equipamento.descricao,
+            setor_id: equipamento.setor_id,
+            tipo: 'equipamento'
+        };
+        
+        // Converter para JSON
+        const qrData = JSON.stringify(dadosQR);
+        
+        // Elemento onde o QR Code será inserido
+        const qrContainer = document.getElementById(`qrcode-${equipamentoId}`);
+        
+        if (!qrContainer) {
+            console.error('❌ Container do QR Code não encontrado');
+            return;
+        }
+        
+        // Limpar container
+        qrContainer.innerHTML = '';
+        
+        // Verificar se a biblioteca QRCode está disponível
+        if (typeof QRCode !== 'undefined') {
+            // Usar biblioteca QRCode.js
+            QRCode.toCanvas(qrData, { width: 150, margin: 2 }, function (error, canvas) {
+                if (error) {
+                    console.error('❌ Erro ao gerar QR Code:', error);
+                    mostrarQRCodeErro(qrContainer);
+                } else {
+                    canvas.style.cssText = 'border: 1px solid #ddd; border-radius: 4px;';
+                    qrContainer.appendChild(canvas);
+                    console.log('✅ QR Code gerado com sucesso');
+                }
+            });
+        } else {
+            // Fallback: usar API online para gerar QR Code
+            const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+            
+            const img = document.createElement('img');
+            img.src = qrCodeURL;
+            img.alt = `QR Code do equipamento ${equipamento.tag}`;
+            img.style.cssText = 'width: 150px; height: 150px; border: 1px solid #ddd; border-radius: 4px;';
+            img.onload = () => console.log('✅ QR Code gerado com sucesso (fallback)');
+            img.onerror = () => mostrarQRCodeErro(qrContainer);
+            
+            qrContainer.appendChild(img);
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao gerar QR Code:', error);
+        const qrContainer = document.getElementById(`qrcode-${equipamentoId}`);
+        if (qrContainer) {
+            mostrarQRCodeErro(qrContainer);
+        }
+    }
+}
+
+// Função auxiliar para mostrar erro no QR Code
+function mostrarQRCodeErro(container) {
+    container.innerHTML = `
+        <div style="
+            width: 150px; 
+            height: 150px; 
+            border: 2px dashed #ccc; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            color: #999;
+            font-size: 12px;
+            text-align: center;
+            border-radius: 4px;
+        ">
+            <div>
+                <i class="fas fa-exclamation-triangle" style="font-size: 20px; margin-bottom: 5px;"></i><br>
+                Erro ao gerar<br>QR Code
+            </div>
         </div>
     `;
 }

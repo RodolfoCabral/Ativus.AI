@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ativus.AI - Relatórios</title>
+    <title>Ativus.AI - Monitoramento</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/dashboard.css">
@@ -121,13 +121,12 @@
             <!-- Área de Conteúdo -->
             <div class="content">
                 <div class="section-header">
-                    <h1><i class="fas fa-chart-bar"></i> Relatórios</h1>
-                    <p>Visualize e analise dados do sistema</p>
+                    <h1><i class="fas fa-desktop"></i> Monitoramento</h1>
+                    <p>Acompanhe indicadores e métricas em tempo real</p>
                 </div>
-                
-                <div class="cards-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; padding: 40px 20px; max-width: 1000px; margin: 0 auto;">
+                              <div class="cards-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; padding: 40px 20px; max-width: 1000px; margin: 0 auto;">
                     
-                    <div class="card" onclick="navigateTo('/relatorios/lista-ativos')" style="
+                    <div class="card" onclick="navigateTo('/kpis/desempenho')" style="
                         background: white;
                         border-radius: 16px;
                         padding: 32px 24px;
@@ -155,10 +154,10 @@
                             margin-bottom: 20px;
                             box-shadow: 0 4px 16px rgba(153, 86, 152, 0.3);
                         ">
-                            <i class="fas fa-list" style="font-size: 32px; color: white;"></i>
+                            <i class="fas fa-chart-line" style="font-size: 32px; color: white;"></i>
                         </div>
-                        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #333;">Lista de Ativos</h3>
-                        <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">Visualize e gerencie todos os ativos cadastrados no sistema</p>
+                        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #333;">Desempenho</h3>
+                        <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">Monitore indicadores de desempenho operacional</p>
                         <div style="
                             position: absolute;
                             bottom: 16px;
@@ -175,7 +174,7 @@
                         </div>
                     </div>
                     
-                    <div class="card" onclick="navigateTo('/relatorios/ordens-servico')" style="
+                    <div class="card" onclick="navigateTo('/kpis/manutencao')" style="
                         background: white;
                         border-radius: 16px;
                         padding: 32px 24px;
@@ -203,10 +202,10 @@
                             margin-bottom: 20px;
                             box-shadow: 0 4px 16px rgba(153, 86, 152, 0.3);
                         ">
-                            <i class="fas fa-clipboard-list" style="font-size: 32px; color: white;"></i>
+                            <i class="fas fa-tools" style="font-size: 32px; color: white;"></i>
                         </div>
-                        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #333;">Ordens de Serviço</h3>
-                        <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">Acompanhe e gerencie todas as ordens de serviço</p>
+                        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #333;">Manutenção</h3>
+                        <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">Acompanhe métricas de manutenção e eficiência</p>
                         <div style="
                             position: absolute;
                             bottom: 16px;
@@ -223,7 +222,7 @@
                         </div>
                     </div>
                     
-                    <div class="card" onclick="navigateTo('/relatorios/solicitacoes')" style="
+                    <div class="card" onclick="navigateTo('/kpis/custo')" style="
                         background: white;
                         border-radius: 16px;
                         padding: 32px 24px;
@@ -251,10 +250,10 @@
                             margin-bottom: 20px;
                             box-shadow: 0 4px 16px rgba(153, 86, 152, 0.3);
                         ">
-                            <i class="fas fa-ticket-alt" style="font-size: 32px; color: white;"></i>
+                            <i class="fas fa-dollar-sign" style="font-size: 32px; color: white;"></i>
                         </div>
-                        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #333;">Solicitações de Serviço</h3>
-                        <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">Gerencie solicitações e chamados de serviço</p>
+                        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #333;">Custo</h3>
+                        <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">Analise custos operacionais e de manutenção</p>
                         <div style="
                             position: absolute;
                             bottom: 16px;
@@ -271,10 +270,7 @@
                         </div>
                     </div>
                     
-                </div>
-            </div>
-        </div>
-    </div>
+                </div></div>
     
     <script src="/static/js/user_info.js"></script>
     <script src="/static/js/dashboard.js"></script>
@@ -285,4 +281,3 @@
     </script>
 </body>
 </html>
-
