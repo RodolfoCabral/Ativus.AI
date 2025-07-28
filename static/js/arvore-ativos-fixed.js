@@ -430,8 +430,8 @@
             alert(`Erro ao excluir ${type}: ${error.message || 'Erro desconhecido'}`);
         }
     };
-    
-    // Funções auxiliares para indicador de carregamento
+
+    // Função para mostrar modal de loading
     function showLoadingModal(message) {
         const modal = document.createElement('div');
         modal.className = 'loading-modal';
@@ -530,16 +530,62 @@
                 break;
         }
 
-        // Criar modal
+        // Criar modal centralizado
         const modal = document.createElement('div');
-        modal.className = 'modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+        
         modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Informações do Ativo</h2>
-                    <button class="close-btn">&times;</button>
+            <div class="modal-content" style="
+                background: white;
+                border-radius: 12px;
+                padding: 0;
+                max-width: 500px;
+                width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                transform: scale(0.9);
+                transition: transform 0.3s ease;
+            ">
+                <div class="modal-header" style="
+                    padding: 20px;
+                    border-bottom: 1px solid #eee;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <h2 style="margin: 0; color: #333;">Informações do Ativo</h2>
+                    <button class="close-btn" style="
+                        background: none;
+                        border: none;
+                        font-size: 24px;
+                        cursor: pointer;
+                        color: #999;
+                        padding: 0;
+                        width: 30px;
+                        height: 30px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">&times;</button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" style="
+                    padding: 20px;
+                    line-height: 1.6;
+                ">
                     ${content}
                 </div>
             </div>
@@ -548,17 +594,30 @@
         // Adicionar ao body
         document.body.appendChild(modal);
 
-        // Mostrar modal
+        // Mostrar modal com animação
         setTimeout(() => {
-            modal.classList.add('show');
+            modal.style.opacity = '1';
+            const modalContent = modal.querySelector('.modal-content');
+            modalContent.style.transform = 'scale(1)';
         }, 10);
 
         // Fechar modal
-        modal.querySelector('.close-btn').addEventListener('click', () => {
-            modal.classList.remove('show');
+        const closeModal = () => {
+            modal.style.opacity = '0';
+            const modalContent = modal.querySelector('.modal-content');
+            modalContent.style.transform = 'scale(0.9)';
             setTimeout(() => {
-                document.body.removeChild(modal);
+                if (document.body.contains(modal)) {
+                    document.body.removeChild(modal);
+                }
             }, 300);
+        };
+
+        modal.querySelector('.close-btn').addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
         });
     }
 
@@ -877,9 +936,8 @@
     }
     
     function openEditEquipamentoModal(equipamento) {
-        // Criar modal
+        // Criar modal centralizado
         const modal = document.createElement('div');
-        modal.className = 'modal';
         modal.style.cssText = `
             position: fixed;
             top: 0;
@@ -894,6 +952,7 @@
             opacity: 0;
             transition: opacity 0.3s ease;
         `;
+        
         modal.innerHTML = `
             <div class="modal-content" style="
                 background: white;
@@ -939,6 +998,7 @@
                                 border: 1px solid #ddd;
                                 border-radius: 6px;
                                 font-size: 14px;
+                                box-sizing: border-box;
                             ">
                         </div>
                         <div class="form-group" style="margin-bottom: 15px;">
@@ -949,6 +1009,7 @@
                                 border: 1px solid #ddd;
                                 border-radius: 6px;
                                 font-size: 14px;
+                                box-sizing: border-box;
                             ">
                         </div>
                         <div class="form-group" style="margin-bottom: 20px;">
@@ -959,6 +1020,7 @@
                                 border: 1px solid #ddd;
                                 border-radius: 6px;
                                 font-size: 14px;
+                                box-sizing: border-box;
                             ">
                                 ${assetsData.setores.map(s => `<option value="${s.id}" ${s.id === equipamento.setor_id ? 'selected' : ''}>${s.tag} - ${s.descricao}</option>`).join('')}
                             </select>
@@ -993,16 +1055,76 @@
         // Adicionar ao body
         document.body.appendChild(modal);
 
-        // Mostrar modal
+        // Mostrar modal com animação
         setTimeout(() => {
-            modal.classList.add('show');
+            modal.style.opacity = '1';
+            const modalContent = modal.querySelector('.modal-content');
+            modalContent.style.transform = 'scale(1)';
         }, 10);
 
         // Fechar modal
         const closeModal = () => {
-            modal.classList.remove('show');
+            modal.style.opacity = '0';
+            const modalContent = modal.querySelector('.modal-content');
+            modalContent.style.transform = 'scale(0.9)';
             setTimeout(() => {
-                document.body.removeChild(modal);
+                if (document.body.contains(modal)) {
+                    document.body.removeChild(modal);
+                }
+            }, 300);
+        };
+
+        modal.querySelector('.close-btn').addEventListener('click', closeModal);
+        modal.querySelector('.close-modal').addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Submeter formulário
+        modal.querySelector('#edit-equipamento-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                tag: modal.querySelector('#tag').value,
+                descricao: modal.querySelector('#descricao').value,
+                setor_id: parseInt(modal.querySelector('#setor_id').value)
+            };
+            
+            try {
+                const response = await fetch(`/api/equipamentos/${equipamento.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        // Atualizar dados locais
+                        const index = assetsData.equipamentos.findIndex(e => e.id === equipamento.id);
+                        if (index !== -1) {
+                            assetsData.equipamentos[index] = { ...assetsData.equipamentos[index], ...formData };
+                        }
+                        
+                        closeModal();
+                        loadAssetsData(); // Recarregar dados
+                        alert('Equipamento atualizado com sucesso!');
+                    } else {
+                        throw new Error(result.message || 'Erro ao atualizar equipamento');
+                    }
+                } else {
+                    throw new Error('Erro na requisição');
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar equipamento:', error);
+                alert('Erro ao atualizar equipamento: ' + error.message);
+            }
+        });
+    }
             }, 300);
         };
 
