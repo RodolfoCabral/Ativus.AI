@@ -5,22 +5,68 @@ let cameras = [];
 let isScanning = false;
 let scannedEquipment = null;
 
-// Inicialização
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('📱 Iniciando Scanner QR');
-    initializeScanner();
-    setupEventListeners();
-});
+// Proteção contra scripts externos
+(function() {
+    'use strict';
+    
+    // Verificar se estamos na página correta
+    if (!window.location.pathname.includes('scanner-qr')) {
+        return;
+    }
 
-// Configurar event listeners
-function setupEventListeners() {
-    document.getElementById('start-scanner').addEventListener('click', startScanner);
-    document.getElementById('stop-scanner').addEventListener('click', stopScanner);
-    document.getElementById('switch-camera').addEventListener('click', switchCamera);
-    document.getElementById('scan-again').addEventListener('click', scanAgain);
-    document.getElementById('btn-abrir-chamado').addEventListener('click', abrirChamado);
-    document.getElementById('btn-ordem-servico').addEventListener('click', abrirOrdemServico);
-}
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('📱 Iniciando Scanner QR');
+        
+        // Verificar se os elementos necessários existem
+        if (!document.getElementById('start-scanner')) {
+            console.error('❌ Elementos do scanner não encontrados');
+            return;
+        }
+        
+        initializeScanner();
+        setupEventListeners();
+    });
+
+    // Configurar event listeners com verificação de existência
+    function setupEventListeners() {
+        const elements = [
+            'start-scanner',
+            'stop-scanner', 
+            'switch-camera',
+            'scan-again',
+            'btn-abrir-chamado',
+            'btn-ordem-servico'
+        ];
+        
+        elements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                switch(id) {
+                    case 'start-scanner':
+                        element.addEventListener('click', startScanner);
+                        break;
+                    case 'stop-scanner':
+                        element.addEventListener('click', stopScanner);
+                        break;
+                    case 'switch-camera':
+                        element.addEventListener('click', switchCamera);
+                        break;
+                    case 'scan-again':
+                        element.addEventListener('click', scanAgain);
+                        break;
+                    case 'btn-abrir-chamado':
+                        element.addEventListener('click', abrirChamado);
+                        break;
+                    case 'btn-ordem-servico':
+                        element.addEventListener('click', abrirOrdemServico);
+                        break;
+                }
+            } else {
+                console.warn(`⚠️ Elemento ${id} não encontrado`);
+            }
+        });
+    }
 
 // Inicializar scanner
 async function initializeScanner() {
@@ -461,4 +507,7 @@ window.addEventListener('error', function(event) {
         showStatus('error', 'Erro de câmera. Verifique as permissões e tente novamente.');
     }
 });
+
+
+})(); // Fim da IIFE de proteção
 
