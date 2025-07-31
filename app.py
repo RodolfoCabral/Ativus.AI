@@ -139,6 +139,11 @@ def create_app():
     def scanner_qr():
         return send_from_directory('static', 'scanner-qr.html')
     
+    @app.route('/lista-qr-codes')
+    @login_required
+    def lista_qr_codes():
+        return send_from_directory('static', 'lista-qr-codes.html')
+    
     @app.route('/parametros')
     @login_required
     def parametros():

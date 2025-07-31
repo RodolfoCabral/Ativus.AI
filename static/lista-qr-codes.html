@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Ativus.AI - Lista de QR Codes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        .filters-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .filters-row {
+            display: flex;
+            gap: 20px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .filter-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+        
+        .filter-group select:focus {
+            outline: none;
+            border-color: #9956a8;
+        }
+        
+        .btn-download {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+        
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+            padding: 20px 0;
+        }
+        
+        .qr-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid #e1e5e9;
+        }
+        
+        .qr-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .qr-code-container {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .qr-code-container canvas,
+        .qr-code-container img {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .equipment-info {
+            text-align: left;
+        }
+        
+        .equipment-tag {
+            font-size: 18px;
+            font-weight: 600;
+            color: #9956a8;
+            margin-bottom: 8px;
+        }
+        
+        .equipment-description {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        
+        .equipment-details {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+        }
+        
+        .equipment-details div {
+            margin-bottom: 4px;
+        }
+        
+        .loading-container {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #9956a8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .no-results i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+        
+        .stats-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .stats-item {
+            text-align: center;
+        }
+        
+        .stats-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #9956a8;
+        }
+        
+        .stats-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Overlay para mobile -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+        
+        <!-- Menu Lateral -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="/static/images/Ativus.png" alt="Ativus.AI Logo" class="sidebar-logo">
+                <span class="sidebar-title">Ativus.AI</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul class="menu">
+                    <li class="menu-item">
+                        <a href="/cadastro-ativos" class="menu-link">
+                            <i class="fas fa-boxes"></i>
+                            <span>Cadastro de Ativos</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/plano-manutencao" class="menu-link">
+                            <i class="fas fa-tools"></i>
+                            <span>Plano de Manutenção</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/abrir-chamado" class="menu-link">
+                            <i class="fas fa-headset"></i>
+                            <span>Abrir Chamado</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/programacao" class="menu-link">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Programação</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/materiais" class="menu-link">
+                            <i class="fas fa-boxes"></i>
+                            <span>Materiais</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/dashboard" class="menu-link">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/relatorios" class="menu-link">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Relatórios</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/monitoramento" class="menu-link">
+                            <i class="fas fa-desktop"></i>
+                            <span>Monitoramento</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/parametros" class="menu-link">
+                            <i class="fas fa-cog"></i>
+                            <span>Parâmetros</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/scanner-qr" class="menu-link">
+                            <i class="fas fa-qrcode"></i>
+                            <span>Scanner QR</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        
+        <!-- Conteúdo Principal -->
+        <div class="main-content">
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="page-title">Lista de QR Codes</h1>
+                </div>
+                
+                <div class="top-bar-right">
+                    <div class="user-menu">
+                        <div class="user-info">
+                            <span class="user-name" id="user-name">Carregando...</span>
+                            <span class="user-company" id="user-company">Carregando...</span>
+                        </div>
+                        <div class="user-avatar" id="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-dropdown" id="user-dropdown">
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-user-circle"></i>
+                                Minha Conta
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-key"></i>
+                                Redefinir Senha
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-question-circle"></i>
+                                Suporte
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item" id="logout-btn">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Sair
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="content">
+                <div class="section-header">
+                    <h1><i class="fas fa-qrcode"></i> Lista de QR Codes</h1>
+                    <p>Visualize e baixe QR codes de todos os equipamentos</p>
+                </div>
+                
+                <!-- Filtros -->
+                <div class="filters-container">
+                    <div class="filters-row">
+                        <div class="filter-group">
+                            <label for="filial-filter">Filial</label>
+                            <select id="filial-filter" onchange="carregarSetores()">
+                                <option value="">Todas as filiais</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="setor-filter">Setor</label>
+                            <select id="setor-filter" onchange="carregarEquipamentos()">
+                                <option value="">Todos os setores</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <button class="btn-download" onclick="baixarPDF()">
+                                <i class="fas fa-download"></i>
+                                Baixar PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Estatísticas -->
+                <div class="stats-container">
+                    <div class="stats-item">
+                        <div class="stats-number" id="total-equipamentos">0</div>
+                        <div class="stats-label">Total de Equipamentos</div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-number" id="total-filiais">0</div>
+                        <div class="stats-label">Filiais</div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-number" id="total-setores">0</div>
+                        <div class="stats-label">Setores</div>
+                    </div>
+                </div>
+                
+                <!-- Container dos QR Codes -->
+                <div id="qr-container">
+                    <div class="loading-container">
+                        <div class="loading-spinner"></div>
+                        <h3>Carregando QR Codes...</h3>
+                        <p>Aguarde enquanto geramos os códigos QR dos equipamentos</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/user_info.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/lista-qr-codes.js"></script>
+</body>
+</html>
+
