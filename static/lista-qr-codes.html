@@ -10,7 +10,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- jsPDF com múltiplas fontes para garantir carregamento -->
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <script>
+        // Fallback para jsPDF se a primeira fonte falhar
+        if (typeof window.jsPDF === 'undefined') {
+            console.log('🔄 Carregando jsPDF fallback...');
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+            script.onload = () => console.log('✅ jsPDF fallback carregado');
+            script.onerror = () => console.error('❌ Erro ao carregar jsPDF fallback');
+            document.head.appendChild(script);
+        } else {
+            console.log('✅ jsPDF carregado com sucesso');
+        }
+    </script>
     <style>
         .filters-container {
             background: white;

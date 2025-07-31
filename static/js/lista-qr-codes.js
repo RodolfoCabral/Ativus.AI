@@ -336,13 +336,26 @@ function baixarPDF() {
             return;
         }
         
-        // Verificar se jsPDF está disponível
-        if (typeof window.jsPDF === 'undefined') {
-            alert('Biblioteca PDF não carregada. Tente novamente.');
+        // Verificar múltiplas formas de acesso ao jsPDF
+        let jsPDF = null;
+        
+        if (typeof window.jsPDF !== 'undefined') {
+            jsPDF = window.jsPDF;
+            console.log('✅ jsPDF encontrado em window.jsPDF');
+        } else if (typeof window.jspdf !== 'undefined' && window.jspdf.jsPDF) {
+            jsPDF = window.jspdf.jsPDF;
+            console.log('✅ jsPDF encontrado em window.jspdf.jsPDF');
+        } else if (typeof jspdf !== 'undefined' && jspdf.jsPDF) {
+            jsPDF = jspdf.jsPDF;
+            console.log('✅ jsPDF encontrado em jspdf.jsPDF');
+        }
+        
+        if (!jsPDF) {
+            console.error('❌ jsPDF não encontrado, tentando carregar dinamicamente...');
+            carregarJsPDFDinamicamente();
             return;
         }
         
-        const { jsPDF } = window.jsPDF;
         const doc = new jsPDF();
         
         // Configurações
@@ -439,8 +452,46 @@ function baixarPDF() {
         
     } catch (error) {
         console.error('❌ Erro ao gerar PDF:', error);
-        alert('Erro ao gerar PDF. Tente novamente.');
+        alert('Erro ao gerar PDF. Tente novamente em alguns segundos.');
     }
+}
+
+// Carregar jsPDF dinamicamente se não estiver disponível
+function carregarJsPDFDinamicamente() {
+    console.log('🔄 Carregando jsPDF dinamicamente...');
+    
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js';
+    
+    script.onload = function() {
+        console.log('✅ jsPDF carregado dinamicamente');
+        setTimeout(() => {
+            baixarPDF(); // Tentar novamente após carregar
+        }, 1000);
+    };
+    
+    script.onerror = function() {
+        console.error('❌ Erro ao carregar jsPDF dinamicamente');
+        // Tentar fonte alternativa
+        const scriptFallback = document.createElement('script');
+        scriptFallback.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        
+        scriptFallback.onload = function() {
+            console.log('✅ jsPDF fallback carregado');
+            setTimeout(() => {
+                baixarPDF(); // Tentar novamente após carregar fallback
+            }, 1000);
+        };
+        
+        scriptFallback.onerror = function() {
+            console.error('❌ Todas as fontes de jsPDF falharam');
+            alert('Erro ao carregar biblioteca PDF. Verifique sua conexão e tente novamente.');
+        };
+        
+        document.head.appendChild(scriptFallback);
+    };
+    
+    document.head.appendChild(script);
 }
 
 // Funções utilitárias
