@@ -9,31 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/dashboard.css">
-    <script>
-        // Esperar o carregamento da biblioteca QRCode antes de carregar o script principal
-        function carregarQRCodeJSQuandoPronto(tentativas = 0) {
-            if (typeof QRCode === 'undefined' || typeof QRCode.toCanvas !== 'function') {
-                if (tentativas < 10) {
-                    console.log('⏳ Aguardando QRCode.js... tentativa', tentativas + 1);
-                    setTimeout(() => carregarQRCodeJSQuandoPronto(tentativas + 1), 300);
-                } else {
-                    console.error('❌ QRCode.js não carregado após 10 tentativas');
-                    alert('Erro ao carregar a biblioteca de QR Code. Recarregue a página.');
-                }
-                return;
-            }
-
-            console.log('✅ QRCode.js disponível, carregando lista-qr-codes.js');
-
-            // Carregar seu JS principal agora
-            const script = document.createElement('script');
-            script.src = '/static/js/lista-qr-codes.js';
-            document.body.appendChild(script);
-        }
-
-        carregarQRCodeJSQuandoPronto();
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" defer></script>
+    <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
     <!-- jsPDF com múltiplas fontes para garantir carregamento -->
     <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
     <script>
@@ -453,7 +429,7 @@
     
     <script src="/static/js/user_info.js"></script>
     <script src="/static/js/dashboard.js"></script>
-
+    <script src="/static/js/lista-qr-codes.js"></script>
 </body>
 </html>
 
