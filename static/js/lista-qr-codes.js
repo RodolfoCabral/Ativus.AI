@@ -326,7 +326,7 @@ function mostrarQRCodeErro(container) {
     `;
 }
 
-// Baixar PDF com todos os QR codes
+// Baixar PDF com todos os QR codes - VERSÃO CORRIGIDA
 function baixarPDF() {
     try {
         console.log('📄 Iniciando geração de PDF...');
@@ -356,103 +356,157 @@ function baixarPDF() {
             return;
         }
         
-        const doc = new jsPDF();
+        // Mostrar mensagem de progresso
+        const btnDownload = document.querySelector('.btn-download');
+        const originalText = btnDownload.innerHTML;
+        btnDownload.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
+        btnDownload.disabled = true;
         
-        // Configurações
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const margin = 20;
-        const qrSize = 60;
-        const itemHeight = 80;
-        const itemsPerRow = 2;
-        const itemsPerPage = 6; // 3 linhas x 2 colunas
-        
-        let currentPage = 1;
-        let itemCount = 0;
-        
-        // Título da primeira página
-        doc.setFontSize(20);
-        doc.setFont(undefined, 'bold');
-        doc.text('Lista de QR Codes - Equipamentos', pageWidth / 2, 30, { align: 'center' });
-        
-        doc.setFontSize(12);
-        doc.setFont(undefined, 'normal');
-        doc.text(`Total de equipamentos: ${equipamentosFiltrados.length}`, pageWidth / 2, 40, { align: 'center' });
-        doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, pageWidth / 2, 50, { align: 'center' });
-        
-        let yPosition = 70;
-        
-        equipamentosFiltrados.forEach((equipamento, index) => {
-            // Verificar se precisa de nova página
-            if (itemCount > 0 && itemCount % itemsPerPage === 0) {
-                doc.addPage();
-                currentPage++;
-                yPosition = 30;
+        // Aguardar um pouco para garantir que todos os QR codes foram gerados
+        setTimeout(() => {
+            try {
+                const doc = new jsPDF();
                 
-                // Título da nova página
+                // Configurações melhoradas para layout vertical
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const margin = 15;
+                const qrSize = 40; // QR code menor para melhor layout
+                const itemWidth = (pageWidth - 3 * margin) / 2; // 2 colunas
+                const itemHeight = 80; // Altura para acomodar informações embaixo
+                const itemsPerRow = 2;
+                const itemsPerPage = 6; // 3 linhas x 2 colunas
+                
+                let currentPage = 1;
+                let itemCount = 0;
+                
+                // Título da primeira página
                 doc.setFontSize(16);
                 doc.setFont(undefined, 'bold');
-                doc.text(`Lista de QR Codes - Página ${currentPage}`, pageWidth / 2, 20, { align: 'center' });
+                doc.text('Lista de QR Codes - Equipamentos', pageWidth / 2, 20, { align: 'center' });
+                
                 doc.setFontSize(10);
                 doc.setFont(undefined, 'normal');
+                doc.text(`Total: ${equipamentosFiltrados.length} equipamentos`, pageWidth / 2, 28, { align: 'center' });
+                doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, pageWidth / 2, 34, { align: 'center' });
+                
+                let yPosition = 45;
+                
+                equipamentosFiltrados.forEach((equipamento, index) => {
+                    // Verificar se precisa de nova página
+                    if (itemCount > 0 && itemCount % itemsPerPage === 0) {
+                        doc.addPage();
+                        currentPage++;
+                        yPosition = 20;
+                        
+                        // Título da nova página
+                        doc.setFontSize(14);
+                        doc.setFont(undefined, 'bold');
+                        doc.text(`Lista de QR Codes - Página ${currentPage}`, pageWidth / 2, 15, { align: 'center' });
+                        yPosition = 25;
+                    }
+                    
+                    // Calcular posição na grade
+                    const col = itemCount % itemsPerRow;
+                    const row = Math.floor((itemCount % itemsPerPage) / itemsPerRow);
+                    
+                    const xPosition = margin + col * (itemWidth + margin);
+                    const currentY = yPosition + row * itemHeight;
+                    
+                    // QR code centralizado horizontalmente no item
+                    const qrX = xPosition + (itemWidth - qrSize) / 2;
+                    const qrY = currentY;
+                    
+                    // Tentar obter o QR code do canvas
+                    const qrCanvas = document.querySelector(`canvas[data-equipment-id="${equipamento.id}"]`);
+                    
+                    if (qrCanvas) {
+                        try {
+                            // Adicionar QR code ao PDF
+                            const qrDataURL = qrCanvas.toDataURL('image/png');
+                            doc.addImage(qrDataURL, 'PNG', qrX, qrY, qrSize, qrSize);
+                            console.log(`✅ QR Code adicionado para equipamento ${equipamento.id}`);
+                        } catch (error) {
+                            console.warn(`⚠️ Erro ao adicionar QR code do equipamento ${equipamento.id}:`, error);
+                            // Adicionar placeholder com borda
+                            doc.setDrawColor(150, 150, 150);
+                            doc.rect(qrX, qrY, qrSize, qrSize);
+                            doc.setFontSize(8);
+                            doc.setTextColor(100, 100, 100);
+                            doc.text('QR Code', qrX + qrSize/2, qrY + qrSize/2 - 2, { align: 'center' });
+                            doc.text('Indisponível', qrX + qrSize/2, qrY + qrSize/2 + 3, { align: 'center' });
+                            doc.setTextColor(0, 0, 0); // Voltar para preto
+                        }
+                    } else {
+                        console.warn(`⚠️ Canvas não encontrado para equipamento ${equipamento.id}`);
+                        // QR code não encontrado, adicionar placeholder
+                        doc.setDrawColor(150, 150, 150);
+                        doc.rect(qrX, qrY, qrSize, qrSize);
+                        doc.setFontSize(8);
+                        doc.setTextColor(100, 100, 100);
+                        doc.text('QR Code', qrX + qrSize/2, qrY + qrSize/2 - 2, { align: 'center' });
+                        doc.text('Carregando...', qrX + qrSize/2, qrY + qrSize/2 + 3, { align: 'center' });
+                        doc.setTextColor(0, 0, 0); // Voltar para preto
+                    }
+                    
+                    // INFORMAÇÕES DO EQUIPAMENTO EMBAIXO DO QR CODE
+                    const setor = setoresData.find(s => s.id === equipamento.setor_id);
+                    const filial = filiaisData.find(f => f.id === setor?.filial_id);
+                    
+                    const infoY = qrY + qrSize + 4; // 4mm abaixo do QR code
+                    
+                    // Tag do equipamento (destaque) - centralizada
+                    doc.setFont(undefined, 'bold');
+                    doc.setFontSize(10);
+                    doc.text(equipamento.tag || 'N/A', xPosition + itemWidth/2, infoY, { align: 'center' });
+                    
+                    // Descrição - centralizada
+                    doc.setFont(undefined, 'normal');
+                    doc.setFontSize(8);
+                    const descricao = equipamento.descricao || 'Sem descrição';
+                    const descricaoTruncada = descricao.length > 28 ? descricao.substring(0, 28) + '...' : descricao;
+                    doc.text(descricaoTruncada, xPosition + itemWidth/2, infoY + 5, { align: 'center' });
+                    
+                    // Informações técnicas organizadas - alinhadas à esquerda
+                    doc.setFontSize(7);
+                    const infoX = xPosition + 2; // Pequena margem da esquerda
+                    doc.text(`ID: ${equipamento.id}`, infoX, infoY + 11);
+                    doc.text(`Setor: ${setor ? setor.tag : 'N/A'}`, infoX, infoY + 16);
+                    doc.text(`Filial: ${filial ? filial.tag : 'N/A'}`, infoX, infoY + 21);
+                    
+                    // Data de criação (se disponível)
+                    if (equipamento.data_criacao) {
+                        const data = formatarData(equipamento.data_criacao);
+                        doc.text(`Criado: ${data}`, infoX, infoY + 26);
+                    }
+                    
+                    itemCount++;
+                });
+                
+                // Salvar PDF
+                const fileName = `qr-codes-equipamentos-${new Date().toISOString().split('T')[0]}.pdf`;
+                doc.save(fileName);
+                
+                console.log('✅ PDF gerado com sucesso');
+                
+                // Restaurar botão
+                btnDownload.innerHTML = originalText;
+                btnDownload.disabled = false;
+                
+            } catch (error) {
+                console.error('❌ Erro ao gerar PDF:', error);
+                alert('Erro ao gerar PDF. Tente novamente.');
+                
+                // Restaurar botão
+                btnDownload.innerHTML = originalText;
+                btnDownload.disabled = false;
             }
             
-            // Calcular posição na grade
-            const col = itemCount % itemsPerRow;
-            const row = Math.floor((itemCount % itemsPerPage) / itemsPerRow);
-            
-            const xPosition = margin + col * (pageWidth - 2 * margin) / itemsPerRow;
-            const currentY = yPosition + row * itemHeight;
-            
-            // Tentar obter o QR code do canvas
-            const qrCanvas = document.querySelector(`canvas[data-equipment-id="${equipamento.id}"]`);
-            
-            if (qrCanvas) {
-                try {
-                    // Adicionar QR code ao PDF
-                    const qrDataURL = qrCanvas.toDataURL('image/png');
-                    doc.addImage(qrDataURL, 'PNG', xPosition, currentY, qrSize, qrSize);
-                } catch (error) {
-                    console.warn(`⚠️ Erro ao adicionar QR code do equipamento ${equipamento.id}:`, error);
-                    // Adicionar placeholder
-                    doc.rect(xPosition, currentY, qrSize, qrSize);
-                    doc.text('QR Code', xPosition + qrSize/2, currentY + qrSize/2, { align: 'center' });
-                }
-            } else {
-                // QR code não encontrado, adicionar placeholder
-                doc.rect(xPosition, currentY, qrSize, qrSize);
-                doc.setFontSize(8);
-                doc.text('QR Code', xPosition + qrSize/2, currentY + qrSize/2, { align: 'center' });
-                doc.setFontSize(10);
-            }
-            
-            // Informações do equipamento
-            const setor = setoresData.find(s => s.id === equipamento.setor_id);
-            const filial = filiaisData.find(f => f.id === setor?.filial_id);
-            
-            doc.setFont(undefined, 'bold');
-            doc.text(equipamento.tag, xPosition + qrSize + 5, currentY + 10);
-            
-            doc.setFont(undefined, 'normal');
-            doc.setFontSize(8);
-            doc.text(equipamento.descricao, xPosition + qrSize + 5, currentY + 18);
-            doc.text(`ID: ${equipamento.id}`, xPosition + qrSize + 5, currentY + 26);
-            doc.text(`Setor: ${setor ? setor.tag : 'N/A'}`, xPosition + qrSize + 5, currentY + 34);
-            doc.text(`Filial: ${filial ? filial.tag : 'N/A'}`, xPosition + qrSize + 5, currentY + 42);
-            
-            doc.setFontSize(10);
-            itemCount++;
-        });
-        
-        // Salvar PDF
-        const fileName = `qr-codes-equipamentos-${new Date().toISOString().split('T')[0]}.pdf`;
-        doc.save(fileName);
-        
-        console.log('✅ PDF gerado com sucesso');
+        }, 3000); // Aguardar 3 segundos para garantir que QR codes foram gerados
         
     } catch (error) {
         console.error('❌ Erro ao gerar PDF:', error);
-        alert('Erro ao gerar PDF. Tente novamente em alguns segundos.');
+        alert('Erro ao gerar PDF. Aguarde os QR codes carregarem completamente e tente novamente.');
     }
 }
 

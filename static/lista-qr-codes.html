@@ -211,6 +211,25 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+        
+        /* Breadcrumb */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            margin-left: 15px;
+        }
+        
+        .breadcrumb a:hover {
+            color: #9956a8 !important;
+            transition: color 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .breadcrumb {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -307,7 +326,13 @@
                     <button class="sidebar-toggle">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <h1 class="page-title">Lista de QR Codes</h1>
+                    <div class="breadcrumb">
+                        <a href="/relatorios" style="color: #666; text-decoration: none;">
+                            <i class="fas fa-chart-bar"></i> Relatórios
+                        </a>
+                        <span style="margin: 0 8px; color: #ccc;">/</span>
+                        <span style="color: #9956a8; font-weight: 600;">Lista de QR Codes</span>
+                    </div>
                 </div>
                 
                 <div class="top-bar-right">
