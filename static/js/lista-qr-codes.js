@@ -326,7 +326,7 @@ function mostrarQRCodeErro(container) {
     `;
 }
 
-// Baixar PDF com todos os QR codes - VERSÃO CORRIGIDA FINAL
+// Baixar PDF com todos os QR codes - VERSÃO COM API FALLBACK
 function baixarPDF() {
     try {
         console.log('📄 Iniciando geração de PDF...');
@@ -356,216 +356,298 @@ function baixarPDF() {
             return;
         }
         
-        // Verificar se QRCode está disponível
-        if (typeof QRCode === 'undefined' || typeof window.QRCode === 'undefined') {
-            console.error('❌ QRCode não encontrado, tentando carregar dinamicamente...');
-            carregarQRCodeDinamicamente(() => {
-                baixarPDF(); // Tentar novamente após carregar
-            });
-            return;
-        }
-        
-        console.log('✅ QRCode encontrado, prosseguindo...');
-        
         // Mostrar mensagem de progresso
         const btnDownload = document.querySelector('.btn-download');
         const originalText = btnDownload.innerHTML;
         btnDownload.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando QR Codes...';
         btnDownload.disabled = true;
         
-        // Primeiro, garantir que todos os QR codes sejam gerados
-        const qrPromises = equipamentosFiltrados.map(equipamento => {
-            return new Promise((resolve) => {
-                const qrData = {
-                    id: equipamento.id,
-                    tag: equipamento.tag,
-                    descricao: equipamento.descricao,
-                    setor_id: equipamento.setor_id,
-                    tipo: 'equipamento'
-                };
-                
-                // Criar canvas temporário para o QR code
-                const canvas = document.createElement('canvas');
-                canvas.setAttribute('data-equipment-id', equipamento.id);
-                
-                // Usar QRCode global ou window.QRCode
-                const QRCodeLib = typeof QRCode !== 'undefined' ? QRCode : window.QRCode;
-                
-                QRCodeLib.toCanvas(canvas, JSON.stringify(qrData), {
-                    width: 150,
-                    margin: 1,
-                    color: {
-                        dark: '#000000',
-                        light: '#FFFFFF'
-                    }
-                }, (error) => {
-                    if (error) {
-                        console.error(`Erro ao gerar QR code para ${equipamento.tag}:`, error);
-                    } else {
-                        console.log(`✅ QR code gerado para ${equipamento.tag}`);
-                    }
-                    resolve(canvas);
-                });
-            });
-        });
-        
-        // Aguardar todos os QR codes serem gerados
-        Promise.all(qrPromises).then((canvases) => {
-            btnDownload.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
-            
-            setTimeout(() => {
-                try {
-                    const doc = new jsPDF();
-                    
-                    // Configurações para layout limpo conforme referência
-                    const pageWidth = doc.internal.pageSize.getWidth();
-                    const pageHeight = doc.internal.pageSize.getHeight();
-                    const margin = 20;
-                    const qrSize = 35; // QR code menor
-                    const itemWidth = (pageWidth - 3 * margin) / 3; // 3 colunas
-                    const itemHeight = 60; // Altura reduzida
-                    const itemsPerRow = 3;
-                    const itemsPerPage = 9; // 3 linhas x 3 colunas
-                    
-                    let currentPage = 1;
-                    let itemCount = 0;
-                    
-                    // Título da primeira página
-                    doc.setFontSize(16);
-                    doc.setFont(undefined, 'bold');
-                    doc.text('Lista de QR Codes - Equipamentos', pageWidth / 2, 20, { align: 'center' });
-                    
-                    doc.setFontSize(10);
-                    doc.setFont(undefined, 'normal');
-                    doc.text(`Total: ${equipamentosFiltrados.length} equipamentos`, pageWidth / 2, 28, { align: 'center' });
-                    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, pageWidth / 2, 34, { align: 'center' });
-                    
-                    let yPosition = 50;
-                    
-                    equipamentosFiltrados.forEach((equipamento, index) => {
-                        // Verificar se precisa de nova página
-                        if (itemCount > 0 && itemCount % itemsPerPage === 0) {
-                            doc.addPage();
-                            currentPage++;
-                            yPosition = 20;
-                            
-                            // Título da nova página
-                            doc.setFontSize(14);
-                            doc.setFont(undefined, 'bold');
-                            doc.text(`Lista de QR Codes - Página ${currentPage}`, pageWidth / 2, 15, { align: 'center' });
-                            yPosition = 30;
-                        }
-                        
-                        // Calcular posição na grade (3 colunas)
-                        const col = itemCount % itemsPerRow;
-                        const row = Math.floor((itemCount % itemsPerPage) / itemsPerRow);
-                        
-                        const xPosition = margin + col * (itemWidth + margin/2);
-                        const currentY = yPosition + row * itemHeight;
-                        
-                        // QR code centralizado horizontalmente no item
-                        const qrX = xPosition + (itemWidth - qrSize) / 2;
-                        const qrY = currentY;
-                        
-                        // Usar o canvas gerado
-                        const canvas = canvases[index];
-                        
-                        if (canvas && canvas.width > 0) {
-                            try {
-                                // Adicionar QR code ao PDF
-                                const qrDataURL = canvas.toDataURL('image/png');
-                                doc.addImage(qrDataURL, 'PNG', qrX, qrY, qrSize, qrSize);
-                                console.log(`✅ QR Code adicionado ao PDF para equipamento ${equipamento.id}`);
-                            } catch (error) {
-                                console.warn(`⚠️ Erro ao adicionar QR code do equipamento ${equipamento.id}:`, error);
-                                // Adicionar placeholder simples
-                                doc.setDrawColor(200, 200, 200);
-                                doc.rect(qrX, qrY, qrSize, qrSize);
-                                doc.setFontSize(8);
-                                doc.text('QR', qrX + qrSize/2, qrY + qrSize/2, { align: 'center' });
-                            }
-                        } else {
-                            console.warn(`⚠️ Canvas inválido para equipamento ${equipamento.id}`);
-                            // Placeholder simples
-                            doc.setDrawColor(200, 200, 200);
-                            doc.rect(qrX, qrY, qrSize, qrSize);
-                            doc.setFontSize(8);
-                            doc.text('QR', qrX + qrSize/2, qrY + qrSize/2, { align: 'center' });
-                        }
-                        
-                        // LAYOUT SIMPLIFICADO - Apenas TAG e DESCRIÇÃO
-                        const infoY = qrY + qrSize + 3;
-                        
-                        // Tag do equipamento (destaque) - centralizada
-                        doc.setFont(undefined, 'bold');
-                        doc.setFontSize(9);
-                        doc.text(equipamento.tag || 'N/A', xPosition + itemWidth/2, infoY, { align: 'center' });
-                        
-                        // Descrição - centralizada e quebrada em linhas se necessário
-                        doc.setFont(undefined, 'normal');
-                        doc.setFontSize(7);
-                        const descricao = equipamento.descricao || 'Sem descrição';
-                        
-                        // Quebrar descrição em múltiplas linhas se muito longa
-                        const maxCharsPerLine = 20;
-                        const words = descricao.split(' ');
-                        let lines = [];
-                        let currentLine = '';
-                        
-                        words.forEach(word => {
-                            if ((currentLine + word).length <= maxCharsPerLine) {
-                                currentLine += (currentLine ? ' ' : '') + word;
-                            } else {
-                                if (currentLine) lines.push(currentLine);
-                                currentLine = word;
-                            }
-                        });
-                        if (currentLine) lines.push(currentLine);
-                        
-                        // Limitar a 2 linhas
-                        lines = lines.slice(0, 2);
-                        
-                        lines.forEach((line, lineIndex) => {
-                            doc.text(line, xPosition + itemWidth/2, infoY + 5 + (lineIndex * 4), { align: 'center' });
-                        });
-                        
-                        itemCount++;
-                    });
-                    
-                    // Salvar PDF
-                    const fileName = `qr-codes-equipamentos-${new Date().toISOString().split('T')[0]}.pdf`;
-                    doc.save(fileName);
-                    
-                    console.log('✅ PDF gerado com sucesso');
-                    
-                    // Restaurar botão
-                    btnDownload.innerHTML = originalText;
-                    btnDownload.disabled = false;
-                    
-                } catch (error) {
-                    console.error('❌ Erro ao gerar PDF:', error);
-                    alert('Erro ao gerar PDF. Tente novamente.');
-                    
-                    // Restaurar botão
-                    btnDownload.innerHTML = originalText;
-                    btnDownload.disabled = false;
-                }
-                
-            }, 1000); // Pequeno delay para garantir processamento
-            
-        }).catch(error => {
-            console.error('❌ Erro ao gerar QR codes:', error);
-            alert('Erro ao gerar QR codes. Tente novamente.');
-            
-            // Restaurar botão
-            btnDownload.innerHTML = originalText;
-            btnDownload.disabled = false;
-        });
+        // Tentar usar biblioteca QRCode primeiro, depois API como fallback
+        gerarQRCodesParaPDF(equipamentosFiltrados, jsPDF, btnDownload, originalText);
         
     } catch (error) {
         console.error('❌ Erro ao gerar PDF:', error);
         alert('Erro ao gerar PDF. Tente novamente.');
     }
+}
+
+// Função para gerar QR codes com fallback para API
+function gerarQRCodesParaPDF(equipamentos, jsPDF, btnDownload, originalText) {
+    // Verificar se QRCode está disponível
+    if (typeof QRCode !== 'undefined' || typeof window.QRCode !== 'undefined') {
+        console.log('✅ QRCode biblioteca encontrada, usando método local');
+        gerarQRCodesLocal(equipamentos, jsPDF, btnDownload, originalText);
+    } else {
+        console.log('⚠️ QRCode biblioteca não encontrada, tentando carregar...');
+        carregarQRCodeDinamicamente(() => {
+            if (typeof QRCode !== 'undefined' || typeof window.QRCode !== 'undefined') {
+                console.log('✅ QRCode carregado, usando método local');
+                gerarQRCodesLocal(equipamentos, jsPDF, btnDownload, originalText);
+            } else {
+                console.log('⚠️ Biblioteca falhou, usando API online');
+                gerarQRCodesViaAPI(equipamentos, jsPDF, btnDownload, originalText);
+            }
+        });
+    }
+}
+
+// Gerar QR codes usando biblioteca local
+function gerarQRCodesLocal(equipamentos, jsPDF, btnDownload, originalText) {
+    const qrPromises = equipamentos.map(equipamento => {
+        return new Promise((resolve) => {
+            const qrData = {
+                id: equipamento.id,
+                tag: equipamento.tag,
+                descricao: equipamento.descricao,
+                setor_id: equipamento.setor_id,
+                tipo: 'equipamento'
+            };
+            
+            const canvas = document.createElement('canvas');
+            const QRCodeLib = typeof QRCode !== 'undefined' ? QRCode : window.QRCode;
+            
+            QRCodeLib.toCanvas(canvas, JSON.stringify(qrData), {
+                width: 150,
+                margin: 1,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, (error) => {
+                if (error) {
+                    console.error(`Erro ao gerar QR code para ${equipamento.tag}:`, error);
+                } else {
+                    console.log(`✅ QR code local gerado para ${equipamento.tag}`);
+                }
+                resolve(canvas);
+            });
+        });
+    });
+    
+    Promise.all(qrPromises).then((canvases) => {
+        criarPDFComQRCodes(equipamentos, canvases, jsPDF, btnDownload, originalText);
+    }).catch(error => {
+        console.error('❌ Erro ao gerar QR codes locais:', error);
+        // Fallback para API
+        gerarQRCodesViaAPI(equipamentos, jsPDF, btnDownload, originalText);
+    });
+}
+
+// Gerar QR codes usando API online
+function gerarQRCodesViaAPI(equipamentos, jsPDF, btnDownload, originalText) {
+    console.log('🌐 Gerando QR codes via API online...');
+    
+    const qrPromises = equipamentos.map(equipamento => {
+        return new Promise((resolve) => {
+            const qrData = {
+                id: equipamento.id,
+                tag: equipamento.tag,
+                descricao: equipamento.descricao,
+                setor_id: equipamento.setor_id,
+                tipo: 'equipamento'
+            };
+            
+            // Usar API do QR Server para gerar QR code
+            const qrText = encodeURIComponent(JSON.stringify(qrData));
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrText}`;
+            
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            
+            img.onload = function() {
+                // Criar canvas e desenhar a imagem
+                const canvas = document.createElement('canvas');
+                canvas.width = 150;
+                canvas.height = 150;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, 150, 150);
+                
+                console.log(`✅ QR code API gerado para ${equipamento.tag}`);
+                resolve(canvas);
+            };
+            
+            img.onerror = function() {
+                console.error(`❌ Erro ao carregar QR code via API para ${equipamento.tag}`);
+                // Criar canvas vazio como fallback
+                const canvas = document.createElement('canvas');
+                canvas.width = 150;
+                canvas.height = 150;
+                const ctx = canvas.getContext('2d');
+                
+                // Desenhar placeholder
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(0, 0, 150, 150);
+                ctx.strokeStyle = '#ccc';
+                ctx.strokeRect(0, 0, 150, 150);
+                
+                ctx.fillStyle = '#666';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('QR Code', 75, 70);
+                ctx.fillText('Indisponível', 75, 90);
+                
+                resolve(canvas);
+            };
+            
+            img.src = qrUrl;
+        });
+    });
+    
+    Promise.all(qrPromises).then((canvases) => {
+        criarPDFComQRCodes(equipamentos, canvases, jsPDF, btnDownload, originalText);
+    }).catch(error => {
+        console.error('❌ Erro ao gerar QR codes via API:', error);
+        alert('Erro ao gerar QR codes. Verifique sua conexão e tente novamente.');
+        
+        // Restaurar botão
+        btnDownload.innerHTML = originalText;
+        btnDownload.disabled = false;
+    });
+}
+
+// Criar PDF com os QR codes gerados
+function criarPDFComQRCodes(equipamentos, canvases, jsPDF, btnDownload, originalText) {
+    btnDownload.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
+    
+    setTimeout(() => {
+        try {
+            const doc = new jsPDF();
+            
+            // Configurações para layout limpo conforme referência
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 20;
+            const qrSize = 35; // QR code menor
+            const itemWidth = (pageWidth - 3 * margin) / 3; // 3 colunas
+            const itemHeight = 60; // Altura reduzida
+            const itemsPerRow = 3;
+            const itemsPerPage = 9; // 3 linhas x 3 colunas
+            
+            let currentPage = 1;
+            let itemCount = 0;
+            
+            // Título da primeira página
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text('Lista de QR Codes - Equipamentos', pageWidth / 2, 20, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Total: ${equipamentos.length} equipamentos`, pageWidth / 2, 28, { align: 'center' });
+            doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, pageWidth / 2, 34, { align: 'center' });
+            
+            let yPosition = 50;
+            
+            equipamentos.forEach((equipamento, index) => {
+                // Verificar se precisa de nova página
+                if (itemCount > 0 && itemCount % itemsPerPage === 0) {
+                    doc.addPage();
+                    currentPage++;
+                    yPosition = 20;
+                    
+                    // Título da nova página
+                    doc.setFontSize(14);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`Lista de QR Codes - Página ${currentPage}`, pageWidth / 2, 15, { align: 'center' });
+                    yPosition = 30;
+                }
+                
+                // Calcular posição na grade (3 colunas)
+                const col = itemCount % itemsPerRow;
+                const row = Math.floor((itemCount % itemsPerPage) / itemsPerRow);
+                
+                const xPosition = margin + col * (itemWidth + margin/2);
+                const currentY = yPosition + row * itemHeight;
+                
+                // QR code centralizado horizontalmente no item
+                const qrX = xPosition + (itemWidth - qrSize) / 2;
+                const qrY = currentY;
+                
+                // Usar o canvas gerado
+                const canvas = canvases[index];
+                
+                if (canvas && canvas.width > 0) {
+                    try {
+                        // Adicionar QR code ao PDF
+                        const qrDataURL = canvas.toDataURL('image/png');
+                        doc.addImage(qrDataURL, 'PNG', qrX, qrY, qrSize, qrSize);
+                        console.log(`✅ QR Code adicionado ao PDF para equipamento ${equipamento.id}`);
+                    } catch (error) {
+                        console.warn(`⚠️ Erro ao adicionar QR code do equipamento ${equipamento.id}:`, error);
+                        // Adicionar placeholder simples
+                        doc.setDrawColor(200, 200, 200);
+                        doc.rect(qrX, qrY, qrSize, qrSize);
+                        doc.setFontSize(8);
+                        doc.text('QR', qrX + qrSize/2, qrY + qrSize/2, { align: 'center' });
+                    }
+                } else {
+                    console.warn(`⚠️ Canvas inválido para equipamento ${equipamento.id}`);
+                    // Placeholder simples
+                    doc.setDrawColor(200, 200, 200);
+                    doc.rect(qrX, qrY, qrSize, qrSize);
+                    doc.setFontSize(8);
+                    doc.text('QR', qrX + qrSize/2, qrY + qrSize/2, { align: 'center' });
+                }
+                
+                // LAYOUT SIMPLIFICADO - Apenas TAG e DESCRIÇÃO
+                const infoY = qrY + qrSize + 3;
+                
+                // Tag do equipamento (destaque) - centralizada
+                doc.setFont(undefined, 'bold');
+                doc.setFontSize(9);
+                doc.text(equipamento.tag || 'N/A', xPosition + itemWidth/2, infoY, { align: 'center' });
+                
+                // Descrição - centralizada e quebrada em linhas se necessário
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(7);
+                const descricao = equipamento.descricao || 'Sem descrição';
+                
+                // Quebrar descrição em múltiplas linhas se muito longa
+                const maxCharsPerLine = 20;
+                const words = descricao.split(' ');
+                let lines = [];
+                let currentLine = '';
+                
+                words.forEach(word => {
+                    if ((currentLine + word).length <= maxCharsPerLine) {
+                        currentLine += (currentLine ? ' ' : '') + word;
+                    } else {
+                        if (currentLine) lines.push(currentLine);
+                        currentLine = word;
+                    }
+                });
+                if (currentLine) lines.push(currentLine);
+                
+                // Limitar a 2 linhas
+                lines = lines.slice(0, 2);
+                
+                lines.forEach((line, lineIndex) => {
+                    doc.text(line, xPosition + itemWidth/2, infoY + 5 + (lineIndex * 4), { align: 'center' });
+                });
+                
+                itemCount++;
+            });
+            
+            // Salvar PDF
+            const fileName = `qr-codes-equipamentos-${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(fileName);
+            
+            console.log('✅ PDF gerado com sucesso');
+            
+            // Restaurar botão
+            btnDownload.innerHTML = originalText;
+            btnDownload.disabled = false;
+            
+        } catch (error) {
+            console.error('❌ Erro ao gerar PDF:', error);
+            alert('Erro ao gerar PDF. Tente novamente.');
+            
+            // Restaurar botão
+            btnDownload.innerHTML = originalText;
+            btnDownload.disabled = false;
+        }
+        
+    }, 1000); // Pequeno delay para garantir processamento
 }
 
 // Carregar QRCode dinamicamente se não estiver disponível
@@ -596,8 +678,11 @@ function carregarQRCodeDinamicamente(callback) {
         };
         
         scriptFallback.onerror = function() {
-            console.error('❌ Todas as fontes de QRCode falharam');
-            alert('Erro ao carregar biblioteca QRCode. Verifique sua conexão e tente novamente.');
+            console.error('❌ Todas as fontes de QRCode falharam, usando API como fallback');
+            // Chamar callback mesmo com falha para usar API
+            setTimeout(() => {
+                if (callback) callback();
+            }, 500);
         };
         
         document.head.appendChild(scriptFallback);
