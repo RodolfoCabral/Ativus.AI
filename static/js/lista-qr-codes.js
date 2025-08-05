@@ -356,6 +356,17 @@ function baixarPDF() {
             return;
         }
         
+        // Verificar se QRCode está disponível
+        if (typeof QRCode === 'undefined' || typeof window.QRCode === 'undefined') {
+            console.error('❌ QRCode não encontrado, tentando carregar dinamicamente...');
+            carregarQRCodeDinamicamente(() => {
+                baixarPDF(); // Tentar novamente após carregar
+            });
+            return;
+        }
+        
+        console.log('✅ QRCode encontrado, prosseguindo...');
+        
         // Mostrar mensagem de progresso
         const btnDownload = document.querySelector('.btn-download');
         const originalText = btnDownload.innerHTML;
@@ -377,7 +388,10 @@ function baixarPDF() {
                 const canvas = document.createElement('canvas');
                 canvas.setAttribute('data-equipment-id', equipamento.id);
                 
-                QRCode.toCanvas(canvas, JSON.stringify(qrData), {
+                // Usar QRCode global ou window.QRCode
+                const QRCodeLib = typeof QRCode !== 'undefined' ? QRCode : window.QRCode;
+                
+                QRCodeLib.toCanvas(canvas, JSON.stringify(qrData), {
                     width: 150,
                     margin: 1,
                     color: {
@@ -552,6 +566,44 @@ function baixarPDF() {
         console.error('❌ Erro ao gerar PDF:', error);
         alert('Erro ao gerar PDF. Tente novamente.');
     }
+}
+
+// Carregar QRCode dinamicamente se não estiver disponível
+function carregarQRCodeDinamicamente(callback) {
+    console.log('🔄 Carregando QRCode dinamicamente...');
+    
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+    
+    script.onload = function() {
+        console.log('✅ QRCode carregado dinamicamente');
+        setTimeout(() => {
+            if (callback) callback();
+        }, 500);
+    };
+    
+    script.onerror = function() {
+        console.error('❌ Erro ao carregar QRCode dinamicamente');
+        // Tentar fonte alternativa
+        const scriptFallback = document.createElement('script');
+        scriptFallback.src = 'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js';
+        
+        scriptFallback.onload = function() {
+            console.log('✅ QRCode fallback carregado');
+            setTimeout(() => {
+                if (callback) callback();
+            }, 500);
+        };
+        
+        scriptFallback.onerror = function() {
+            console.error('❌ Todas as fontes de QRCode falharam');
+            alert('Erro ao carregar biblioteca QRCode. Verifique sua conexão e tente novamente.');
+        };
+        
+        document.head.appendChild(scriptFallback);
+    };
+    
+    document.head.appendChild(script);
 }
 
 // Carregar jsPDF dinamicamente se não estiver disponível
