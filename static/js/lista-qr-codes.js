@@ -328,12 +328,6 @@ function mostrarQRCodeErro(container) {
 
 // Baixar PDF com todos os QR codes - VERSÃO CORRIGIDA FINAL
 function baixarPDF() {
-    if (typeof QRCode === 'undefined' || typeof QRCode.toCanvas !== 'function') {
-    alert('Biblioteca de QR Code ainda não está carregada. Recarregue a página ou tente novamente em alguns segundos.');
-    console.error('❌ QRCode.toCanvas não está disponível no momento');
-    return;
-    }
-
     try {
         console.log('📄 Iniciando geração de PDF...');
         
