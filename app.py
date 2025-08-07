@@ -164,6 +164,11 @@ def create_app():
     def plano_manutencao():
         return send_from_directory('static', 'plano-manutencao.html')
     
+    @app.route('/plano-mestre')
+    @login_required
+    def plano_mestre():
+        return send_from_directory('static', 'plano-mestre.html')
+    
     @app.route('/abrir-chamado')
     @login_required
     def abrir_chamado():

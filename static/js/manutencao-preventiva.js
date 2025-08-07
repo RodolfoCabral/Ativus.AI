@@ -308,7 +308,7 @@ function abrirDadosTecnicos(equipamentoId) {
 }
 
 function abrirPlanoManutencao(equipamentoId) {
-    console.log(`🔧 Abrindo plano de manutenção do equipamento ${equipamentoId}`);
+    console.log(`🔧 Redirecionando para plano mestre do equipamento ${equipamentoId}`);
     
     const equipamento = equipamentosData.find(eq => eq.id === equipamentoId);
     if (!equipamento) {
@@ -316,51 +316,11 @@ function abrirPlanoManutencao(equipamentoId) {
         return;
     }
     
-    // Criar modal de plano de manutenção
-    const modal = criarModal('Plano de Manutenção', `
-        <div style="padding: 20px;">
-            <h3 style="margin-top: 0; color: #333;">${equipamento.tag}</h3>
-            <p style="color: #666; margin-bottom: 30px;">${equipamento.descricao}</p>
-            
-            <div style="margin-bottom: 25px;">
-                <h4 style="color: #9956a8; margin-bottom: 15px;">Configurar Manutenção Preventiva</h4>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Frequência:</label>
-                    <select style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                        <option>Semanal</option>
-                        <option>Quinzenal</option>
-                        <option>Mensal</option>
-                        <option>Trimestral</option>
-                        <option>Semestral</option>
-                        <option>Anual</option>
-                    </select>
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Próxima manutenção:</label>
-                    <input type="date" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                </div>
-                
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Observações:</label>
-                    <textarea rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical;" placeholder="Instruções específicas para a manutenção..."></textarea>
-                </div>
-                
-                <button onclick="salvarPlanoManutencao(${equipamentoId})" style="
-                    background: #9956a8;
-                    color: white;
-                    border: none;
-                    padding: 12px 24px;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-weight: 600;
-                ">Salvar Plano</button>
-            </div>
-        </div>
-    `);
+    // Salvar dados do equipamento no localStorage para a nova página
+    localStorage.setItem('equipamentoSelecionado', JSON.stringify(equipamento));
     
-    document.body.appendChild(modal);
+    // Redirecionar para a nova página de plano mestre
+    window.location.href = '/plano-mestre';
 }
 
 function abrirTransferencia(equipamentoId) {

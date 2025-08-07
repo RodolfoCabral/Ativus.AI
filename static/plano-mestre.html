@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plano Mestre - SaaS Ativus</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        .plano-container {
+            padding: 20px;
+        }
+        
+        .plano-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e1e5e9;
+        }
+        
+        .equipamento-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .equipamento-tag {
+            background: #9956a8;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .equipamento-desc {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            border-bottom: 2px solid #e1e5e9;
+            margin-bottom: 25px;
+        }
+        
+        .nav-tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-tab.active {
+            color: #9956a8;
+            border-bottom-color: #9956a8;
+            background: rgba(153, 86, 168, 0.05);
+        }
+        
+        .nav-tab:hover {
+            color: #9956a8;
+            background: rgba(153, 86, 168, 0.05);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .plano-mestre-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .btn-adicionar {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-adicionar:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+        
+        .atividades-lista {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .atividades-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e1e5e9;
+            display: grid;
+            grid-template-columns: 50px 1fr 120px 120px 120px 120px 120px 100px 120px;
+            gap: 15px;
+            font-weight: 600;
+            color: #555;
+            font-size: 13px;
+        }
+        
+        .atividade-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e1e5e9;
+            display: grid;
+            grid-template-columns: 50px 1fr 120px 120px 120px 120px 120px 100px 120px;
+            gap: 15px;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+        
+        .atividade-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .atividade-item:last-child {
+            border-bottom: none;
+        }
+        
+        .checkbox-custom {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .status-funcionando {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-parado {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .acoes-btns {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-acao {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-copiar {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-copiar:hover {
+            background: #138496;
+        }
+        
+        .btn-editar {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-editar:hover {
+            background: #e0a800;
+        }
+        
+        .btn-excluir {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-excluir:hover {
+            background: #c82333;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+        
+        .empty-state h3 {
+            margin: 0 0 10px 0;
+            color: #555;
+        }
+        
+        .empty-state p {
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #e1e5e9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-close:hover {
+            background: #f8f9fa;
+            color: #333;
+        }
+        
+        .modal-body {
+            padding: 25px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #9956a8;
+            box-shadow: 0 0 0 2px rgba(153, 86, 168, 0.1);
+        }
+        
+        .form-control select {
+            cursor: pointer;
+        }
+        
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #28a745;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .modal-footer {
+            padding: 20px 25px;
+            border-top: 1px solid #e1e5e9;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .btn-cancelar {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s ease;
+        }
+        
+        .btn-cancelar:hover {
+            background: #5a6268;
+        }
+        
+        .btn-salvar {
+            background: #9956a8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s ease;
+        }
+        
+        .btn-salvar:hover {
+            background: #7d4691;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .atividades-header,
+            .atividade-item {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .atividades-header {
+                display: none;
+            }
+            
+            .atividade-item {
+                display: block;
+                padding: 15px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Menu Lateral -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>SaaS Ativus</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/cadastro-ativos" class="nav-item">
+                    <i class="fas fa-plus-circle"></i>
+                    Cadastro de ativos
+                </a>
+                <a href="/plano-manutencao" class="nav-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    Plano de manutenção
+                </a>
+                <a href="/abrir-chamado" class="nav-item">
+                    <i class="fas fa-ticket-alt"></i>
+                    Abrir chamado
+                </a>
+                <a href="/programacao" class="nav-item">
+                    <i class="fas fa-calendar-check"></i>
+                    Programação
+                </a>
+                <a href="/materiais" class="nav-item">
+                    <i class="fas fa-boxes"></i>
+                    Materiais
+                </a>
+                <a href="/dashboard" class="nav-item">
+                    <i class="fas fa-chart-line"></i>
+                    Dashboard
+                </a>
+                <a href="/relatorios" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                    Relatórios
+                </a>
+                <a href="/kpis" class="nav-item">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Monitoramento
+                </a>
+                <a href="/parametros" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    Parâmetros
+                </a>
+                <a href="/scanner-qr" class="nav-item">
+                    <i class="fas fa-qrcode"></i>
+                    Scanner QR
+                </a>
+            </nav>
+        </div>
+
+        <!-- Conteúdo Principal -->
+        <div class="main-content">
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="breadcrumb">
+                        <a href="/plano-manutencao" style="color: #666; text-decoration: none;">
+                            <i class="fas fa-calendar-alt"></i> Plano de Manutenção
+                        </a>
+                        <span style="margin: 0 8px; color: #ccc;">/</span>
+                        <span style="color: #9956a8; font-weight: 600;">Plano Mestre</span>
+                    </div>
+                </div>
+                
+                <div class="top-bar-right">
+                    <div class="user-menu">
+                        <div class="user-info">
+                            <span class="user-name" id="user-name">Carregando...</span>
+                            <span class="user-company" id="user-company">Carregando...</span>
+                        </div>
+                        <div class="user-avatar" id="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-dropdown" id="user-dropdown">
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-user-circle"></i>
+                                Minha Conta
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-key"></i>
+                                Redefinir Senha
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-question-circle"></i>
+                                Suporte
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item" id="logout-btn">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Sair
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="content">
+                <div class="plano-container">
+                    <!-- Header com informações do equipamento -->
+                    <div class="plano-header">
+                        <div class="equipamento-info">
+                            <div class="equipamento-tag" id="equipamento-tag">F01-EXT-EB01</div>
+                            <div class="equipamento-desc" id="equipamento-desc">ESTEIRA DE BORRACHA</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Nav Tabs -->
+                    <div class="nav-tabs">
+                        <button class="nav-tab active" data-tab="plano-mestre">
+                            <i class="fas fa-list-check"></i>
+                            Plano Mestre
+                        </button>
+                        <button class="nav-tab" data-tab="procedimentos">
+                            <i class="fas fa-file-alt"></i>
+                            Procedimentos de manutenção preventiva
+                        </button>
+                    </div>
+                    
+                    <!-- Tab Content: Plano Mestre -->
+                    <div class="tab-content active" id="plano-mestre">
+                        <div class="plano-mestre-header">
+                            <h3>Lista de Atividades</h3>
+                            <button class="btn-adicionar" onclick="abrirModalAtividade()">
+                                <i class="fas fa-plus"></i>
+                                Adicionar Atividade
+                            </button>
+                        </div>
+                        
+                        <div class="atividades-lista">
+                            <div class="atividades-header">
+                                <div>Conjunto</div>
+                                <div>Descrição</div>
+                                <div>Oficina</div>
+                                <div>Frequência/Ponto de Controle</div>
+                                <div>Tipo de Manutenção</div>
+                                <div>Condição do Ativo</div>
+                                <div>Val. Ponto Controle</div>
+                                <div>Condição</div>
+                                <div>Ações</div>
+                            </div>
+                            
+                            <div id="atividades-container">
+                                <!-- Empty state inicial -->
+                                <div class="empty-state">
+                                    <i class="fas fa-clipboard-list"></i>
+                                    <h3>Nenhuma atividade cadastrada</h3>
+                                    <p>Clique em "Adicionar Atividade" para começar a criar seu plano mestre</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tab Content: Procedimentos -->
+                    <div class="tab-content" id="procedimentos">
+                        <div class="empty-state">
+                            <i class="fas fa-file-alt"></i>
+                            <h3>Procedimentos de manutenção preventiva</h3>
+                            <p>Esta seção será implementada em breve</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Item Plano Mestre -->
+    <div class="modal" id="modalAtividade">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Item Plano Mestre</h2>
+                <button class="btn-close" onclick="fecharModalAtividade()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formAtividade">
+                    <div class="form-group full-width">
+                        <label class="form-label">Descrição</label>
+                        <textarea class="form-control" id="descricao" rows="3" placeholder="Descreva a atividade de manutenção"></textarea>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Oficina</label>
+                            <select class="form-control" id="oficina">
+                                <option value="">Selecione...</option>
+                                <option value="eletrica">Elétrica</option>
+                                <option value="mecanica">Mecânica</option>
+                                <option value="instrumentacao">Instrumentação</option>
+                                <option value="civil">Civil</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Tipo de Manutenção</label>
+                            <select class="form-control" id="tipoManutencao">
+                                <option value="">Selecione...</option>
+                                <option value="preventiva-periodica">Preventiva Periódica</option>
+                                <option value="preventiva-preditiva">Preventiva Preditiva</option>
+                                <option value="corretiva">Corretiva</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Frequência</label>
+                            <select class="form-control" id="frequencia">
+                                <option value="">Selecione...</option>
+                                <option value="diario">Diário</option>
+                                <option value="semanal">Semanal</option>
+                                <option value="quinzenal">Quinzenal</option>
+                                <option value="mensal">Mensal</option>
+                                <option value="bimestral">Bimestral</option>
+                                <option value="trimestral">Trimestral</option>
+                                <option value="semestral">Semestral</option>
+                                <option value="anual">Anual</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Conjunto</label>
+                            <select class="form-control" id="conjunto">
+                                <option value="">Selecione...</option>
+                                <option value="conjunto-motoredutor">CONJUNTO MOTOREDUTOR</option>
+                                <option value="sistema-eletrico">SISTEMA ELÉTRICO</option>
+                                <option value="sistema-mecanico">SISTEMA MECÂNICO</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Ponto Controle</label>
+                            <select class="form-control" id="pontoControle">
+                                <option value="">Selecione...</option>
+                                <option value="visual">Visual</option>
+                                <option value="auditivo">Auditivo</option>
+                                <option value="medicao">Medição</option>
+                                <option value="teste">Teste</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Valor Frequência</label>
+                            <input type="number" class="form-control" id="valorFrequencia" placeholder="Ex: 30">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Condição</label>
+                            <select class="form-control" id="condicao">
+                                <option value="">Selecione...</option>
+                                <option value="funcionando">Funcionando</option>
+                                <option value="parado">Parado</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="toggle-switch">
+                        <span>Parado</span>
+                        <label class="switch">
+                            <input type="checkbox" id="statusAtivo" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <span>Funcionando</span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancelar" onclick="fecharModalAtividade()">
+                    <i class="fas fa-times"></i>
+                    CANCELAR
+                </button>
+                <button class="btn-salvar" onclick="salvarAtividade()">
+                    <i class="fas fa-save"></i>
+                    SALVAR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/user_info.js"></script>
+    <script src="/static/js/plano-mestre.js"></script>
+</body>
+</html>
+
