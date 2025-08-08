@@ -99,6 +99,18 @@ def create_app():
         print(f"Erro ao registrar blueprint de execução de OS: {e}")
         print("Sistema funcionará sem funcionalidades de execução de OS.")
     
+    # Importar e registrar blueprint de plano mestre
+    try:
+        from routes.plano_mestre import plano_mestre_bp
+        app.register_blueprint(plano_mestre_bp)
+        print("Blueprint de plano mestre registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar plano_mestre_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de plano mestre.")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de plano mestre: {e}")
+        print("Sistema funcionará sem funcionalidades de plano mestre.")
+    
     # Rotas para arquivos estáticos
     @app.route('/')
     def index():
