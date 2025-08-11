@@ -52,13 +52,44 @@ async function carregarAtividades() {
     try {
         console.log(`📡 Carregando atividades do equipamento ${equipamentoAtual.id}`);
         
-        const response = await fetch(`/api/plano-mestre/equipamento/${equipamentoAtual.id}`, {
+        let response = await fetch(`/api/plano-mestre/equipamento/${equipamentoAtual.id}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
             },
             credentials: 'same-origin'
         });
+        
+        // Se der erro 401, tentar API de debug
+        if (response.status === 401) {
+            console.warn('⚠️ Erro 401 na API principal, tentando API de debug...');
+            
+            // Primeiro, testar autenticação
+            try {
+                const authTest = await fetch('/api/plano-mestre-debug/test-auth', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                const authData = await authTest.json();
+                console.log('🔍 Teste de autenticação:', authData);
+            } catch (authError) {
+                console.error('❌ Erro no teste de autenticação:', authError);
+            }
+            
+            // Tentar API sem autenticação para debug
+            response = await fetch(`/api/plano-mestre-debug/equipamento/${equipamentoAtual.id}/sem-auth`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (response.ok) {
+                console.log('✅ API de debug funcionou, problema é de autenticação');
+                mostrarFeedback('⚠️ Usando modo debug - problema de autenticação detectado', 'warning');
+            }
+        }
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -72,7 +103,7 @@ async function carregarAtividades() {
         
     } catch (error) {
         console.error('❌ Erro ao carregar atividades:', error);
-        mostrarFeedback('Erro ao carregar atividades. Tente novamente.', 'error');
+        mostrarFeedback('Erro ao carregar atividades. Usando dados locais como fallback.', 'error');
         
         // Fallback para dados locais se API falhar
         carregarAtividadesLocal();

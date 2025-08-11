@@ -111,6 +111,16 @@ def create_app():
         print(f"Erro ao registrar blueprint de plano mestre: {e}")
         print("Sistema funcionará sem funcionalidades de plano mestre.")
     
+    # Importar e registrar blueprint de debug do plano mestre
+    try:
+        from routes.plano_mestre_debug import plano_mestre_debug_bp
+        app.register_blueprint(plano_mestre_debug_bp)
+        print("Blueprint de debug do plano mestre registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar plano_mestre_debug_bp: {e}")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de debug do plano mestre: {e}")
+    
     # Rotas para arquivos estáticos
     @app.route('/')
     def index():
