@@ -1,2 +1,2 @@
-# Pacote routes
+# __init__.py para routes
 
