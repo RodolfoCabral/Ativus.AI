@@ -11,47 +11,17 @@ logger = logging.getLogger(__name__)
 
 plano_mestre_bp = Blueprint('plano_mestre', __name__, url_prefix='/api/plano-mestre')
 
-def login_required_api(f):
-    """Decorator para verificar se o usuário está logado - compatível com Flask-Login"""
+def login_required(f):
+    """Decorator para verificar se o usuário está logado"""
     def decorated_function(*args, **kwargs):
-        # Verificar múltiplas formas de autenticação
-        user_authenticated = False
-        user_id = None
-        
-        # Método 1: Session tradicional
-        if 'user_id' in session:
-            user_authenticated = True
-            user_id = session['user_id']
-        
-        # Método 2: Flask-Login current_user
-        try:
-            from flask_login import current_user
-            if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
-                user_authenticated = True
-                user_id = current_user.id
-        except ImportError:
-            pass
-        
-        # Método 3: Verificar se há dados de usuário na session
-        if 'logged_in' in session and session.get('logged_in'):
-            user_authenticated = True
-            user_id = session.get('user_id', 1)  # Fallback para ID 1
-        
-        if not user_authenticated:
-            logger.warning(f"Acesso negado para {f.__name__}: usuário não autenticado")
-            logger.warning(f"Session keys: {list(session.keys())}")
-            return jsonify({'error': 'Login necessário', 'redirect': '/login'}), 401
-        
-        # Garantir que user_id está disponível na session para as funções
-        if user_id and 'user_id' not in session:
-            session['user_id'] = user_id
-            
+        if 'user_id' not in session:
+            return jsonify({'error': 'Login necessário'}), 401
         return f(*args, **kwargs)
     decorated_function.__name__ = f.__name__
     return decorated_function
 
 @plano_mestre_bp.route('/equipamento/<int:equipamento_id>', methods=['GET'])
-@login_required_api_api
+@login_required
 def obter_plano_mestre(equipamento_id):
     """Obter plano mestre de um equipamento específico"""
     try:
@@ -88,7 +58,7 @@ def obter_plano_mestre(equipamento_id):
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @plano_mestre_bp.route('/equipamento/<int:equipamento_id>/atividades', methods=['POST'])
-@login_required_api
+@login_required
 def criar_atividade(equipamento_id):
     """Criar nova atividade no plano mestre"""
     try:
@@ -144,7 +114,7 @@ def criar_atividade(equipamento_id):
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @plano_mestre_bp.route('/atividade/<int:atividade_id>', methods=['PUT'])
-@login_required_api
+@login_required
 def atualizar_atividade(atividade_id):
     """Atualizar atividade existente"""
     try:
@@ -180,7 +150,7 @@ def atualizar_atividade(atividade_id):
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @plano_mestre_bp.route('/atividade/<int:atividade_id>', methods=['DELETE'])
-@login_required_api
+@login_required
 def excluir_atividade(atividade_id):
     """Excluir atividade"""
     try:
@@ -200,7 +170,7 @@ def excluir_atividade(atividade_id):
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @plano_mestre_bp.route('/atividade/<int:atividade_id>/copiar', methods=['POST'])
-@login_required_api
+@login_required
 def copiar_atividade(atividade_id):
     """Copiar atividade existente"""
     try:
@@ -241,7 +211,7 @@ def copiar_atividade(atividade_id):
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @plano_mestre_bp.route('/atividade/<int:atividade_id>/toggle', methods=['POST'])
-@login_required_api
+@login_required
 def toggle_atividade(atividade_id):
     """Marcar/desmarcar atividade como concluída"""
     try:
@@ -276,7 +246,7 @@ def toggle_atividade(atividade_id):
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @plano_mestre_bp.route('/equipamento/<int:equipamento_id>/historico', methods=['GET'])
-@login_required_api
+@login_required
 def obter_historico(equipamento_id):
     """Obter histórico de execuções do plano mestre"""
     try:
@@ -299,7 +269,7 @@ def obter_historico(equipamento_id):
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @plano_mestre_bp.route('/equipamento/<int:equipamento_id>/estatisticas', methods=['GET'])
-@login_required_api
+@login_required
 def obter_estatisticas(equipamento_id):
     """Obter estatísticas do plano mestre"""
     try:
