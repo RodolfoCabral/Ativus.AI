@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     carregarAtividades();
     
     // Sidebar toggle
-    const sidebarToggle = document.querySelector('.sidebar-toggle');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
     const sidebar = document.querySelector('.sidebar');
     
     if (sidebarToggle) {
@@ -521,60 +521,5 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Dados de exemplo para demonstração (remover em produção)
-function adicionarDadosExemplo() {
-    if (atividades.length === 0) {
-        const exemplos = [
-            {
-                id: 1,
-                descricao: 'Teste de isolamento elétrico',
-                oficina: 'eletrica',
-                tipoManutencao: 'preventiva-periodica',
-                frequencia: 'trimestral',
-                conjunto: 'conjunto-motoredutor',
-                pontoControle: 'medicao',
-                valorFrequencia: '90',
-                condicao: 'funcionando',
-                status: 'funcionando',
-                dataCriacao: new Date().toISOString()
-            },
-            {
-                id: 2,
-                descricao: 'teste geração',
-                oficina: 'mecanica',
-                tipoManutencao: 'preventiva-periodica',
-                frequencia: 'mensal',
-                conjunto: '',
-                pontoControle: 'visual',
-                valorFrequencia: '30',
-                condicao: 'funcionando',
-                status: 'funcionando',
-                dataCriacao: new Date().toISOString()
-            },
-            {
-                id: 3,
-                descricao: 'Teste valor',
-                oficina: 'mecanica',
-                tipoManutencao: 'preventiva-periodica',
-                frequencia: 'mensal',
-                conjunto: '',
-                pontoControle: 'visual',
-                valorFrequencia: '30',
-                condicao: 'parado',
-                status: 'parado',
-                dataCriacao: new Date().toISOString()
-            }
-        ];
-        
-        atividades = exemplos;
-        localStorage.setItem('planoMestreAtividades', JSON.stringify(atividades));
-        renderizarAtividades();
-        console.log('📋 Dados de exemplo adicionados');
-    }
-}
-
-// Adicionar dados de exemplo na primeira carga (para demonstração)
-setTimeout(() => {
-    adicionarDadosExemplo();
-}, 1000);
+// Sistema agora usa apenas dados do banco de dados - sem dados de exemplo
 
