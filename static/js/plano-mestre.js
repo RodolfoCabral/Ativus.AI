@@ -1,4 +1,4 @@
-// Plano Mestre - JavaScript com APIs
+// Plano Mestre - JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔧 Plano Mestre carregado');
     
@@ -18,268 +18,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Variáveis globais
-let equipamentoAtual = null;
-let atividades = [];
-let atividadeEditando = null;
-
 // Carregar dados do equipamento selecionado
 function carregarDadosEquipamento() {
     const equipamentoSelecionado = localStorage.getItem('equipamentoSelecionado');
     
     if (equipamentoSelecionado) {
-        equipamentoAtual = JSON.parse(equipamentoSelecionado);
+        const equipamento = JSON.parse(equipamentoSelecionado);
         
         // Atualizar informações do equipamento no header
-        document.getElementById('equipamento-tag').textContent = equipamentoAtual.tag || 'TAG-001';
-        document.getElementById('equipamento-desc').textContent = equipamentoAtual.descricao || 'Equipamento';
+        document.getElementById('equipamento-tag').textContent = equipamento.tag || 'TAG-001';
+        document.getElementById('equipamento-desc').textContent = equipamento.descricao || 'Equipamento';
         
-        console.log('📋 Dados do equipamento carregados:', equipamentoAtual);
+        console.log('📋 Dados do equipamento carregados:', equipamento);
     } else {
         // Dados padrão se não houver equipamento selecionado
         console.log('⚠️ Nenhum equipamento selecionado, usando dados padrão');
-        equipamentoAtual = { id: 1, tag: 'F01-EXT-EB01', descricao: 'ESTEIRA DE BORRACHA' };
     }
 }
 
-// Carregar atividades do equipamento via API
-async function carregarAtividades() {
-    if (!equipamentoAtual) {
-        console.error('❌ Nenhum equipamento selecionado');
-        return;
-    }
-    
-    try {
-        console.log(`📡 Carregando atividades do equipamento ${equipamentoAtual.id}`);
-        
-        const response = await fetch(`/api/plano-mestre/equipamento/${equipamentoAtual.id}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'same-origin'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        atividades = data.atividades || [];
-        
-        console.log(`✅ ${atividades.length} atividades carregadas`);
-        renderizarAtividades();
-        
-    } catch (error) {
-        console.error('❌ Erro ao carregar atividades:', error);
-        mostrarFeedback('Erro ao carregar atividades. Tente novamente.', 'error');
-        
-        // Fallback para dados locais se API falhar
-        carregarAtividadesLocal();
-    }
-}
-
-// Fallback para dados locais (compatibilidade)
-function carregarAtividadesLocal() {
-    const chaveLocal = `planoMestreAtividades_${equipamentoAtual.id}`;
-    const atividadesSalvas = localStorage.getItem(chaveLocal);
-    
-    if (atividadesSalvas) {
-        atividades = JSON.parse(atividadesSalvas);
-        console.log('📋 Atividades carregadas do localStorage:', atividades.length);
-    } else {
-        atividades = [];
-    }
-    
-    renderizarAtividades();
-}
-
-// Salvar atividade via API
-async function salvarAtividade() {
-    const form = document.getElementById('formAtividade');
-    
-    // Validar campos obrigatórios
-    const descricao = document.getElementById('descricao').value.trim();
-    if (!descricao) {
-        alert('Por favor, preencha a descrição da atividade.');
-        return;
-    }
-    
-    // Coletar dados do formulário
-    const dadosAtividade = {
-        descricao: descricao,
-        oficina: document.getElementById('oficina').value,
-        tipo_manutencao: document.getElementById('tipoManutencao').value,
-        frequencia: document.getElementById('frequencia').value,
-        conjunto: document.getElementById('conjunto').value,
-        ponto_controle: document.getElementById('pontoControle').value,
-        valor_frequencia: parseInt(document.getElementById('valorFrequencia').value) || null,
-        condicao: document.getElementById('condicao').value,
-        status_ativo: document.getElementById('statusAtivo').checked
-    };
-    
-    try {
-        let response;
-        
-        if (atividadeEditando) {
-            // Atualizar atividade existente
-            console.log('📝 Atualizando atividade:', atividadeEditando.id);
-            response = await fetch(`/api/plano-mestre/atividade/${atividadeEditando.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify(dadosAtividade)
-            });
-        } else {
-            // Criar nova atividade
-            console.log('➕ Criando nova atividade para equipamento:', equipamentoAtual.id);
-            response = await fetch(`/api/plano-mestre/equipamento/${equipamentoAtual.id}/atividades`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify(dadosAtividade)
-            });
-        }
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Erro na requisição');
-        }
-        
-        const atividadeSalva = await response.json();
-        console.log('✅ Atividade salva:', atividadeSalva);
-        
-        // Recarregar atividades
-        await carregarAtividades();
-        
-        // Fechar modal
-        fecharModalAtividade();
-        
-        // Mostrar feedback
-        mostrarFeedback(atividadeEditando ? 'Atividade atualizada com sucesso!' : 'Atividade adicionada com sucesso!');
-        
-    } catch (error) {
-        console.error('❌ Erro ao salvar atividade:', error);
-        mostrarFeedback(`Erro ao salvar atividade: ${error.message}`, 'error');
-    }
-}
-
-// Copiar atividade via API
-async function copiarAtividade(id) {
-    try {
-        console.log('📋 Copiando atividade:', id);
-        
-        const response = await fetch(`/api/plano-mestre/atividade/${id}/copiar`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'same-origin'
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Erro na requisição');
-        }
-        
-        const atividadeCopiada = await response.json();
-        console.log('✅ Atividade copiada:', atividadeCopiada);
-        
-        // Recarregar atividades
-        await carregarAtividades();
-        
-        mostrarFeedback('Atividade copiada com sucesso!');
-        
-    } catch (error) {
-        console.error('❌ Erro ao copiar atividade:', error);
-        mostrarFeedback(`Erro ao copiar atividade: ${error.message}`, 'error');
-    }
-}
-
-// Editar atividade
-function editarAtividade(id) {
-    const atividade = atividades.find(a => a.id === id);
-    if (atividade) {
-        abrirModalAtividade(atividade);
-        console.log('✏️ Editando atividade:', atividade);
-    }
-}
-
-// Excluir atividade via API
-async function excluirAtividade(id) {
-    const atividade = atividades.find(a => a.id === id);
-    if (atividade && confirm(`Tem certeza que deseja excluir a atividade "${atividade.descricao}"?`)) {
-        try {
-            console.log('🗑️ Excluindo atividade:', id);
-            
-            const response = await fetch(`/api/plano-mestre/atividade/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'same-origin'
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Erro na requisição');
-            }
-            
-            console.log('✅ Atividade excluída com sucesso');
-            
-            // Recarregar atividades
-            await carregarAtividades();
-            
-            mostrarFeedback('Atividade excluída com sucesso!');
-            
-        } catch (error) {
-            console.error('❌ Erro ao excluir atividade:', error);
-            mostrarFeedback(`Erro ao excluir atividade: ${error.message}`, 'error');
-        }
-    }
-}
-
-// Toggle status da atividade via API
-async function toggleAtividade(id) {
-    const atividade = atividades.find(a => a.id === id);
-    if (!atividade) return;
-    
-    try {
-        console.log('🔄 Toggle atividade:', id);
-        
-        const novoStatus = !atividade.concluida;
-        
-        const response = await fetch(`/api/plano-mestre/atividade/${id}/toggle`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify({
-                concluida: novoStatus,
-                observacoes: novoStatus ? 'Marcada como concluída via interface' : null
-            })
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Erro na requisição');
-        }
-        
-        console.log('✅ Toggle realizado com sucesso');
-        
-        // Recarregar atividades
-        await carregarAtividades();
-        
-    } catch (error) {
-        console.error('❌ Erro ao fazer toggle da atividade:', error);
-        mostrarFeedback(`Erro ao atualizar status: ${error.message}`, 'error');
-    }
-}
+// Array para armazenar atividades
+let atividades = [];
+let atividadeEditando = null;
 
 // Inicializar sistema de tabs
 function inicializarTabs() {
@@ -402,6 +161,16 @@ function salvarAtividade() {
     mostrarFeedback(atividadeEditando ? 'Atividade atualizada com sucesso!' : 'Atividade adicionada com sucesso!');
 }
 
+// Carregar atividades do localStorage
+function carregarAtividades() {
+    const atividadesSalvas = localStorage.getItem('planoMestreAtividades');
+    if (atividadesSalvas) {
+        atividades = JSON.parse(atividadesSalvas);
+        console.log('📋 Atividades carregadas:', atividades.length);
+    }
+    renderizarAtividades();
+}
+
 // Renderizar lista de atividades
 function renderizarAtividades() {
     const container = document.getElementById('atividades-container');
@@ -419,23 +188,22 @@ function renderizarAtividades() {
     
     let html = '';
     atividades.forEach((atividade, index) => {
-        const statusClass = atividade.condicao === 'funcionando' ? 'status-funcionando' : 'status-parado';
-        const statusText = atividade.condicao === 'funcionando' ? 'Funcionando' : 'Parado';
-        const isChecked = atividade.concluida ? 'checked' : '';
+        const statusClass = atividade.status === 'funcionando' ? 'status-funcionando' : 'status-parado';
+        const statusText = atividade.status === 'funcionando' ? 'Funcionando' : 'Parado';
         
         html += `
-            <div class="atividade-item ${atividade.concluida ? 'concluida' : ''}">
+            <div class="atividade-item">
                 <div>
-                    <input type="checkbox" class="checkbox-custom" ${isChecked} onchange="toggleAtividade(${atividade.id})">
+                    <input type="checkbox" class="checkbox-custom" onchange="toggleAtividade(${atividade.id})">
                 </div>
                 <div>${atividade.descricao}</div>
                 <div>${formatarTexto(atividade.oficina)}</div>
-                <div>${formatarFrequencia(atividade.frequencia, atividade.ponto_controle)}</div>
-                <div>${formatarTexto(atividade.tipo_manutencao)}</div>
+                <div>${formatarFrequencia(atividade.frequencia, atividade.pontoControle)}</div>
+                <div>${formatarTexto(atividade.tipoManutencao)}</div>
                 <div>
                     <span class="status-badge ${statusClass}">${statusText}</span>
                 </div>
-                <div>${atividade.valor_frequencia || '-'}</div>
+                <div>${atividade.valorFrequencia || '-'}</div>
                 <div>${formatarTexto(atividade.condicao)}</div>
                 <div class="acoes-btns">
                     <button class="btn-acao btn-copiar" onclick="copiarAtividade(${atividade.id})" title="Copiar">
