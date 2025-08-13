@@ -1,5 +1,6 @@
 # Rotas para Plano Mestre - Versão Debug
 from flask import Blueprint, request, jsonify, session
+from flask_login import login_required, current_user
 from models import db
 from models.plano_mestre import PlanoMestre, AtividadePlanoMestre, HistoricoExecucaoPlano
 from datetime import datetime
@@ -26,6 +27,18 @@ def test_auth():
         }
         
         logger.info(f"Session info: {session_info}")
+        
+        # Verificar Flask-Login
+        try:
+            user_info = {
+                'is_authenticated': current_user.is_authenticated,
+                'user_id': current_user.id if current_user.is_authenticated else None,
+                'user_email': current_user.email if current_user.is_authenticated else None
+            }
+            logger.info(f"Flask-Login info: {user_info}")
+        except Exception as e:
+            user_info = {'error': str(e)}
+            logger.error(f"Erro ao verificar Flask-Login: {e}")
         
         # Verificar Flask-Login
         flask_login_info = {}

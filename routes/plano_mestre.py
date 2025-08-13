@@ -1,5 +1,6 @@
 # Rotas para Plano Mestre
 from flask import Blueprint, request, jsonify, session
+from flask_login import login_required, current_user
 from models import db
 from models.plano_mestre import PlanoMestre, AtividadePlanoMestre, HistoricoExecucaoPlano
 from datetime import datetime
@@ -10,15 +11,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 plano_mestre_bp = Blueprint('plano_mestre', __name__, url_prefix='/api/plano-mestre')
-
-def login_required(f):
-    """Decorator para verificar se o usuário está logado"""
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return jsonify({'error': 'Login necessário'}), 401
-        return f(*args, **kwargs)
-    decorated_function.__name__ = f.__name__
-    return decorated_function
 
 @plano_mestre_bp.route('/equipamento/<int:equipamento_id>', methods=['GET'])
 @login_required
@@ -35,7 +27,7 @@ def obter_plano_mestre(equipamento_id):
                 equipamento_id=equipamento_id,
                 nome=f"Plano Mestre - Equipamento {equipamento_id}",
                 descricao="Plano mestre criado automaticamente",
-                criado_por=session['user_id']
+                criado_por=current_user.id
             )
             db.session.add(plano)
             db.session.commit()
@@ -76,7 +68,7 @@ def criar_atividade(equipamento_id):
                 equipamento_id=equipamento_id,
                 nome=f"Plano Mestre - Equipamento {equipamento_id}",
                 descricao="Plano mestre criado automaticamente",
-                criado_por=session['user_id']
+                criado_por=current_user.id
             )
             db.session.add(plano)
             db.session.flush()  # Para obter o ID
@@ -98,7 +90,7 @@ def criar_atividade(equipamento_id):
             valor_frequencia=data.get('valor_frequencia'),
             condicao=data.get('condicao'),
             status_ativo=data.get('status_ativo', True),
-            criado_por=session['user_id'],
+            criado_por=current_user.id,
             ordem=ultima_ordem + 1
         )
         
@@ -195,7 +187,7 @@ def copiar_atividade(atividade_id):
             valor_frequencia=atividade_original.valor_frequencia,
             condicao=atividade_original.condicao,
             status_ativo=atividade_original.status_ativo,
-            criado_por=session['user_id'],
+            criado_por=current_user.id,
             ordem=ultima_ordem + 1
         )
         
@@ -227,7 +219,7 @@ def toggle_atividade(atividade_id):
             historico = HistoricoExecucaoPlano(
                 plano_mestre_id=atividade.plano_mestre_id,
                 atividade_id=atividade.id,
-                executado_por=session['user_id'],
+                executado_por=current_user.id,
                 status_execucao='concluida',
                 observacoes=data.get('observacoes')
             )
