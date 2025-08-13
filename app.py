@@ -8,37 +8,46 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from dotenv import load_dotenv
 import ssl
+import logging
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+# Carregar variáveis de ambiente
+load_dotenv()
 
 def create_app():
     app = Flask(__name__, static_folder='static')
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev_key_for_testing')
     
-    # Configuração do banco de dados PostgreSQL
-    # Priorizar a variável HEROKU_POSTGRESQL_NAVY_URL fornecida pelo usuário
-    database_url = os.environ.get('HEROKU_POSTGRESQL_NAVY_URL')
+    # Configuração usando config.py
+    try:
+        from config import config
+        config_name = os.environ.get('FLASK_CONFIG', 'production')
+        app.config.from_object(config[config_name])
+        logger.info(f"Configuração carregada: {config_name}")
+    except ImportError:
+        # Fallback para configuração manual se config.py não existir
+        app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev_key_for_testing')
+        
+        # Configuração do banco de dados PostgreSQL
+        database_url = os.environ.get('HEROKU_POSTGRESQL_NAVY_URL')
+        if not database_url:
+            database_url = os.environ.get('DATABASE_URL')
+        if not database_url:
+            database_url = 'postgresql://postgres:postgres@localhost:5432/ativus'
+        
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        logger.info("Configuração manual aplicada")
     
-    # Fallback para DATABASE_URL se HEROKU_POSTGRESQL_NAVY_URL não estiver disponível
-    if not database_url:
-        database_url = os.environ.get('DATABASE_URL')
-    
-    # Valor padrão para desenvolvimento local
-    if not database_url:
-        database_url = 'postgresql://postgres:postgres@localhost:5432/ativus'
-    
-    # Corrigir prefixo da URL se necessário (Heroku usa postgres://, SQLAlchemy requer postgresql://)
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    
-    # Usar sempre PostgreSQL, sem fallback para SQLite
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    print(f"Conectando ao banco de dados: {database_url}")
-    
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    logger.info(f"Conectando ao banco de dados: {app.config['SQLALCHEMY_DATABASE_URI']}")
     
     # Inicialização do banco de dados
     db.init_app(app)
@@ -98,6 +107,28 @@ def create_app():
     except Exception as e:
         print(f"Erro ao registrar blueprint de execução de OS: {e}")
         print("Sistema funcionará sem funcionalidades de execução de OS.")
+    
+    # Importar e registrar blueprint de plano mestre
+    try:
+        from routes.plano_mestre import plano_mestre_bp
+        app.register_blueprint(plano_mestre_bp)
+        print("Blueprint de plano mestre registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar plano_mestre_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de plano mestre.")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de plano mestre: {e}")
+        print("Sistema funcionará sem funcionalidades de plano mestre.")
+    
+    # Importar e registrar blueprint de debug do plano mestre
+    try:
+        from routes.plano_mestre_debug import plano_mestre_debug_bp
+        app.register_blueprint(plano_mestre_debug_bp)
+        print("Blueprint de debug do plano mestre registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar plano_mestre_debug_bp: {e}")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de debug do plano mestre: {e}")
     
     # Rotas para arquivos estáticos
     @app.route('/')
@@ -491,7 +522,7 @@ def send_signup_email(data):
     SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
     
     if not SENDGRID_API_KEY:
-        print("API Key do SendGrid não encontrada. Verifique seu .env.txt.")
+        logger.error("API Key do SendGrid não encontrada. Verifique as variáveis de ambiente.")
         raise Exception("API Key do SendGrid ausente")
     
     html_content = f"""
@@ -522,8 +553,8 @@ def send_signup_email(data):
         ssl._create_default_https_context = ssl._create_unverified_context
         sg = SendGridAPIClient(SENDGRID_API_KEY)
         response = sg.send(message)
-        print(f"Email enviado com sucesso. Status: {response.status_code}")
+        logger.info(f"Email enviado com sucesso. Status: {response.status_code}")
     except Exception as e:
-        print(f"Erro ao enviar email com SendGrid: {e}")
+        logger.error(f"Erro ao enviar email com SendGrid: {e}")
         raise
 
