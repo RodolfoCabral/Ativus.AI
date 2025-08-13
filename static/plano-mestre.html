@@ -177,6 +177,16 @@
             color: #9956a8;
         }
         
+        .section-header {
+            padding: 20px 0 10px 0;
+            margin-bottom: 20px;
+        }
+        
+        .section-header .breadcrumb {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
         .checkbox-custom {
             width: 18px;
             height: 18px;
@@ -595,38 +605,36 @@
 
         <!-- Conteúdo Principal -->
         <div class="main-content">
-            <!-- Área Superior -->
             <header class="top-bar">
-                <button id="sidebar-toggle" class="sidebar-toggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-                
-                <div class="breadcrumb">
-                    <a href="/plano-manutencao" style="color: #666; text-decoration: none;">
-                        <i class="fas fa-tools"></i> Plano de Manutenção
-                    </a>
-                    <span style="margin: 0 8px; color: #ccc;">/</span>
-                    <span style="color: #9956a8; font-weight: 600;">Plano Mestre</span>
+                <div class="top-bar-left">
+                    <button class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
                 </div>
                 
-                <div class="user-info">
-                    <span id="user-name">Carregando...</span>
-                    <span id="user-company">Carregando...</span>
-                    <div class="user-dropdown">
-                        <button class="user-dropdown-btn">
-                            <i class="fas fa-user-circle"></i>
-                        </button>
-                        <div class="user-dropdown-menu">
-                            <a href="#"><i class="fas fa-user-circle"></i> Minha Conta</a>
-                            <a href="#"><i class="fas fa-key"></i> Redefinir Senha</a>
-                            <a href="#"><i class="fas fa-question-circle"></i> Suporte</a>
-                            <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</a>
-                        </div>
+                <div class="top-bar-right">
+                    <div class="user-info">
+                        <span id="user-name">Carregando...</span>
+                        <span id="user-company">Carregando...</span>
+                    </div>
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                        <i class="fas fa-chevron-down"></i>
                     </div>
                 </div>
             </header>
             
             <div class="content">
+                <div class="section-header">
+                    <div class="breadcrumb">
+                        <a href="/plano-manutencao" style="color: #666; text-decoration: none;">
+                            <i class="fas fa-tools"></i> Plano de Manutenção
+                        </a>
+                        <span style="margin: 0 8px; color: #ccc;">/</span>
+                        <span style="color: #9956a8; font-weight: 600;">Plano Mestre</span>
+                    </div>
+                </div>
+                
                 <div class="plano-container">
                     <!-- Header com informações do equipamento -->
                     <div class="plano-header">
