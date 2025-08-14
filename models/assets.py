@@ -70,6 +70,7 @@ class Equipamento(db.Model):
     tag = db.Column(db.String(50), nullable=False)
     descricao = db.Column(db.String(200), nullable=False)
     setor_id = db.Column(db.Integer, db.ForeignKey('setores.id'), nullable=False)
+    foto = db.Column(db.String(255), nullable=True)  # Caminho para a foto do equipamento
     empresa = db.Column(db.String(100), nullable=False)
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     usuario_criacao = db.Column(db.String(100), nullable=False)
@@ -85,6 +86,7 @@ class Equipamento(db.Model):
             'filial_id': self.setor_ref.filial_id if self.setor_ref else None,
             'filial_tag': self.setor_ref.filial_ref.tag if self.setor_ref and self.setor_ref.filial_ref else None,
             'filial_descricao': self.setor_ref.filial_ref.descricao if self.setor_ref and self.setor_ref.filial_ref else None,
+            'foto': self.foto,
             'empresa': self.empresa,
             'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
             'usuario_criacao': self.usuario_criacao

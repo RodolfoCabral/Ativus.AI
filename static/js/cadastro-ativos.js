@@ -299,30 +299,32 @@ function saveEquipamento() {
     const form = document.getElementById('equipamento-form');
     const formData = new FormData(form);
     
-    const data = {
-        tag: formData.get('tag'),
-        descricao: formData.get('descricao'),
-        setor_id: parseInt(formData.get('setor_id'))
-    };
-    
     // Validar campos obrigatórios
-    if (!data.tag || !data.descricao || !data.setor_id) {
-        showMessage('Todos os campos são obrigatórios', 'error');
+    const tag = formData.get('tag');
+    const descricao = formData.get('descricao');
+    const setor_id = formData.get('setor_id');
+    
+    if (!tag || !descricao || !setor_id) {
+        showMessage('Todos os campos obrigatórios devem ser preenchidos', 'error');
         return;
     }
     
+    // A foto é opcional, então não precisa validar
+    const foto = formData.get('foto');
+    
     fetch('/api/equipamentos', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
+        body: formData  // Usar FormData diretamente para suportar upload de arquivo
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             showMessage('Equipamento cadastrado com sucesso!', 'success');
             closeEquipamentoForm();
+            // Recarregar a árvore de ativos para mostrar o novo equipamento
+            if (typeof loadTreeData === 'function') {
+                loadTreeData();
+            }
         } else {
             showMessage('Erro ao cadastrar equipamento: ' + data.message, 'error');
         }
@@ -367,5 +369,50 @@ function showMessage(message, type) {
             messageDiv.remove();
         }
     }, 5000);
+}
+
+
+// Funções para preview da foto do equipamento
+document.addEventListener('DOMContentLoaded', function() {
+    const fotoInput = document.getElementById('equipamento-foto');
+    if (fotoInput) {
+        fotoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validar tipo de arquivo
+                if (!file.type.startsWith('image/')) {
+                    showMessage('Por favor, selecione apenas arquivos de imagem', 'error');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Validar tamanho (máximo 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showMessage('A imagem deve ter no máximo 5MB', 'error');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Mostrar preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('foto-preview');
+                    const previewImg = document.getElementById('foto-preview-img');
+                    
+                    previewImg.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+
+function removerFotoPreview() {
+    const fotoInput = document.getElementById('equipamento-foto');
+    const preview = document.getElementById('foto-preview');
+    
+    fotoInput.value = '';
+    preview.style.display = 'none';
 }
 

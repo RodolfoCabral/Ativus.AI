@@ -187,35 +187,68 @@ def get_equipamentos():
 @assets_bp.route('/api/equipamentos', methods=['POST'])
 @login_required
 def create_equipamento():
-    """Criar novo equipamento"""
+    """Criar novo equipamento com upload de foto"""
     has_permission, user_or_message = check_admin_permission()
     if not has_permission:
         return jsonify({'success': False, 'message': user_or_message}), 403
     
-    data = request.get_json()
+    # Processar FormData em vez de JSON para suportar upload de arquivo
+    tag = request.form.get('tag')
+    descricao = request.form.get('descricao')
+    setor_id = request.form.get('setor_id')
+    foto = request.files.get('foto')
     
     # Validar campos obrigatórios
-    required_fields = ['tag', 'descricao', 'setor_id']
-    for field in required_fields:
-        if not data.get(field):
-            return jsonify({'success': False, 'message': f'Campo {field} é obrigatório'}), 400
+    if not tag or not descricao or not setor_id:
+        return jsonify({'success': False, 'message': 'Campos tag, descrição e setor são obrigatórios'}), 400
     
     try:
+        # Converter setor_id para int
+        setor_id = int(setor_id)
+        
         # Verificar se setor existe e pertence à empresa
-        setor = Setor.query.filter_by(id=data['setor_id'], empresa=current_user.company).first()
+        setor = Setor.query.filter_by(id=setor_id, empresa=current_user.company).first()
         if not setor:
             return jsonify({'success': False, 'message': 'Setor não encontrado ou não pertence à sua empresa'}), 400
         
         # Verificar se tag já existe na empresa
-        existing = Equipamento.query.filter_by(tag=data['tag'], empresa=current_user.company).first()
+        existing = Equipamento.query.filter_by(tag=tag, empresa=current_user.company).first()
         if existing:
             return jsonify({'success': False, 'message': 'Tag já existe nesta empresa'}), 400
         
+        # Processar upload da foto se fornecida
+        foto_path = None
+        if foto and foto.filename:
+            # Validar tipo de arquivo
+            allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+            if '.' in foto.filename and foto.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
+                import os
+                import uuid
+                from werkzeug.utils import secure_filename
+                
+                # Criar diretório de upload se não existir
+                upload_dir = os.path.join('static', 'uploads', 'equipamentos')
+                os.makedirs(upload_dir, exist_ok=True)
+                
+                # Gerar nome único para o arquivo
+                file_extension = foto.filename.rsplit('.', 1)[1].lower()
+                filename = f"{uuid.uuid4().hex}.{file_extension}"
+                foto_path = os.path.join(upload_dir, filename)
+                
+                # Salvar arquivo
+                foto.save(foto_path)
+                
+                # Salvar caminho relativo no banco
+                foto_path = f"/static/uploads/equipamentos/{filename}"
+            else:
+                return jsonify({'success': False, 'message': 'Tipo de arquivo não permitido. Use PNG, JPG, JPEG ou GIF'}), 400
+        
         # Criar novo equipamento
         equipamento = Equipamento(
-            tag=data['tag'],
-            descricao=data['descricao'],
-            setor_id=data['setor_id'],
+            tag=tag,
+            descricao=descricao,
+            setor_id=setor_id,
+            foto=foto_path,
             empresa=current_user.company,
             usuario_criacao=current_user.email
         )

@@ -219,9 +219,12 @@ function criarCardEquipamento(equipamento) {
     card.innerHTML = `
         <div class="equipment-image">
             <div class="status-indicator ${statusClass}"></div>
-            <div class="placeholder-icon">
-                <i class="fas fa-cogs"></i>
-            </div>
+            ${equipamento.foto ? 
+                `<img src="${equipamento.foto}" alt="${equipamento.descricao}" style="width: 100%; height: 100%; object-fit: cover;">` :
+                `<div class="placeholder-icon">
+                    <i class="fas fa-cogs"></i>
+                </div>`
+            }
         </div>
         
         <div class="equipment-info">
