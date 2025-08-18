@@ -99,7 +99,6 @@ function preencherFormulario(atividade) {
     document.getElementById('conjunto').value = atividade.conjunto || '';
     document.getElementById('pontoControle').value = atividade.ponto_controle || '';
     document.getElementById('valorFrequencia').value = atividade.valor_frequencia || '';
-    document.getElementById('condicao').value = atividade.condicao || '';
     document.getElementById('statusAtivo').checked = atividade.status_ativo !== false;
 }
 
@@ -140,7 +139,6 @@ async function salvarAtividade() {
             conjunto: document.getElementById('conjunto').value,
             ponto_controle: document.getElementById('pontoControle').value,
             valor_frequencia: parseInt(document.getElementById('valorFrequencia').value) || null,
-            condicao: document.getElementById('condicao').value,
             status_ativo: document.getElementById('statusAtivo').checked
         };
         
@@ -286,7 +284,6 @@ function renderizarAtividades() {
                     <span class="status-badge ${statusClass}">${statusText}</span>
                 </div>
                 <div>${atividade.valor_frequencia || '-'}</div>
-                <div>${formatarTexto(atividade.condicao)}</div>
                 <div class="acoes-btns">
                     <button class="btn-acao btn-copiar" onclick="copiarAtividade(${atividade.id})" title="Copiar">
                         <i class="fas fa-copy"></i>
