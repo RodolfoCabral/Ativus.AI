@@ -9,7 +9,7 @@ class PMP(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(50), nullable=False, unique=True)
     descricao = db.Column(db.Text, nullable=False)
-    equipamento_id = db.Column(db.Integer, db.ForeignKey('equipamentos.id'), nullable=False)
+    equipamento_id = db.Column(db.Integer, nullable=False)  # Removido FK temporariamente
     
     # Dados de agrupamento
     tipo = db.Column(db.String(100))
@@ -26,14 +26,9 @@ class PMP(db.Model):
     
     # Metadados
     status = db.Column(db.String(20), default='ativo')
-    criado_por = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    criado_por = db.Column(db.Integer, nullable=False)  # Removido FK temporariamente
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)
     atualizado_em = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relacionamentos
-    equipamento = db.relationship('Equipamento', backref='pmps')
-    criador = db.relationship('User', backref='pmps_criadas')
-    atividades = db.relationship('AtividadePMP', back_populates='pmp', cascade='all, delete-orphan')
     
     def to_dict(self):
         return {
@@ -54,7 +49,7 @@ class PMP(db.Model):
             'criado_por': self.criado_por,
             'criado_em': self.criado_em.isoformat() if self.criado_em else None,
             'atualizado_em': self.atualizado_em.isoformat() if self.atualizado_em else None,
-            'atividades': [atividade.to_dict() for atividade in self.atividades]
+            'atividades': [atividade.to_dict() for atividade in self.atividades] if hasattr(self, 'atividades') else []
         }
     
     def set_dias_semana(self, dias_lista):
@@ -71,8 +66,8 @@ class AtividadePMP(db.Model):
     __tablename__ = 'atividades_pmp'
     
     id = db.Column(db.Integer, primary_key=True)
-    pmp_id = db.Column(db.Integer, db.ForeignKey('pmps.id'), nullable=False)
-    atividade_plano_mestre_id = db.Column(db.Integer, db.ForeignKey('atividades_plano_mestre.id'), nullable=False)
+    pmp_id = db.Column(db.Integer, nullable=False)  # Removido FK temporariamente
+    atividade_plano_mestre_id = db.Column(db.Integer, nullable=False)  # Removido FK temporariamente
     
     # Ordem da atividade na PMP
     ordem = db.Column(db.Integer, default=1)
@@ -83,10 +78,6 @@ class AtividadePMP(db.Model):
     # Metadados
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relacionamentos
-    pmp = db.relationship('PMP', back_populates='atividades')
-    atividade = db.relationship('AtividadePlanoMestre', backref='pmps_relacionadas')
-    
     def to_dict(self):
         return {
             'id': self.id,
@@ -94,8 +85,7 @@ class AtividadePMP(db.Model):
             'atividade_plano_mestre_id': self.atividade_plano_mestre_id,
             'ordem': self.ordem,
             'status': self.status,
-            'criado_em': self.criado_em.isoformat() if self.criado_em else None,
-            'atividade': self.atividade.to_dict() if self.atividade else None
+            'criado_em': self.criado_em.isoformat() if self.criado_em else None
         }
 
 
@@ -104,7 +94,7 @@ class HistoricoExecucaoPMP(db.Model):
     __tablename__ = 'historico_execucao_pmp'
     
     id = db.Column(db.Integer, primary_key=True)
-    pmp_id = db.Column(db.Integer, db.ForeignKey('pmps.id'), nullable=False)
+    pmp_id = db.Column(db.Integer, nullable=False)  # Removido FK temporariamente
     
     # Dados da execução
     data_programada = db.Column(db.DateTime, nullable=False)
@@ -118,17 +108,12 @@ class HistoricoExecucaoPMP(db.Model):
     observacoes = db.Column(db.Text)
     
     # Responsáveis
-    executado_por = db.Column(db.Integer, db.ForeignKey('users.id'))
-    criado_por = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    executado_por = db.Column(db.Integer)  # Removido FK temporariamente
+    criado_por = db.Column(db.Integer, nullable=False)  # Removido FK temporariamente
     
     # Metadados
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)
     atualizado_em = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relacionamentos
-    pmp = db.relationship('PMP', backref='historico_execucoes')
-    executor = db.relationship('User', foreign_keys=[executado_por], backref='execucoes_pmp')
-    criador = db.relationship('User', foreign_keys=[criado_por], backref='execucoes_pmp_criadas')
     
     def to_dict(self):
         return {
