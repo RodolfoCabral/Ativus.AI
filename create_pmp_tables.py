@@ -40,7 +40,7 @@ def create_pmp_tables():
             
             for tabela in tabelas_pmp:
                 try:
-                    result = db.engine.execute(text(f"SELECT COUNT(*) FROM {tabela}"))
+                    result = db.session.execute(text(f"SELECT COUNT(*) FROM {tabela}"))
                     count = result.fetchone()[0]
                     print(f"  ✅ {tabela} - {count} registros")
                 except Exception as e:
@@ -51,7 +51,7 @@ def create_pmp_tables():
             # Mostrar estrutura das tabelas
             for tabela in tabelas_pmp:
                 try:
-                    result = db.engine.execute(text(f"""
+                    result = db.session.execute(text(f"""
                         SELECT column_name, data_type, is_nullable
                         FROM information_schema.columns 
                         WHERE table_name = '{tabela}'

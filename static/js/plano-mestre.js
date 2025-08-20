@@ -1,4 +1,9 @@
 // Plano Mestre - JavaScript
+// Variáveis globais
+let equipamentoAtual = null;
+let atividades = [];
+let atividadeEditando = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔧 Plano Mestre carregado');
     
@@ -23,22 +28,19 @@ function carregarDadosEquipamento() {
     const equipamentoSelecionado = localStorage.getItem('equipamentoSelecionado');
     
     if (equipamentoSelecionado) {
-        const equipamento = JSON.parse(equipamentoSelecionado);
+        equipamentoAtual = JSON.parse(equipamentoSelecionado);
         
         // Atualizar informações do equipamento no header
-        document.getElementById('equipamento-tag').textContent = equipamento.tag || 'TAG-001';
-        document.getElementById('equipamento-desc').textContent = equipamento.descricao || 'Equipamento';
+        document.getElementById('equipamento-tag').textContent = equipamentoAtual.tag || 'TAG-001';
+        document.getElementById('equipamento-desc').textContent = equipamentoAtual.descricao || 'Equipamento';
         
-        console.log('📋 Dados do equipamento carregados:', equipamento);
+        console.log('📋 Dados do equipamento carregados:', equipamentoAtual);
     } else {
         // Dados padrão se não houver equipamento selecionado
         console.log('⚠️ Nenhum equipamento selecionado, usando dados padrão');
+        equipamentoAtual = null;
     }
 }
-
-// Array para armazenar atividades
-let atividades = [];
-let atividadeEditando = null;
 
 // Inicializar sistema de tabs
 function inicializarTabs() {
