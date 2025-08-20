@@ -130,6 +130,18 @@ def create_app():
     except Exception as e:
         print(f"Erro ao registrar blueprint de debug do plano mestre: {e}")
     
+    # Importar e registrar blueprint de PMP
+    try:
+        from routes.pmp import pmp_bp
+        app.register_blueprint(pmp_bp)
+        print("Blueprint de PMP registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar pmp_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de PMP.")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de PMP: {e}")
+        print("Sistema funcionará sem funcionalidades de PMP.")
+    
     # Rotas para arquivos estáticos
     @app.route('/')
     def index():

@@ -520,3 +520,15 @@ document.addEventListener('keydown', function(e) {
 
 // Sistema agora usa apenas dados do banco de dados - sem dados de exemplo
 
+
+// Abrir sistema PMP
+function abrirSistemaPMP() {
+    if (!equipamentoAtual) {
+        alert('Nenhum equipamento selecionado');
+        return;
+    }
+    
+    // Redirecionar para o sistema PMP com o equipamento atual
+    window.location.href = `/pmp-sistema?equipamento=${equipamentoAtual.id}`;
+}
+

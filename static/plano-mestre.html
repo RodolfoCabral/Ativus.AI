@@ -153,10 +153,92 @@
             accent-color: #28a745;
         }
         
-        .atividade-concluida > div:not(.acoes-btns) {
+        .atividade-item.concluida .atividade-desc {
             text-decoration: line-through;
-            color: #6c757d;
+            opacity: 0.6;
         }
+        
+        .procedimentos-header {
+            text-align: center;
+            padding: 30px 20px;
+            border-bottom: 2px solid #e1e5e9;
+        }
+        
+        .procedimentos-header h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        
+        .procedimentos-header p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .pmp-actions {
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .btn-pmp {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            margin-bottom: 30px;
+        }
+        
+        .btn-pmp:hover {
+            background: linear-gradient(135deg, #218838, #1ea085);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+        
+        .btn-pmp i {
+            margin-right: 10px;
+        }
+        
+        .pmp-info {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: left;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .pmp-info h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .pmp-info ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .pmp-info li {
+            padding: 8px 0;
+            color: #555;
+            position: relative;
+            padding-left: 25px;
+        }
+        
+        .pmp-info li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }   }
         
         .breadcrumb {
             display: flex;
@@ -691,10 +773,25 @@
                     
                     <!-- Tab Content: Procedimentos -->
                     <div class="tab-content" id="procedimentos">
-                        <div class="empty-state">
-                            <i class="fas fa-file-alt"></i>
-                            <h3>Procedimentos de manutenção preventiva</h3>
-                            <p>Esta seção será implementada em breve</p>
+                        <div class="procedimentos-header">
+                            <h3>Procedimentos de Manutenção Preventiva (PMP)</h3>
+                            <p>Gere automaticamente os PMPs baseados nas atividades do plano mestre</p>
+                        </div>
+                        
+                        <div class="pmp-actions">
+                            <button class="btn-pmp" onclick="abrirSistemaPMP()">
+                                <i class="fas fa-magic"></i>
+                                Acessar Sistema PMP
+                            </button>
+                            <div class="pmp-info">
+                                <h4>Como funciona:</h4>
+                                <ul>
+                                    <li>As atividades são agrupadas por <strong>oficina</strong>, <strong>frequência</strong>, <strong>tipo de manutenção</strong> e <strong>condição do ativo</strong></li>
+                                    <li>Cada grupo gera uma PMP com código único (PMP-01-XX, PMP-02-XX, etc.)</li>
+                                    <li>Um equipamento pode ter múltiplas PMPs conforme os agrupamentos</li>
+                                    <li>As PMPs podem ser configuradas e impressas individualmente</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
