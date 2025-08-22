@@ -534,3 +534,352 @@ function abrirSistemaPMP() {
     window.location.href = `/pmp-sistema?equipamento=${equipamentoAtual.id}`;
 }
 
+
+
+// ========================================
+// FUNCIONALIDADES PMP INTEGRADAS
+// ========================================
+
+// Variáveis globais para PMP
+let pmpsAtual = [];
+let pmpSelecionada = null;
+
+// Gerar PMPs integrado na aba
+async function gerarPMPsIntegrado() {
+    if (!equipamentoAtual) {
+        alert('Nenhum equipamento selecionado');
+        return;
+    }
+    
+    console.log('🔄 Gerando PMPs para equipamento:', equipamentoAtual.id);
+    
+    try {
+        // Mostrar loading
+        mostrarLoadingPMP();
+        
+        // Chamar API para gerar PMPs
+        const response = await fetch(`/api/pmp/equipamento/${equipamentoAtual.id}/gerar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        
+        const pmps = await response.json();
+        console.log('✅ PMPs geradas:', pmps);
+        
+        // Atualizar interface
+        pmpsAtual = pmps;
+        renderizarPMPsIntegradas(pmps);
+        
+        // Atualizar informações do equipamento na sidebar PMP
+        atualizarInfoEquipamentoPMP();
+        
+    } catch (error) {
+        console.error('❌ Erro ao gerar PMPs:', error);
+        alert('Erro ao gerar PMPs: ' + error.message);
+        esconderLoadingPMP();
+    }
+}
+
+// Mostrar loading na área de PMPs
+function mostrarLoadingPMP() {
+    const container = document.getElementById('pmps-lista-integrated');
+    container.innerHTML = `
+        <div class="loading-pmp">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Gerando PMPs...</p>
+        </div>
+    `;
+}
+
+// Esconder loading na área de PMPs
+function esconderLoadingPMP() {
+    const container = document.getElementById('pmps-lista-integrated');
+    container.innerHTML = `
+        <div class="empty-state-pmp">
+            <i class="fas fa-clipboard-list"></i>
+            <h4>Nenhuma PMP gerada</h4>
+            <p>Clique em "Gerar PMPs" para criar os procedimentos</p>
+        </div>
+    `;
+}
+
+// Renderizar lista de PMPs na sidebar integrada
+function renderizarPMPsIntegradas(pmps) {
+    const container = document.getElementById('pmps-lista-integrated');
+    
+    if (!pmps || pmps.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state-pmp">
+                <i class="fas fa-clipboard-list"></i>
+                <h4>Nenhuma PMP encontrada</h4>
+                <p>As atividades não puderam ser agrupadas em PMPs</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    pmps.forEach((pmp, index) => {
+        html += `
+            <div class="pmp-item-integrated ${index === 0 ? 'active' : ''}" 
+                 onclick="selecionarPMPIntegrada(${pmp.id}, this)">
+                <div class="pmp-codigo">${pmp.codigo}</div>
+                <div class="pmp-descricao-item">${pmp.descricao}</div>
+                <div class="pmp-detalhes-item">
+                    <span>${pmp.atividades_count || 0} atividades</span>
+                    <span class="status-badge status-ativo">Ativo</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    // Selecionar primeira PMP automaticamente
+    if (pmps.length > 0) {
+        selecionarPMPIntegrada(pmps[0].id, container.querySelector('.pmp-item-integrated'));
+    }
+}
+
+// Selecionar uma PMP específica
+async function selecionarPMPIntegrada(pmpId, elemento) {
+    // Remover seleção anterior
+    document.querySelectorAll('.pmp-item-integrated').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Adicionar seleção atual
+    if (elemento) {
+        elemento.classList.add('active');
+    }
+    
+    console.log('📋 Selecionando PMP:', pmpId);
+    
+    try {
+        // Buscar detalhes da PMP
+        const response = await fetch(`/api/pmp/${pmpId}`);
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        
+        const pmp = await response.json();
+        console.log('✅ Detalhes da PMP carregados:', pmp);
+        
+        pmpSelecionada = pmp;
+        renderizarFormularioPMP(pmp);
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar PMP:', error);
+        alert('Erro ao carregar detalhes da PMP: ' + error.message);
+    }
+}
+
+// Renderizar formulário da PMP selecionada
+function renderizarFormularioPMP(pmp) {
+    const container = document.getElementById('pmp-form-integrated');
+    const titleDisplay = document.getElementById('pmp-title-display');
+    
+    // Atualizar título
+    titleDisplay.textContent = pmp.codigo + ' - ' + pmp.descricao;
+    
+    // Renderizar formulário baseado na imagem fornecida
+    container.innerHTML = `
+        <div class="pmp-form-content">
+            <!-- Seção: Descrição da O.S. -->
+            <div class="pmp-form-section full-width">
+                <div class="pmp-form-section-title">Descrição da O.S.</div>
+                <input type="text" class="pmp-form-control" 
+                       value="${pmp.descricao}" readonly>
+            </div>
+            
+            <!-- Seção: Informações Básicas -->
+            <div class="pmp-form-section">
+                <div class="pmp-form-section-title">Informações Básicas</div>
+                <div class="pmp-form-row">
+                    <div class="pmp-form-group">
+                        <label class="pmp-form-label">Tipo</label>
+                        <input type="text" class="pmp-form-control" 
+                               value="${pmp.tipo || 'Preventiva Periódica'}" readonly>
+                    </div>
+                    <div class="pmp-form-group">
+                        <label class="pmp-form-label">Oficina</label>
+                        <input type="text" class="pmp-form-control" 
+                               value="${pmp.oficina || 'Mecânica'}" readonly>
+                    </div>
+                </div>
+                <div class="pmp-form-row">
+                    <div class="pmp-form-group">
+                        <label class="pmp-form-label">Frequência</label>
+                        <input type="text" class="pmp-form-control" 
+                               value="${pmp.frequencia || 'Mensal'}" readonly>
+                    </div>
+                    <div class="pmp-form-group">
+                        <label class="pmp-form-label">Condição</label>
+                        <input type="text" class="pmp-form-control" 
+                               value="${pmp.condicao || 'Funcionando'}" readonly>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção: Configurações -->
+            <div class="pmp-form-section">
+                <div class="pmp-form-section-title">Configurações</div>
+                <div class="pmp-form-row">
+                    <div class="pmp-form-group">
+                        <label class="pmp-form-label">Nº de pessoas para execução</label>
+                        <input type="number" class="pmp-form-control" value="2" min="1">
+                    </div>
+                    <div class="pmp-form-group">
+                        <label class="pmp-form-label">Nº de dias para antecipar a geração de O.S.</label>
+                        <input type="number" class="pmp-form-control" value="2" min="0">
+                    </div>
+                </div>
+                <div class="pmp-form-row">
+                    <div class="pmp-form-group">
+                        <label class="pmp-form-label">Tempo por pessoa (em horas decimais)</label>
+                        <input type="number" class="pmp-form-control" value="5" step="0.1" min="0">
+                    </div>
+                    <div class="pmp-form-group">
+                        <label class="pmp-form-label">Forma de impressão da O.S.</label>
+                        <select class="pmp-form-control">
+                            <option value="comum">Comum</option>
+                            <option value="detalhada">Detalhada</option>
+                            <option value="resumida">Resumida</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção: Atividades da PMP -->
+        <div class="pmp-atividades-section">
+            <div class="pmp-atividades-header">
+                Atividades incluídas nesta PMP (${pmp.atividades ? pmp.atividades.length : 0})
+            </div>
+            <div class="pmp-atividades-lista">
+                ${renderizarAtividadesPMP(pmp.atividades || [])}
+            </div>
+        </div>
+        
+        <!-- Botão Salvar -->
+        <div style="text-align: right; margin-top: 20px;">
+            <button class="btn-gerar-pmps" onclick="salvarAlteracoesPMP()">
+                <i class="fas fa-save"></i>
+                Salvar Alterações
+            </button>
+        </div>
+    `;
+}
+
+// Renderizar lista de atividades da PMP
+function renderizarAtividadesPMP(atividades) {
+    if (!atividades || atividades.length === 0) {
+        return `
+            <div class="pmp-atividade-item">
+                <div class="pmp-atividade-desc">Nenhuma atividade encontrada</div>
+            </div>
+        `;
+    }
+    
+    return atividades.map(atividade => `
+        <div class="pmp-atividade-item">
+            <div class="pmp-atividade-desc">${atividade.descricao}</div>
+            <div class="pmp-atividade-detalhes">
+                ${atividade.oficina} • ${atividade.frequencia} • ${atividade.tipo_manutencao}
+            </div>
+        </div>
+    `).join('');
+}
+
+// Atualizar informações do equipamento na sidebar PMP
+function atualizarInfoEquipamentoPMP() {
+    if (equipamentoAtual) {
+        document.getElementById('equipamento-tag-pmp').textContent = equipamentoAtual.tag || '-';
+        document.getElementById('equipamento-desc-pmp').textContent = equipamentoAtual.descricao || 'Equipamento';
+    }
+}
+
+// Salvar alterações da PMP
+function salvarAlteracoesPMP() {
+    if (!pmpSelecionada) {
+        alert('Nenhuma PMP selecionada');
+        return;
+    }
+    
+    // Coletar dados do formulário
+    const formData = {
+        // Implementar coleta de dados do formulário
+        // Por enquanto, apenas mostrar mensagem de sucesso
+    };
+    
+    console.log('💾 Salvando alterações da PMP:', pmpSelecionada.id, formData);
+    alert('Alterações salvas com sucesso!');
+}
+
+// Carregar PMPs existentes ao trocar para a aba
+async function carregarPMPsExistentes() {
+    if (!equipamentoAtual) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/pmp/equipamento/${equipamentoAtual.id}`);
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        
+        const pmps = await response.json();
+        console.log('📋 PMPs existentes carregadas:', pmps);
+        
+        if (pmps && pmps.length > 0) {
+            pmpsAtual = pmps;
+            renderizarPMPsIntegradas(pmps);
+            atualizarInfoEquipamentoPMP();
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar PMPs existentes:', error);
+        // Não mostrar erro para o usuário, apenas manter estado vazio
+    }
+}
+
+// Modificar a função de inicialização de tabs para carregar PMPs
+function inicializarTabsComPMP() {
+    const tabs = document.querySelectorAll('.nav-tab');
+    const contents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const targetTab = this.getAttribute('data-tab');
+            
+            // Remover classe active de todas as tabs e conteúdos
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            
+            // Adicionar classe active na tab e conteúdo selecionados
+            this.classList.add('active');
+            document.getElementById(targetTab).classList.add('active');
+            
+            // Se mudou para aba de procedimentos, carregar PMPs existentes
+            if (targetTab === 'procedimentos') {
+                setTimeout(() => {
+                    atualizarInfoEquipamentoPMP();
+                    carregarPMPsExistentes();
+                }, 100);
+            }
+        });
+    });
+}
+
+// Substituir a inicialização de tabs original
+document.addEventListener('DOMContentLoaded', function() {
+    // Remover a chamada original de inicializarTabs() e usar a nova
+    inicializarTabsComPMP();
+});
+

@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, current_app
 from models.pmp import PMP, AtividadePMP, HistoricoExecucaoPMP
-from models.assets import Equipamento
+from assets_models import Equipamento
 from models.plano_mestre import AtividadePlanoMestre
 from app import db
 import logging
@@ -61,54 +61,122 @@ def pmp_sistema():
 @pmp_bp.route('/api/pmp/equipamento/<int:equipamento_id>/gerar', methods=['POST'])
 def gerar_pmps(equipamento_id):
     """
-    Gera PMPs agrupando atividades do plano mestre.
+    Gera PMPs agrupando atividades do plano mestre por:
+    - Oficina
+    - Frequência  
+    - Tipo de manutenção
+    - Condição do ativo
     """
-    atividades = AtividadePlanoMestre.query.filter_by(equipamento_id=equipamento_id).all()
-    
-    # Agrupa por (oficina, frequencia, tipo_manutencao, condicao)
-    grupos = {}
-    for at in atividades:
-        chave = (at.oficina, at.frequencia, at.tipo_manutencao, at.condicao)
-        if chave not in grupos:
-            grupos[chave] = []
-        grupos[chave].append(at)
-
-    # Limpa PMPs antigas para este equipamento
-    PMP.query.filter_by(equipamento_id=equipamento_id).delete()
-    
-    # Cria novas PMPs
-    contador = 1
-    equipamento_tag = Equipamento.query.get(equipamento_id).tag
-    novas_pmps = []
-
-    for chave, atividades_grupo in grupos.items():
-        oficina, frequencia, tipo, condicao = chave
+    try:
+        # Buscar atividades do plano mestre para este equipamento
+        atividades = AtividadePlanoMestre.query.filter_by(equipamento_id=equipamento_id).all()
         
-        codigo_pmp = f"PMP-{contador:02d}-{equipamento_tag}"
-        descricao_pmp = f"PMP para {oficina} com frequência {frequencia}"
-
-        nova_pmp = PMP(
-            equipamento_id=equipamento_id,
-            codigo=codigo_pmp,
-            descricao=descricao_pmp,
-            # Adicione outros campos conforme necessário
-        )
-        db.session.add(nova_pmp)
-        db.session.flush() # Para obter o ID da nova PMP
-
-        for at_plano_mestre in atividades_grupo:
-            nova_atividade_pmp = AtividadePMP(
-                pmp_id=nova_pmp.id,
-                descricao=at_plano_mestre.descricao,
-                # Mapeie outros campos se necessário
+        if not atividades:
+            return jsonify({
+                'success': False,
+                'message': 'Nenhuma atividade encontrada para este equipamento'
+            }), 404
+        
+        # Buscar informações do equipamento
+        equipamento = Equipamento.query.get(equipamento_id)
+        if not equipamento:
+            return jsonify({
+                'success': False,
+                'message': 'Equipamento não encontrado'
+            }), 404
+        
+        # Agrupar atividades por critérios
+        grupos = {}
+        for atividade in atividades:
+            # Criar chave de agrupamento
+            chave = (
+                atividade.oficina or 'Não definida',
+                atividade.frequencia or 'Não definida', 
+                atividade.tipo_manutencao or 'Não definida',
+                atividade.condicao or 'funcionando'
             )
-            db.session.add(nova_atividade_pmp)
+            
+            if chave not in grupos:
+                grupos[chave] = []
+            grupos[chave].append(atividade)
         
-        novas_pmps.append(nova_pmp)
-        contador += 1
-
-    db.session.commit()
-    return jsonify([pmp.to_dict() for pmp in novas_pmps]), 201
+        current_app.logger.info(f"Encontrados {len(grupos)} grupos de atividades para equipamento {equipamento_id}")
+        
+        # Limpar PMPs antigas para este equipamento
+        PMP.query.filter_by(equipamento_id=equipamento_id).delete()
+        
+        # Criar novas PMPs
+        contador = 1
+        novas_pmps = []
+        
+        for chave, atividades_grupo in grupos.items():
+            oficina, frequencia, tipo_manutencao, condicao = chave
+            
+            # Gerar código único da PMP
+            codigo_pmp = f"PMP-{contador:02d}-{equipamento.tag}"
+            
+            # Gerar descrição baseada nos critérios de agrupamento
+            descricao_pmp = f"PREVENTIVA {frequencia.upper()} - {oficina.upper()}"
+            
+            # Criar nova PMP
+            nova_pmp = PMP(
+                equipamento_id=equipamento_id,
+                codigo=codigo_pmp,
+                descricao=descricao_pmp,
+                oficina=oficina,
+                frequencia=frequencia,
+                tipo_manutencao=tipo_manutencao,
+                condicao=condicao,
+                status='ativo'
+            )
+            
+            db.session.add(nova_pmp)
+            db.session.flush()  # Para obter o ID da nova PMP
+            
+            # Criar atividades da PMP
+            for atividade_plano in atividades_grupo:
+                nova_atividade_pmp = AtividadePMP(
+                    pmp_id=nova_pmp.id,
+                    descricao=atividade_plano.descricao,
+                    oficina=atividade_plano.oficina,
+                    frequencia=atividade_plano.frequencia,
+                    tipo_manutencao=atividade_plano.tipo_manutencao,
+                    conjunto=atividade_plano.conjunto,
+                    ponto_controle=atividade_plano.ponto_controle,
+                    valor_frequencia=atividade_plano.valor_frequencia,
+                    condicao=atividade_plano.condicao
+                )
+                db.session.add(nova_atividade_pmp)
+            
+            novas_pmps.append(nova_pmp)
+            contador += 1
+        
+        # Salvar no banco
+        db.session.commit()
+        
+        current_app.logger.info(f"Criadas {len(novas_pmps)} PMPs para equipamento {equipamento_id}")
+        
+        # Retornar PMPs criadas com contagem de atividades
+        resultado = []
+        for pmp in novas_pmps:
+            pmp_dict = pmp.to_dict()
+            pmp_dict['atividades_count'] = len([a for a in atividades if 
+                a.oficina == pmp.oficina and 
+                a.frequencia == pmp.frequencia and 
+                a.tipo_manutencao == pmp.tipo_manutencao and 
+                a.condicao == pmp.condicao
+            ])
+            resultado.append(pmp_dict)
+        
+        return jsonify(resultado), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Erro ao gerar PMPs: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'message': f'Erro interno: {str(e)}'
+        }), 500
 
 @pmp_bp.route('/api/pmp/equipamento/<int:equipamento_id>', methods=['GET'])
 def get_pmps_por_equipamento(equipamento_id):
@@ -123,6 +191,28 @@ def get_pmp_detalhes(pmp_id):
     """
     Retorna os detalhes de uma PMP específica, incluindo suas atividades.
     """
-    pmp = PMP.query.get_or_404(pmp_id)
-    return jsonify(pmp.to_dict(incluir_atividades=True))
+    try:
+        pmp = PMP.query.get(pmp_id)
+        if not pmp:
+            return jsonify({
+                'success': False,
+                'message': 'PMP não encontrada'
+            }), 404
+        
+        # Buscar atividades da PMP
+        atividades = AtividadePMP.query.filter_by(pmp_id=pmp_id).all()
+        
+        # Montar resposta com detalhes completos
+        resultado = pmp.to_dict()
+        resultado['atividades'] = [atividade.to_dict() for atividade in atividades]
+        resultado['atividades_count'] = len(atividades)
+        
+        return jsonify(resultado), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Erro ao buscar detalhes da PMP {pmp_id}: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'message': f'Erro interno: {str(e)}'
+        }), 500
 

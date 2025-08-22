@@ -62,12 +62,21 @@ class PMP(db.Model):
 
 
 class AtividadePMP(db.Model):
-    """Modelo para relacionar atividades com PMPs"""
+    """Modelo para atividades específicas de uma PMP"""
     __tablename__ = 'atividades_pmp'
     
     id = db.Column(db.Integer, primary_key=True)
     pmp_id = db.Column(db.Integer, nullable=False)  # Removido FK temporariamente
-    atividade_plano_mestre_id = db.Column(db.Integer, nullable=False)  # Removido FK temporariamente
+    
+    # Dados da atividade (copiados do plano mestre)
+    descricao = db.Column(db.Text, nullable=False)
+    oficina = db.Column(db.String(100))
+    frequencia = db.Column(db.String(100))
+    tipo_manutencao = db.Column(db.String(100))
+    conjunto = db.Column(db.String(100))
+    ponto_controle = db.Column(db.String(100))
+    valor_frequencia = db.Column(db.Integer)
+    condicao = db.Column(db.String(50))
     
     # Ordem da atividade na PMP
     ordem = db.Column(db.Integer, default=1)
@@ -82,7 +91,14 @@ class AtividadePMP(db.Model):
         return {
             'id': self.id,
             'pmp_id': self.pmp_id,
-            'atividade_plano_mestre_id': self.atividade_plano_mestre_id,
+            'descricao': self.descricao,
+            'oficina': self.oficina,
+            'frequencia': self.frequencia,
+            'tipo_manutencao': self.tipo_manutencao,
+            'conjunto': self.conjunto,
+            'ponto_controle': self.ponto_controle,
+            'valor_frequencia': self.valor_frequencia,
+            'condicao': self.condicao,
             'ordem': self.ordem,
             'status': self.status,
             'criado_em': self.criado_em.isoformat() if self.criado_em else None

@@ -238,6 +238,304 @@
             left: 0;
             color: #28a745;
             font-weight: bold;
+        }
+        
+        /* Estilos para PMP Integrado */
+        .pmp-container-integrated {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .pmp-header-integrated {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            border-bottom: 2px solid #e1e5e9;
+            background: #f8f9fa;
+        }
+        
+        .pmp-title-section h3 {
+            margin: 0 0 5px 0;
+            color: #333;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .pmp-title-section p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .btn-gerar-pmps {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-gerar-pmps:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+        
+        .pmp-main-container {
+            display: flex;
+            height: 600px;
+        }
+        
+        .pmp-sidebar-integrated {
+            width: 300px;
+            background: #f8f9fa;
+            border-right: 1px solid #e1e5e9;
+            overflow-y: auto;
+        }
+        
+        .pmp-sidebar-header-integrated {
+            padding: 15px;
+            border-bottom: 1px solid #e1e5e9;
+            background: white;
+        }
+        
+        .equipamento-info-pmp {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .equipamento-tag-pmp {
+            background: #9956a8;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .equipamento-desc-pmp {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .pmps-lista-integrated {
+            padding: 0;
+        }
+        
+        .pmp-item-integrated {
+            padding: 15px;
+            border-bottom: 1px solid #e1e5e9;
+            cursor: pointer;
+            transition: background 0.3s;
+            background: white;
+        }
+        
+        .pmp-item-integrated:hover {
+            background: #f0f8ff;
+        }
+        
+        .pmp-item-integrated.active {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .pmp-codigo {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .pmp-descricao-item {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .pmp-detalhes-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #888;
+        }
+        
+        .pmp-content-integrated {
+            flex: 1;
+            background: white;
+            overflow-y: auto;
+        }
+        
+        .pmp-content-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #e1e5e9;
+            background: #f8f9fa;
+        }
+        
+        .pmp-title-display {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .pmp-form-integrated {
+            padding: 25px;
+        }
+        
+        .pmp-empty-selection {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .pmp-empty-selection i {
+            font-size: 48px;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .pmp-empty-selection h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .empty-state-pmp {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .empty-state-pmp i {
+            font-size: 36px;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .empty-state-pmp h4 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .empty-state-pmp p {
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        .pmp-form-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .pmp-form-section {
+            margin-bottom: 25px;
+        }
+        
+        .pmp-form-section.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .pmp-form-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e1e5e9;
+        }
+        
+        .pmp-form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .pmp-form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .pmp-form-label {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .pmp-form-control {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .pmp-form-control:focus {
+            outline: none;
+            border-color: #2196f3;
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+        }
+        
+        .pmp-form-control[readonly] {
+            background: #f8f9fa;
+            color: #666;
+        }
+        
+        .pmp-atividades-section {
+            margin-top: 20px;
+        }
+        
+        .pmp-atividades-header {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px 6px 0 0;
+            border: 1px solid #e1e5e9;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .pmp-atividades-lista {
+            border: 1px solid #e1e5e9;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .pmp-atividade-item {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .pmp-atividade-item:last-child {
+            border-bottom: none;
+        }
+        
+        .pmp-atividade-desc {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .pmp-atividade-detalhes {
+            font-size: 12px;
+            color: #666;
         }   }
         
         .breadcrumb {
@@ -773,24 +1071,54 @@
                     
                     <!-- Tab Content: Procedimentos -->
                     <div class="tab-content" id="procedimentos">
-                        <div class="procedimentos-header">
-                            <h3>Procedimentos de Manutenção Preventiva (PMP)</h3>
-                            <p>Gere automaticamente os PMPs baseados nas atividades do plano mestre</p>
-                        </div>
-                        
-                        <div class="pmp-actions">
-                            <button class="btn-pmp" onclick="abrirSistemaPMP()">
-                                <i class="fas fa-magic"></i>
-                                Acessar Sistema PMP
-                            </button>
-                            <div class="pmp-info">
-                                <h4>Como funciona:</h4>
-                                <ul>
-                                    <li>As atividades são agrupadas por <strong>oficina</strong>, <strong>frequência</strong>, <strong>tipo de manutenção</strong> e <strong>condição do ativo</strong></li>
-                                    <li>Cada grupo gera uma PMP com código único (PMP-01-XX, PMP-02-XX, etc.)</li>
-                                    <li>Um equipamento pode ter múltiplas PMPs conforme os agrupamentos</li>
-                                    <li>As PMPs podem ser configuradas e impressas individualmente</li>
-                                </ul>
+                        <div class="pmp-container-integrated">
+                            <!-- Header da aba PMP -->
+                            <div class="pmp-header-integrated">
+                                <div class="pmp-title-section">
+                                    <h3>Procedimentos de Manutenção Preventiva (PMP)</h3>
+                                    <p>PMPs geradas automaticamente baseadas nas atividades do plano mestre</p>
+                                </div>
+                                <button class="btn-gerar-pmps" onclick="gerarPMPsIntegrado()">
+                                    <i class="fas fa-magic"></i>
+                                    Gerar PMPs
+                                </button>
+                            </div>
+                            
+                            <!-- Container principal com sidebar e conteúdo -->
+                            <div class="pmp-main-container">
+                                <!-- Sidebar com lista de PMPs -->
+                                <div class="pmp-sidebar-integrated">
+                                    <div class="pmp-sidebar-header-integrated">
+                                        <div class="equipamento-info-pmp">
+                                            <span class="equipamento-tag-pmp" id="equipamento-tag-pmp">-</span>
+                                            <span class="equipamento-desc-pmp" id="equipamento-desc-pmp">Equipamento</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="pmps-lista-integrated" id="pmps-lista-integrated">
+                                        <div class="empty-state-pmp">
+                                            <i class="fas fa-clipboard-list"></i>
+                                            <h4>Nenhuma PMP gerada</h4>
+                                            <p>Clique em "Gerar PMPs" para criar os procedimentos</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Conteúdo principal da PMP -->
+                                <div class="pmp-content-integrated">
+                                    <div class="pmp-content-header">
+                                        <div class="pmp-title-display" id="pmp-title-display">Selecione uma PMP</div>
+                                    </div>
+                                    
+                                    <!-- Formulário da PMP -->
+                                    <div class="pmp-form-integrated" id="pmp-form-integrated">
+                                        <div class="pmp-empty-selection">
+                                            <i class="fas fa-mouse-pointer"></i>
+                                            <h4>Selecione uma PMP</h4>
+                                            <p>Escolha uma PMP na lista ao lado para visualizar e configurar os detalhes</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
