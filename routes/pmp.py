@@ -68,13 +68,23 @@ def gerar_pmps(equipamento_id):
     - Condição do ativo
     """
     try:
-        # Buscar atividades do plano mestre para este equipamento
-        atividades = AtividadePlanoMestre.query.filter_by(equipamento_id=equipamento_id).all()
+        # Buscar plano mestre para este equipamento
+        from models.plano_mestre import PlanoMestre
+        plano_mestre = PlanoMestre.query.filter_by(equipamento_id=equipamento_id).first()
+        
+        if not plano_mestre:
+            return jsonify({
+                'success': False,
+                'message': 'Nenhum plano mestre encontrado para este equipamento'
+            }), 404
+        
+        # Buscar atividades do plano mestre
+        atividades = AtividadePlanoMestre.query.filter_by(plano_mestre_id=plano_mestre.id).all()
         
         if not atividades:
             return jsonify({
                 'success': False,
-                'message': 'Nenhuma atividade encontrada para este equipamento'
+                'message': 'Nenhuma atividade encontrada no plano mestre deste equipamento'
             }), 404
         
         # Buscar informações do equipamento
@@ -127,7 +137,8 @@ def gerar_pmps(equipamento_id):
                 frequencia=frequencia,
                 tipo_manutencao=tipo_manutencao,
                 condicao=condicao,
-                status='ativo'
+                status='ativo',
+                criado_por=1  # TODO: usar current_user.id quando autenticação estiver funcionando
             )
             
             db.session.add(nova_pmp)
