@@ -133,9 +133,9 @@ def gerar_pmps(equipamento_id):
                 equipamento_id=equipamento_id,
                 codigo=codigo_pmp,
                 descricao=descricao_pmp,
+                tipo=tipo_manutencao,  # Usar 'tipo' em vez de 'tipo_manutencao'
                 oficina=oficina,
                 frequencia=frequencia,
-                tipo_manutencao=tipo_manutencao,
                 condicao=condicao,
                 status='ativo',
                 criado_por=1  # TODO: usar current_user.id quando autenticação estiver funcionando
@@ -174,7 +174,7 @@ def gerar_pmps(equipamento_id):
             pmp_dict['atividades_count'] = len([a for a in atividades if 
                 a.oficina == pmp.oficina and 
                 a.frequencia == pmp.frequencia and 
-                a.tipo_manutencao == pmp.tipo_manutencao and 
+                a.tipo_manutencao == pmp.tipo and  # Corrigir comparação
                 a.condicao == pmp.condicao
             ])
             resultado.append(pmp_dict)
