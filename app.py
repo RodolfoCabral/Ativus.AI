@@ -130,16 +130,16 @@ def create_app():
     except Exception as e:
         print(f"Erro ao registrar blueprint de debug do plano mestre: {e}")
     
-    # Importar e registrar blueprint de PMP
+    # Importar e registrar blueprint de PMP LIMPO
     try:
-        from routes.pmp import pmp_bp
-        app.register_blueprint(pmp_bp)
-        print("Blueprint de PMP registrado com sucesso")
+        from routes.pmp_limpo import pmp_limpo_bp
+        app.register_blueprint(pmp_limpo_bp)
+        print("Blueprint de PMP LIMPO registrado com sucesso")
     except ImportError as e:
-        print(f"Aviso: Não foi possível importar pmp_bp: {e}")
+        print(f"Aviso: Não foi possível importar pmp_limpo_bp: {e}")
         print("Sistema funcionará sem funcionalidades de PMP.")
     except Exception as e:
-        print(f"Erro ao registrar blueprint de PMP: {e}")
+        print(f"Erro ao registrar blueprint de PMP LIMPO: {e}")
         print("Sistema funcionará sem funcionalidades de PMP.")
     
     # Rotas para arquivos estáticos
