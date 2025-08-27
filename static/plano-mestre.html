@@ -432,6 +432,134 @@
             margin: 0;
         }
         
+        /* Estilos do formulário PMP */
+        .pmp-form-content {
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .pmp-form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .pmp-form-header h4 {
+            margin: 0;
+            color: #333;
+            font-size: 18px;
+        }
+        
+        .btn-salvar-pmp {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-salvar-pmp:hover {
+            background: #218838;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .section-title i {
+            color: #9956a8;
+        }
+        
+        .atividades-count {
+            margin-left: auto;
+            font-size: 12px;
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 12px;
+            color: #666;
+        }
+        
+        .form-grid-pmp {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .form-group-pmp {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group-pmp.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-label-pmp {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .form-control-pmp {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .form-control-pmp:focus {
+            outline: none;
+            border-color: #9956a8;
+            box-shadow: 0 0 0 2px rgba(153, 86, 168, 0.1);
+        }
+        
+        .form-control-pmp[readonly] {
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
+        
+        .atividades-pmp-lista {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            min-height: 100px;
+        }
+        
+        .loading-atividades {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .loading-atividades i {
+            margin-right: 8px;
+        }
+        
         .pmp-form-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1112,10 +1240,141 @@
                                     
                                     <!-- Formulário da PMP -->
                                     <div class="pmp-form-integrated" id="pmp-form-integrated">
-                                        <div class="pmp-empty-selection">
+                                        <div class="pmp-empty-selection" id="pmp-empty-selection">
                                             <i class="fas fa-mouse-pointer"></i>
                                             <h4>Selecione uma PMP</h4>
                                             <p>Escolha uma PMP na lista ao lado para visualizar e configurar os detalhes</p>
+                                        </div>
+                                        
+                                        <!-- Formulário de edição da PMP (inicialmente oculto) -->
+                                        <div class="pmp-form-content" id="pmp-form-content" style="display: none;">
+                                            <div class="pmp-form-header">
+                                                <h4 id="pmp-form-title">Configuração da PMP</h4>
+                                                <div class="pmp-form-actions">
+                                                    <button type="button" class="btn-salvar-pmp" onclick="salvarAlteracoesPMP()">
+                                                        <i class="fas fa-save"></i>
+                                                        Salvar Alterações
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="pmp-form-body">
+                                                <!-- Informações Básicas -->
+                                                <div class="form-section">
+                                                    <h5 class="section-title">
+                                                        <i class="fas fa-info-circle"></i>
+                                                        Informações Básicas
+                                                    </h5>
+                                                    
+                                                    <div class="form-grid-pmp">
+                                                        <div class="form-group-pmp">
+                                                            <label class="form-label-pmp">Código</label>
+                                                            <input type="text" class="form-control-pmp" id="pmp-codigo" readonly>
+                                                        </div>
+                                                        
+                                                        <div class="form-group-pmp full-width">
+                                                            <label class="form-label-pmp">Descrição</label>
+                                                            <textarea class="form-control-pmp" id="pmp-descricao" rows="2" placeholder="Descrição da PMP"></textarea>
+                                                        </div>
+                                                        
+                                                        <div class="form-group-pmp">
+                                                            <label class="form-label-pmp">Tipo</label>
+                                                            <select class="form-control-pmp" id="pmp-tipo">
+                                                                <option value="">Selecione...</option>
+                                                                <option value="preventiva-periodica">Preventiva Periódica</option>
+                                                                <option value="preventiva-preditiva">Preventiva Preditiva</option>
+                                                                <option value="corretiva">Corretiva</option>
+                                                            </select>
+                                                        </div>
+                                                        
+                                                        <div class="form-group-pmp">
+                                                            <label class="form-label-pmp">Oficina</label>
+                                                            <select class="form-control-pmp" id="pmp-oficina">
+                                                                <option value="">Selecione...</option>
+                                                                <option value="eletrica">Elétrica</option>
+                                                                <option value="mecanica">Mecânica</option>
+                                                                <option value="instrumentacao">Instrumentação</option>
+                                                                <option value="civil">Civil</option>
+                                                            </select>
+                                                        </div>
+                                                        
+                                                        <div class="form-group-pmp">
+                                                            <label class="form-label-pmp">Frequência</label>
+                                                            <select class="form-control-pmp" id="pmp-frequencia">
+                                                                <option value="">Selecione...</option>
+                                                                <option value="diario">Diário</option>
+                                                                <option value="semanal">Semanal</option>
+                                                                <option value="quinzenal">Quinzenal</option>
+                                                                <option value="mensal">Mensal</option>
+                                                                <option value="bimestral">Bimestral</option>
+                                                                <option value="trimestral">Trimestral</option>
+                                                                <option value="semestral">Semestral</option>
+                                                                <option value="anual">Anual</option>
+                                                            </select>
+                                                        </div>
+                                                        
+                                                        <div class="form-group-pmp">
+                                                            <label class="form-label-pmp">Condição</label>
+                                                            <select class="form-control-pmp" id="pmp-condicao">
+                                                                <option value="">Selecione...</option>
+                                                                <option value="funcionando">Funcionando</option>
+                                                                <option value="parado">Parado</option>
+                                                                <option value="manutencao">Em Manutenção</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Configurações -->
+                                                <div class="form-section">
+                                                    <h5 class="section-title">
+                                                        <i class="fas fa-cogs"></i>
+                                                        Configurações
+                                                    </h5>
+                                                    
+                                                    <div class="form-grid-pmp">
+                                                        <div class="form-group-pmp">
+                                                            <label class="form-label-pmp">Nº de pessoas para execução</label>
+                                                            <input type="number" class="form-control-pmp" id="pmp-num-pessoas" min="1" max="10" placeholder="1">
+                                                        </div>
+                                                        
+                                                        <div class="form-group-pmp">
+                                                            <label class="form-label-pmp">Nº de dias para antecipar a geração de O.S.</label>
+                                                            <input type="number" class="form-control-pmp" id="pmp-dias-antecipacao" min="0" max="30" placeholder="0">
+                                                        </div>
+                                                        
+                                                        <div class="form-group-pmp">
+                                                            <label class="form-label-pmp">Tempo por pessoa (em horas decimais)</label>
+                                                            <input type="number" class="form-control-pmp" id="pmp-tempo-pessoa" step="0.1" min="0.1" max="24" placeholder="1.0">
+                                                        </div>
+                                                        
+                                                        <div class="form-group-pmp">
+                                                            <label class="form-label-pmp">Forma de impressão da O.S.</label>
+                                                            <select class="form-control-pmp" id="pmp-forma-impressao">
+                                                                <option value="comum">Comum</option>
+                                                                <option value="detalhada">Detalhada</option>
+                                                                <option value="resumida">Resumida</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Atividades da PMP -->
+                                                <div class="form-section">
+                                                    <h5 class="section-title">
+                                                        <i class="fas fa-list-check"></i>
+                                                        Atividades da PMP
+                                                        <span class="atividades-count" id="pmp-atividades-count">0 atividades</span>
+                                                    </h5>
+                                                    
+                                                    <div class="atividades-pmp-lista" id="atividades-pmp-lista">
+                                                        <div class="loading-atividades">
+                                                            <i class="fas fa-spinner fa-spin"></i>
+                                                            Carregando atividades...
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

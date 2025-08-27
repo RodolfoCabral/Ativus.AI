@@ -682,21 +682,103 @@ async function selecionarPMPIntegrada(pmpId, elemento) {
 
 // Renderizar formulário da PMP selecionada
 function renderizarFormularioPMP(pmp) {
-    const container = document.getElementById('pmp-form-integrated');
     const titleDisplay = document.getElementById('pmp-title-display');
+    const emptySelection = document.getElementById('pmp-empty-selection');
+    const formContent = document.getElementById('pmp-form-content');
     
     // Atualizar título
     titleDisplay.textContent = pmp.codigo + ' - ' + pmp.descricao;
     
-    // Renderizar formulário baseado na imagem fornecida
-    container.innerHTML = `
-        <div class="pmp-form-content">
-            <!-- Seção: Descrição da O.S. -->
-            <div class="pmp-form-section full-width">
-                <div class="pmp-form-section-title">Descrição da O.S.</div>
-                <input type="text" class="pmp-form-control" 
-                       value="${pmp.descricao}" readonly>
+    // Ocultar mensagem vazia e mostrar formulário
+    emptySelection.style.display = 'none';
+    formContent.style.display = 'block';
+    
+    // Preencher campos do formulário
+    document.getElementById('pmp-codigo').value = pmp.codigo || '';
+    document.getElementById('pmp-descricao').value = pmp.descricao || '';
+    document.getElementById('pmp-tipo').value = pmp.tipo || '';
+    document.getElementById('pmp-oficina').value = pmp.oficina || '';
+    document.getElementById('pmp-frequencia').value = pmp.frequencia || '';
+    document.getElementById('pmp-condicao').value = pmp.condicao || '';
+    document.getElementById('pmp-num-pessoas').value = pmp.num_pessoas || 1;
+    document.getElementById('pmp-dias-antecipacao').value = pmp.dias_antecipacao || 0;
+    document.getElementById('pmp-tempo-pessoa').value = pmp.tempo_pessoa || 1.0;
+    document.getElementById('pmp-forma-impressao').value = pmp.forma_impressao || 'comum';
+    
+    // Atualizar contagem de atividades
+    document.getElementById('pmp-atividades-count').textContent = `${pmp.atividades_count || 0} atividades`;
+    
+    // Carregar atividades da PMP
+    carregarAtividadesPMP(pmp.id);
+    
+    console.log('✅ Formulário PMP preenchido:', pmp);
+}
+
+// Carregar atividades de uma PMP específica
+async function carregarAtividadesPMP(pmpId) {
+    const container = document.getElementById('atividades-pmp-lista');
+    
+    try {
+        container.innerHTML = `
+            <div class="loading-atividades">
+                <i class="fas fa-spinner fa-spin"></i>
+                Carregando atividades...
             </div>
+        `;
+        
+        const response = await fetch(`/api/pmp/${pmpId}`);
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        
+        const pmp = await response.json();
+        const atividades = pmp.atividades || [];
+        
+        if (atividades.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state-atividades">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>Nenhuma atividade encontrada para esta PMP</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Renderizar lista de atividades
+        let html = '<div class="atividades-header-pmp">';
+        html += '<div>Ordem</div>';
+        html += '<div>Descrição</div>';
+        html += '<div>Oficina</div>';
+        html += '<div>Frequência</div>';
+        html += '<div>Status</div>';
+        html += '</div>';
+        
+        atividades.forEach(atividade => {
+            html += `
+                <div class="atividade-item-pmp">
+                    <div class="atividade-ordem">${atividade.ordem}</div>
+                    <div class="atividade-descricao">${atividade.descricao || '-'}</div>
+                    <div class="atividade-oficina">${atividade.oficina || '-'}</div>
+                    <div class="atividade-frequencia">${atividade.frequencia || '-'}</div>
+                    <div class="atividade-status">
+                        <span class="status-badge status-${atividade.status || 'ativo'}">${atividade.status || 'ativo'}</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar atividades da PMP:', error);
+        container.innerHTML = `
+            <div class="error-atividades">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Erro ao carregar atividades: ${error.message}</p>
+            </div>
+        `;
+    }
+}
             
             <!-- Seção: Informações Básicas -->
             <div class="pmp-form-section">
