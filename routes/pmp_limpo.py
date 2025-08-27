@@ -142,11 +142,7 @@ def gerar_pmps_limpo(equipamento_id):
             pmp_dict['atividades_count'] = AtividadePMP.query.filter_by(pmp_id=pmp.id).count()
             resultado.append(pmp_dict)
         
-        return jsonify({
-            'success': True,
-            'message': f'Criadas {len(novas_pmps)} PMPs com sucesso',
-            'pmps': resultado
-        }), 201
+        return jsonify(resultado), 201
         
     except Exception as e:
         db.session.rollback()
