@@ -142,16 +142,6 @@ def create_app():
         print(f"Erro ao registrar blueprint de PMP LIMPO: {e}")
         print("Sistema funcionará sem funcionalidades de PMP.")
     
-    # Importar e registrar blueprint de ATUALIZAÇÃO de PMPs
-    try:
-        from routes.pmp_atualizar import pmp_atualizar_bp
-        app.register_blueprint(pmp_atualizar_bp)
-        print("Blueprint de ATUALIZAÇÃO PMP registrado com sucesso")
-    except ImportError as e:
-        print(f"Aviso: Não foi possível importar pmp_atualizar_bp: {e}")
-    except Exception as e:
-        print(f"Erro ao registrar blueprint de ATUALIZAÇÃO PMP: {e}")
-    
     # Rotas para arquivos estáticos
     @app.route('/')
     def index():
