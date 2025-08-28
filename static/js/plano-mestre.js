@@ -569,8 +569,27 @@ async function gerarPMPsIntegrado() {
             throw new Error(`Erro HTTP: ${response.status}`);
         }
         
-        const pmps = await response.json();
-        console.log('✅ PMPs geradas:', pmps);
+        const resultado = await response.json();
+        console.log('✅ Resposta da API:', resultado);
+        
+        // Verificar se a resposta tem o formato correto
+        let pmps;
+        if (resultado.success && resultado.pmps) {
+            // Formato: {success: true, message: "...", pmps: [...]}
+            pmps = resultado.pmps;
+        } else if (Array.isArray(resultado)) {
+            // Formato: [...]
+            pmps = resultado;
+        } else {
+            throw new Error('Formato de resposta inválido da API');
+        }
+        
+        console.log('✅ PMPs extraídas:', pmps);
+        
+        // Verificar se pmps é um array
+        if (!Array.isArray(pmps)) {
+            throw new Error('PMPs retornadas não são um array');
+        }
         
         // Atualizar interface
         pmpsAtual = pmps;
