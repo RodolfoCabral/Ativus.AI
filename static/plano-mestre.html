@@ -144,6 +144,429 @@
             border-bottom: none;
         }
         
+        .atividade-concluida {
+            background: #f8f9fa;
+            opacity: 0.7;
+        }
+        
+        .atividade-concluida .checkbox-custom:checked {
+            accent-color: #28a745;
+        }
+        
+        .atividade-item.concluida .atividade-desc {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        
+        .procedimentos-header {
+            text-align: center;
+            padding: 30px 20px;
+            border-bottom: 2px solid #e1e5e9;
+        }
+        
+        .procedimentos-header h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        
+        .procedimentos-header p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .pmp-actions {
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .btn-pmp {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            margin-bottom: 30px;
+        }
+        
+        .btn-pmp:hover {
+            background: linear-gradient(135deg, #218838, #1ea085);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+        
+        .btn-pmp i {
+            margin-right: 10px;
+        }
+        
+        .pmp-info {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: left;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .pmp-info h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .pmp-info ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .pmp-info li {
+            padding: 8px 0;
+            color: #555;
+            position: relative;
+            padding-left: 25px;
+        }
+        
+        .pmp-info li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        /* Estilos para PMP Integrado */
+        .pmp-container-integrated {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .pmp-header-integrated {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            border-bottom: 2px solid #e1e5e9;
+            background: #f8f9fa;
+        }
+        
+        .pmp-title-section h3 {
+            margin: 0 0 5px 0;
+            color: #333;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .pmp-title-section p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .btn-gerar-pmps {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-gerar-pmps:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+        
+        .pmp-main-container {
+            display: flex;
+            height: 600px;
+        }
+        
+        .pmp-sidebar-integrated {
+            width: 300px;
+            background: #f8f9fa;
+            border-right: 1px solid #e1e5e9;
+            overflow-y: auto;
+        }
+        
+        .pmp-sidebar-header-integrated {
+            padding: 15px;
+            border-bottom: 1px solid #e1e5e9;
+            background: white;
+        }
+        
+        .equipamento-info-pmp {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .equipamento-tag-pmp {
+            background: #9956a8;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .equipamento-desc-pmp {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .pmps-lista-integrated {
+            padding: 0;
+        }
+        
+        .pmp-item-integrated {
+            padding: 15px;
+            border-bottom: 1px solid #e1e5e9;
+            cursor: pointer;
+            transition: background 0.3s;
+            background: white;
+        }
+        
+        .pmp-item-integrated:hover {
+            background: #f0f8ff;
+        }
+        
+        .pmp-item-integrated.active {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .pmp-codigo {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .pmp-descricao-item {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .pmp-detalhes-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #888;
+        }
+        
+        .pmp-content-integrated {
+            flex: 1;
+            background: white;
+            overflow-y: auto;
+        }
+        
+        .pmp-content-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #e1e5e9;
+            background: #f8f9fa;
+        }
+        
+        .pmp-title-display {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .pmp-form-integrated {
+            padding: 25px;
+        }
+        
+        .pmp-empty-selection {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .pmp-empty-selection i {
+            font-size: 48px;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .pmp-empty-selection h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .empty-state-pmp {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .empty-state-pmp i {
+            font-size: 36px;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .empty-state-pmp h4 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .empty-state-pmp p {
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        .pmp-form-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .pmp-form-section {
+            margin-bottom: 25px;
+        }
+        
+        .pmp-form-section.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .pmp-form-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e1e5e9;
+        }
+        
+        .pmp-form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .pmp-form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .pmp-form-label {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .pmp-form-control {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .pmp-form-control:focus {
+            outline: none;
+            border-color: #2196f3;
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+        }
+        
+        .pmp-form-control[readonly] {
+            background: #f8f9fa;
+            color: #666;
+        }
+        
+        .pmp-atividades-section {
+            margin-top: 20px;
+        }
+        
+        .pmp-atividades-header {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px 6px 0 0;
+            border: 1px solid #e1e5e9;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .pmp-atividades-lista {
+            border: 1px solid #e1e5e9;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .pmp-atividade-item {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .pmp-atividade-item:last-child {
+            border-bottom: none;
+        }
+        
+        .pmp-atividade-desc {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .pmp-atividade-detalhes {
+            font-size: 12px;
+            color: #666;
+        }   }
+        
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .breadcrumb a {
+            color: #666;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .breadcrumb a:hover {
+            color: #9956a8;
+        }
+        
+        .section-header {
+            padding: 20px 0 10px 0;
+            margin-bottom: 20px;
+        }
+        
+        .section-header .breadcrumb {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
         .checkbox-custom {
             width: 18px;
             height: 18px;
@@ -475,52 +898,88 @@
 </head>
 <body>
     <div class="dashboard-container">
+        <!-- Overlay para mobile -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+        
         <!-- Menu Lateral -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2>SaaS Ativus</h2>
+                <img src="/static/images/Ativus.png" alt="Ativus.AI Logo" class="sidebar-logo">
+                <span class="sidebar-title">Ativus.AI</span>
             </div>
+            
             <nav class="sidebar-nav">
-                <a href="/cadastro-ativos" class="nav-item">
-                    <i class="fas fa-plus-circle"></i>
-                    Cadastro de ativos
-                </a>
-                <a href="/plano-manutencao" class="nav-item">
-                    <i class="fas fa-calendar-alt"></i>
-                    Plano de manutenção
-                </a>
-                <a href="/abrir-chamado" class="nav-item">
-                    <i class="fas fa-ticket-alt"></i>
-                    Abrir chamado
-                </a>
-                <a href="/programacao" class="nav-item">
-                    <i class="fas fa-calendar-check"></i>
-                    Programação
-                </a>
-                <a href="/materiais" class="nav-item">
-                    <i class="fas fa-boxes"></i>
-                    Materiais
-                </a>
-                <a href="/dashboard" class="nav-item">
-                    <i class="fas fa-chart-line"></i>
-                    Dashboard
-                </a>
-                <a href="/relatorios" class="nav-item">
-                    <i class="fas fa-chart-bar"></i>
-                    Relatórios
-                </a>
-                <a href="/kpis" class="nav-item">
-                    <i class="fas fa-tachometer-alt"></i>
-                    Monitoramento
-                </a>
-                <a href="/parametros" class="nav-item">
-                    <i class="fas fa-cog"></i>
-                    Parâmetros
-                </a>
-                <a href="/scanner-qr" class="nav-item">
-                    <i class="fas fa-qrcode"></i>
-                    Scanner QR
-                </a>
+                <ul class="menu">
+                    <li class="menu-item">
+                        <a href="/cadastro-ativos" class="menu-link">
+                            <i class="fas fa-boxes"></i>
+                            <span>Cadastro de Ativos</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/plano-manutencao" class="menu-link">
+                            <i class="fas fa-tools"></i>
+                            <span>Plano de Manutenção</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/abrir-chamado" class="menu-link">
+                            <i class="fas fa-headset"></i>
+                            <span>Abrir Chamado</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/programacao" class="menu-link">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Programação</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/materiais" class="menu-link">
+                            <i class="fas fa-box"></i>
+                            <span>Materiais</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/dashboard" class="menu-link">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/relatorios" class="menu-link">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Relatórios</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/kpis" class="menu-link">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Monitoramento</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/parametros" class="menu-link">
+                            <i class="fas fa-cog"></i>
+                            <span>Parâmetros</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/scanner-qr" class="menu-link">
+                            <i class="fas fa-qrcode"></i>
+                            <span>Scanner QR</span>
+                        </a>
+                    </li>
+                </ul>
             </nav>
         </div>
 
@@ -531,48 +990,31 @@
                     <button class="sidebar-toggle">
                         <i class="fas fa-bars"></i>
                     </button>
+                </div>
+                
+                <div class="top-bar-right">
+                    <div class="user-info">
+                        <span id="user-name">Carregando...</span>
+                        <span id="user-company">Carregando...</span>
+                    </div>
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="content">
+                <div class="section-header">
                     <div class="breadcrumb">
                         <a href="/plano-manutencao" style="color: #666; text-decoration: none;">
-                            <i class="fas fa-calendar-alt"></i> Plano de Manutenção
+                            <i class="fas fa-tools"></i> Plano de Manutenção
                         </a>
                         <span style="margin: 0 8px; color: #ccc;">/</span>
                         <span style="color: #9956a8; font-weight: 600;">Plano Mestre</span>
                     </div>
                 </div>
                 
-                <div class="top-bar-right">
-                    <div class="user-menu">
-                        <div class="user-info">
-                            <span class="user-name" id="user-name">Carregando...</span>
-                            <span class="user-company" id="user-company">Carregando...</span>
-                        </div>
-                        <div class="user-avatar" id="user-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="user-dropdown" id="user-dropdown">
-                            <a href="#" class="dropdown-item">
-                                <i class="fas fa-user-circle"></i>
-                                Minha Conta
-                            </a>
-                            <a href="#" class="dropdown-item">
-                                <i class="fas fa-key"></i>
-                                Redefinir Senha
-                            </a>
-                            <a href="#" class="dropdown-item">
-                                <i class="fas fa-question-circle"></i>
-                                Suporte
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a href="#" class="dropdown-item" id="logout-btn">
-                                <i class="fas fa-sign-out-alt"></i>
-                                Sair
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </header>
-            
-            <div class="content">
                 <div class="plano-container">
                     <!-- Header com informações do equipamento -->
                     <div class="plano-header">
@@ -613,7 +1055,6 @@
                                 <div>Tipo de Manutenção</div>
                                 <div>Condição do Ativo</div>
                                 <div>Val. Ponto Controle</div>
-                                <div>Condição</div>
                                 <div>Ações</div>
                             </div>
                             
@@ -630,10 +1071,55 @@
                     
                     <!-- Tab Content: Procedimentos -->
                     <div class="tab-content" id="procedimentos">
-                        <div class="empty-state">
-                            <i class="fas fa-file-alt"></i>
-                            <h3>Procedimentos de manutenção preventiva</h3>
-                            <p>Esta seção será implementada em breve</p>
+                        <div class="pmp-container-integrated">
+                            <!-- Header da aba PMP -->
+                            <div class="pmp-header-integrated">
+                                <div class="pmp-title-section">
+                                    <h3>Procedimentos de Manutenção Preventiva (PMP)</h3>
+                                    <p>PMPs geradas automaticamente baseadas nas atividades do plano mestre</p>
+                                </div>
+                                <button class="btn-gerar-pmps" onclick="gerarPMPsIntegrado()">
+                                    <i class="fas fa-magic"></i>
+                                    Gerar PMPs
+                                </button>
+                            </div>
+                            
+                            <!-- Container principal com sidebar e conteúdo -->
+                            <div class="pmp-main-container">
+                                <!-- Sidebar com lista de PMPs -->
+                                <div class="pmp-sidebar-integrated">
+                                    <div class="pmp-sidebar-header-integrated">
+                                        <div class="equipamento-info-pmp">
+                                            <span class="equipamento-tag-pmp" id="equipamento-tag-pmp">-</span>
+                                            <span class="equipamento-desc-pmp" id="equipamento-desc-pmp">Equipamento</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="pmps-lista-integrated" id="pmps-lista-integrated">
+                                        <div class="empty-state-pmp">
+                                            <i class="fas fa-clipboard-list"></i>
+                                            <h4>Nenhuma PMP gerada</h4>
+                                            <p>Clique em "Gerar PMPs" para criar os procedimentos</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Conteúdo principal da PMP -->
+                                <div class="pmp-content-integrated">
+                                    <div class="pmp-content-header">
+                                        <div class="pmp-title-display" id="pmp-title-display">Selecione uma PMP</div>
+                                    </div>
+                                    
+                                    <!-- Formulário da PMP -->
+                                    <div class="pmp-form-integrated" id="pmp-form-integrated">
+                                        <div class="pmp-empty-selection">
+                                            <i class="fas fa-mouse-pointer"></i>
+                                            <h4>Selecione uma PMP</h4>
+                                            <p>Escolha uma PMP na lista ao lado para visualizar e configurar os detalhes</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -718,15 +1204,6 @@
                         <div class="form-group">
                             <label class="form-label">Valor Frequência</label>
                             <input type="number" class="form-control" id="valorFrequencia" placeholder="Ex: 30">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Condição</label>
-                            <select class="form-control" id="condicao">
-                                <option value="">Selecione...</option>
-                                <option value="funcionando">Funcionando</option>
-                                <option value="parado">Parado</option>
-                            </select>
                         </div>
                     </div>
                     
