@@ -676,21 +676,31 @@ async function selecionarPMPIntegrada(pmpId, elemento) {
     // Adicionar seleção atual
     if (elemento) {
         elemento.classList.add('active');
+    } else {
+        // Se elemento não foi fornecido, encontrar e selecionar o elemento correto
+        const pmpElement = document.querySelector(`[onclick*="selecionarPMPIntegrada(${pmpId}"]`);
+        if (pmpElement) {
+            pmpElement.classList.add('active');
+        }
     }
     
     console.log('📋 Selecionando PMP:', pmpId);
     
     try {
-        // Buscar detalhes da PMP
+        // SEMPRE buscar dados atualizados do servidor
+        console.log('🔄 Buscando dados atualizados da PMP do servidor...');
         const response = await fetch(`/api/pmp/${pmpId}`);
         if (!response.ok) {
             throw new Error(`Erro HTTP: ${response.status}`);
         }
         
         const pmp = await response.json();
-        console.log('✅ Detalhes da PMP carregados:', pmp);
+        console.log('✅ Detalhes da PMP carregados do servidor:', pmp);
         
+        // Atualizar variável global com dados frescos do servidor
         pmpSelecionada = pmp;
+        
+        // Renderizar formulário com dados atualizados
         renderizarFormularioPMP(pmp);
         
     } catch (error) {
@@ -939,6 +949,10 @@ async function salvarAlteracoesPMP() {
                         console.log('🔄 Lista de PMPs atualizada');
                     }
                 }
+                
+                // CORREÇÃO: Recarregar formulário com dados atualizados
+                console.log('🔄 Recarregando formulário com dados atualizados...');
+                renderizarFormularioPMP(pmpSelecionada);
             }
             
             // Mostrar campos atualizados se disponível
@@ -965,6 +979,8 @@ async function carregarPMPsExistentes() {
     }
     
     try {
+        console.log('🔄 Carregando PMPs existentes para equipamento:', equipamentoAtual.id);
+        
         const response = await fetch(`/api/pmp/equipamento/${equipamentoAtual.id}`);
         if (!response.ok) {
             throw new Error(`Erro HTTP: ${response.status}`);
@@ -977,6 +993,12 @@ async function carregarPMPsExistentes() {
             pmpsAtual = pmps;
             renderizarPMPsIntegradas(pmps);
             atualizarInfoEquipamentoPMP();
+            
+            // CORREÇÃO: Se havia uma PMP selecionada, recarregar seus dados atualizados
+            if (pmpSelecionada) {
+                console.log('🔄 Recarregando dados da PMP selecionada:', pmpSelecionada.id);
+                await selecionarPMPIntegrada(pmpSelecionada.id, null);
+            }
         }
         
     } catch (error) {
