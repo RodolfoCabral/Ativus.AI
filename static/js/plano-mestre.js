@@ -733,24 +733,27 @@ function renderizarFormularioPMP(pmp) {
                 <div class="pmp-form-row">
                     <div class="pmp-form-group">
                         <label class="pmp-form-label">Nº de pessoas para execução</label>
-                        <input type="number" class="pmp-form-control" value="2" min="1">
+                        <input type="number" class="pmp-form-control" id="pmp-num-pessoas" 
+                               value="${pmp.num_pessoas || 1}" min="1">
                     </div>
                     <div class="pmp-form-group">
                         <label class="pmp-form-label">Nº de dias para antecipar a geração de O.S.</label>
-                        <input type="number" class="pmp-form-control" value="2" min="0">
+                        <input type="number" class="pmp-form-control" id="pmp-dias-antecipacao" 
+                               value="${pmp.dias_antecipacao || 0}" min="0">
                     </div>
                 </div>
                 <div class="pmp-form-row">
                     <div class="pmp-form-group">
                         <label class="pmp-form-label">Tempo por pessoa (em horas decimais)</label>
-                        <input type="number" class="pmp-form-control" value="5" step="0.1" min="0">
+                        <input type="number" class="pmp-form-control" id="pmp-tempo-pessoa" 
+                               value="${pmp.tempo_pessoa || 1.0}" step="0.1" min="0">
                     </div>
                     <div class="pmp-form-group">
                         <label class="pmp-form-label">Forma de impressão da O.S.</label>
-                        <select class="pmp-form-control">
-                            <option value="comum">Comum</option>
-                            <option value="detalhada">Detalhada</option>
-                            <option value="resumida">Resumida</option>
+                        <select class="pmp-form-control" id="pmp-forma-impressao">
+                            <option value="comum" ${(pmp.forma_impressao || 'comum') === 'comum' ? 'selected' : ''}>Comum</option>
+                            <option value="detalhada" ${pmp.forma_impressao === 'detalhada' ? 'selected' : ''}>Detalhada</option>
+                            <option value="resumida" ${pmp.forma_impressao === 'resumida' ? 'selected' : ''}>Resumida</option>
                         </select>
                     </div>
                 </div>
