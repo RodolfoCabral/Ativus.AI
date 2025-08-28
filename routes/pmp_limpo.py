@@ -4,6 +4,7 @@ from assets_models import Equipamento
 from models.plano_mestre import PlanoMestre, AtividadePlanoMestre
 from models import db
 import logging
+from datetime import datetime
 
 pmp_limpo_bp = Blueprint('pmp_limpo_bp', __name__)
 
@@ -205,6 +206,191 @@ def get_pmp_detalhes_limpo(pmp_id):
         
     except Exception as e:
         current_app.logger.error(f"❌ Erro ao buscar detalhes da PMP {pmp_id}: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Erro interno: {str(e)}'
+        }), 500
+
+@pmp_limpo_bp.route('/api/pmp/<int:pmp_id>/atualizar', methods=['PUT'])
+def atualizar_pmp_limpo(pmp_id):
+    """
+    Atualiza uma PMP existente com novos dados.
+    
+    CAMPOS SUPORTADOS:
+    - num_pessoas: Número de pessoas para execução
+    - dias_antecipacao: Dias para antecipar a geração de O.S.
+    - tempo_pessoa: Tempo por pessoa em horas decimais
+    - forma_impressao: Forma de impressão da O.S.
+    - descricao: Descrição da PMP
+    - tipo: Tipo de manutenção
+    - oficina: Oficina responsável
+    - frequencia: Frequência da manutenção
+    - condicao: Condição do ativo
+    - status: Status da PMP
+    """
+    try:
+        current_app.logger.info(f"🔧 Iniciando atualização PMP {pmp_id}")
+        
+        # 1. Validar dados recebidos
+        data = request.get_json()
+        if not data:
+            current_app.logger.error("❌ Nenhum dado recebido na requisição")
+            return jsonify({
+                'success': False,
+                'message': 'Dados não fornecidos'
+            }), 400
+        
+        current_app.logger.info(f"📦 Dados recebidos: {data}")
+        
+        # 2. Buscar PMP existente
+        pmp = PMP.query.get(pmp_id)
+        if not pmp:
+            current_app.logger.error(f"❌ PMP {pmp_id} não encontrada")
+            return jsonify({
+                'success': False,
+                'message': 'PMP não encontrada'
+            }), 404
+        
+        current_app.logger.info(f"✅ PMP encontrada: {pmp.codigo}")
+        
+        # 3. Atualizar campos da PMP
+        campos_atualizados = []
+        
+        # Campos de configuração (principais)
+        if 'num_pessoas' in data:
+            valor_antigo = pmp.num_pessoas
+            try:
+                pmp.num_pessoas = int(data['num_pessoas'])
+                campos_atualizados.append(f"num_pessoas: {valor_antigo} → {pmp.num_pessoas}")
+                current_app.logger.info(f"🔄 Atualizando num_pessoas: {valor_antigo} → {pmp.num_pessoas}")
+            except (ValueError, TypeError) as e:
+                current_app.logger.error(f"❌ Erro ao converter num_pessoas: {e}")
+                return jsonify({
+                    'success': False,
+                    'message': f'Valor inválido para num_pessoas: {data["num_pessoas"]}'
+                }), 400
+        
+        if 'dias_antecipacao' in data:
+            valor_antigo = pmp.dias_antecipacao
+            try:
+                pmp.dias_antecipacao = int(data['dias_antecipacao'])
+                campos_atualizados.append(f"dias_antecipacao: {valor_antigo} → {pmp.dias_antecipacao}")
+                current_app.logger.info(f"🔄 Atualizando dias_antecipacao: {valor_antigo} → {pmp.dias_antecipacao}")
+            except (ValueError, TypeError) as e:
+                current_app.logger.error(f"❌ Erro ao converter dias_antecipacao: {e}")
+                return jsonify({
+                    'success': False,
+                    'message': f'Valor inválido para dias_antecipacao: {data["dias_antecipacao"]}'
+                }), 400
+        
+        if 'tempo_pessoa' in data:
+            valor_antigo = pmp.tempo_pessoa
+            try:
+                pmp.tempo_pessoa = float(data['tempo_pessoa'])
+                campos_atualizados.append(f"tempo_pessoa: {valor_antigo} → {pmp.tempo_pessoa}")
+                current_app.logger.info(f"🔄 Atualizando tempo_pessoa: {valor_antigo} → {pmp.tempo_pessoa}")
+            except (ValueError, TypeError) as e:
+                current_app.logger.error(f"❌ Erro ao converter tempo_pessoa: {e}")
+                return jsonify({
+                    'success': False,
+                    'message': f'Valor inválido para tempo_pessoa: {data["tempo_pessoa"]}'
+                }), 400
+        
+        if 'forma_impressao' in data:
+            valor_antigo = pmp.forma_impressao
+            pmp.forma_impressao = str(data['forma_impressao'])
+            campos_atualizados.append(f"forma_impressao: '{valor_antigo}' → '{pmp.forma_impressao}'")
+            current_app.logger.info(f"🔄 Atualizando forma_impressao: '{valor_antigo}' → '{pmp.forma_impressao}'")
+        
+        # Outros campos opcionais
+        if 'descricao' in data:
+            valor_antigo = pmp.descricao
+            pmp.descricao = str(data['descricao'])
+            campos_atualizados.append(f"descricao: '{valor_antigo}' → '{pmp.descricao}'")
+            current_app.logger.info(f"🔄 Atualizando descricao")
+        
+        if 'tipo' in data:
+            valor_antigo = pmp.tipo
+            pmp.tipo = str(data['tipo'])
+            campos_atualizados.append(f"tipo: '{valor_antigo}' → '{pmp.tipo}'")
+            current_app.logger.info(f"🔄 Atualizando tipo")
+        
+        if 'oficina' in data:
+            valor_antigo = pmp.oficina
+            pmp.oficina = str(data['oficina'])
+            campos_atualizados.append(f"oficina: '{valor_antigo}' → '{pmp.oficina}'")
+            current_app.logger.info(f"🔄 Atualizando oficina")
+        
+        if 'frequencia' in data:
+            valor_antigo = pmp.frequencia
+            pmp.frequencia = str(data['frequencia'])
+            campos_atualizados.append(f"frequencia: '{valor_antigo}' → '{pmp.frequencia}'")
+            current_app.logger.info(f"🔄 Atualizando frequencia")
+        
+        if 'condicao' in data:
+            valor_antigo = pmp.condicao
+            pmp.condicao = str(data['condicao'])
+            campos_atualizados.append(f"condicao: '{valor_antigo}' → '{pmp.condicao}'")
+            current_app.logger.info(f"🔄 Atualizando condicao")
+        
+        if 'status' in data:
+            valor_antigo = pmp.status
+            pmp.status = str(data['status'])
+            campos_atualizados.append(f"status: '{valor_antigo}' → '{pmp.status}'")
+            current_app.logger.info(f"🔄 Atualizando status")
+        
+        # 4. Atualizar timestamp de modificação
+        pmp.atualizado_em = datetime.utcnow()
+        current_app.logger.info(f"🕒 Timestamp atualizado: {pmp.atualizado_em}")
+        
+        # 5. Salvar no banco com commit robusto
+        current_app.logger.info("💾 Iniciando commit no banco...")
+        
+        try:
+            # Garantir que o objeto está na sessão
+            db.session.add(pmp)
+            
+            # Forçar flush para detectar erros antes do commit
+            db.session.flush()
+            current_app.logger.info("✅ Flush realizado com sucesso")
+            
+            # Commit final
+            db.session.commit()
+            current_app.logger.info("✅ Commit realizado com sucesso!")
+            
+            # Verificar se as alterações foram realmente salvas
+            pmp_verificacao = PMP.query.get(pmp_id)
+            current_app.logger.info(f"🔍 Verificação pós-commit:")
+            current_app.logger.info(f"   num_pessoas: {pmp_verificacao.num_pessoas}")
+            current_app.logger.info(f"   dias_antecipacao: {pmp_verificacao.dias_antecipacao}")
+            current_app.logger.info(f"   tempo_pessoa: {pmp_verificacao.tempo_pessoa}")
+            current_app.logger.info(f"   forma_impressao: {pmp_verificacao.forma_impressao}")
+            
+        except Exception as commit_error:
+            current_app.logger.error(f"❌ Erro no commit: {commit_error}", exc_info=True)
+            db.session.rollback()
+            return jsonify({
+                'success': False,
+                'message': f'Erro ao salvar no banco: {str(commit_error)}'
+            }), 500
+        
+        current_app.logger.info(f"🎉 PMP {pmp_id} atualizada com sucesso!")
+        current_app.logger.info(f"📝 Campos alterados: {campos_atualizados}")
+        
+        # 6. Retornar PMP atualizada
+        pmp_dict = pmp.to_dict()
+        pmp_dict['atividades_count'] = AtividadePMP.query.filter_by(pmp_id=pmp.id).count()
+        
+        return jsonify({
+            'success': True,
+            'message': 'PMP atualizada com sucesso',
+            'pmp': pmp_dict,
+            'campos_atualizados': campos_atualizados
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"❌ Erro geral ao atualizar PMP {pmp_id}: {e}", exc_info=True)
         return jsonify({
             'success': False,
             'message': f'Erro interno: {str(e)}'

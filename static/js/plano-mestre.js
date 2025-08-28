@@ -809,20 +809,134 @@ function atualizarInfoEquipamentoPMP() {
 }
 
 // Salvar alterações da PMP
-function salvarAlteracoesPMP() {
+async function salvarAlteracoesPMP() {
     if (!pmpSelecionada) {
         alert('Nenhuma PMP selecionada');
         return;
     }
     
-    // Coletar dados do formulário
-    const formData = {
-        // Implementar coleta de dados do formulário
-        // Por enquanto, apenas mostrar mensagem de sucesso
-    };
-    
-    console.log('💾 Salvando alterações da PMP:', pmpSelecionada.id, formData);
-    alert('Alterações salvas com sucesso!');
+    try {
+        console.log('💾 Iniciando salvamento da PMP:', pmpSelecionada.id);
+        
+        // Coletar dados do formulário pelos IDs dos campos
+        const formData = {};
+        
+        // Campos de configuração (principais)
+        const numPessoas = document.getElementById('pmp-num-pessoas');
+        if (numPessoas) {
+            formData.num_pessoas = parseInt(numPessoas.value) || 1;
+            console.log('📝 num_pessoas coletado:', formData.num_pessoas);
+        }
+        
+        const diasAntecipacao = document.getElementById('pmp-dias-antecipacao');
+        if (diasAntecipacao) {
+            formData.dias_antecipacao = parseInt(diasAntecipacao.value) || 0;
+            console.log('📝 dias_antecipacao coletado:', formData.dias_antecipacao);
+        }
+        
+        const tempoPessoa = document.getElementById('pmp-tempo-pessoa');
+        if (tempoPessoa) {
+            formData.tempo_pessoa = parseFloat(tempoPessoa.value) || 1.0;
+            console.log('📝 tempo_pessoa coletado:', formData.tempo_pessoa);
+        }
+        
+        const formaImpressao = document.getElementById('pmp-forma-impressao');
+        if (formaImpressao) {
+            formData.forma_impressao = formaImpressao.value || 'comum';
+            console.log('📝 forma_impressao coletado:', formData.forma_impressao);
+        }
+        
+        // Outros campos opcionais
+        const descricao = document.getElementById('pmp-descricao');
+        if (descricao && descricao.value !== pmpSelecionada.descricao) {
+            formData.descricao = descricao.value;
+            console.log('📝 descricao coletado:', formData.descricao);
+        }
+        
+        const tipo = document.getElementById('pmp-tipo');
+        if (tipo && tipo.value !== pmpSelecionada.tipo) {
+            formData.tipo = tipo.value;
+            console.log('📝 tipo coletado:', formData.tipo);
+        }
+        
+        const oficina = document.getElementById('pmp-oficina');
+        if (oficina && oficina.value !== pmpSelecionada.oficina) {
+            formData.oficina = oficina.value;
+            console.log('📝 oficina coletado:', formData.oficina);
+        }
+        
+        const frequencia = document.getElementById('pmp-frequencia');
+        if (frequencia && frequencia.value !== pmpSelecionada.frequencia) {
+            formData.frequencia = frequencia.value;
+            console.log('📝 frequencia coletado:', formData.frequencia);
+        }
+        
+        const condicao = document.getElementById('pmp-condicao');
+        if (condicao && condicao.value !== pmpSelecionada.condicao) {
+            formData.condicao = condicao.value;
+            console.log('📝 condicao coletado:', formData.condicao);
+        }
+        
+        console.log('📦 Dados coletados para envio:', formData);
+        
+        // Verificar se há dados para enviar
+        if (Object.keys(formData).length === 0) {
+            alert('Nenhuma alteração detectada');
+            return;
+        }
+        
+        // Chamar API de atualização
+        console.log('🚀 Enviando dados para API...');
+        const response = await fetch(`/api/pmp/${pmpSelecionada.id}/atualizar`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        console.log('📡 Resposta da API recebida:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Erro na resposta da API:', errorText);
+            throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const resultado = await response.json();
+        console.log('✅ Resultado da API:', resultado);
+        
+        if (resultado.success) {
+            // Atualizar PMP selecionada com dados retornados
+            if (resultado.pmp) {
+                pmpSelecionada = resultado.pmp;
+                console.log('🔄 PMP selecionada atualizada:', pmpSelecionada);
+                
+                // Atualizar lista de PMPs se disponível
+                if (window.pmpsAtual) {
+                    const index = window.pmpsAtual.findIndex(p => p.id === pmpSelecionada.id);
+                    if (index !== -1) {
+                        window.pmpsAtual[index] = pmpSelecionada;
+                        console.log('🔄 Lista de PMPs atualizada');
+                    }
+                }
+            }
+            
+            // Mostrar campos atualizados se disponível
+            if (resultado.campos_atualizados && resultado.campos_atualizados.length > 0) {
+                console.log('📝 Campos atualizados:', resultado.campos_atualizados);
+            }
+            
+            alert('Alterações salvas com sucesso!');
+        } else {
+            console.error('❌ API retornou erro:', resultado.message);
+            alert('Erro ao salvar: ' + resultado.message);
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao salvar alterações da PMP:', error);
+        alert('Erro ao salvar alterações: ' + error.message);
+    }
 }
 
 // Carregar PMPs existentes ao trocar para a aba
