@@ -787,6 +787,77 @@ function renderizarFormularioPMP(pmp) {
                     </div>
                 </div>
             </div>
+            
+            <!-- Seção: Planejamento -->
+            <div class="pmp-form-section">
+                <div class="pmp-form-section-title">Planejamento</div>
+                <div class="pmp-form-row">
+                    <div class="pmp-form-group">
+                        <label class="pmp-form-label">Hora Homem (hh)</label>
+                        <input type="number" class="pmp-form-control" id="pmp-hora-homem" 
+                               value="${calcularHoraHomem(pmp.num_pessoas || 1, pmp.tempo_pessoa || 1.0)}" 
+                               step="0.1" readonly>
+                        <small class="pmp-form-help">Calculado automaticamente: Nº pessoas × Tempo por pessoa</small>
+                    </div>
+                    <div class="pmp-form-group">
+                        <label class="pmp-form-label">Materiais</label>
+                        <button type="button" class="btn-secondary" onclick="abrirSeletorMateriais()">
+                            <i class="fas fa-plus"></i>
+                            Selecionar Materiais
+                        </button>
+                        <div id="pmp-materiais-lista" class="pmp-materiais-container">
+                            ${renderizarMateriaisPMP(pmp.materiais || [])}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção: Programação -->
+            <div class="pmp-form-section">
+                <div class="pmp-form-section-title">Programação</div>
+                <div class="pmp-form-row">
+                    <div class="pmp-form-group full-width">
+                        <label class="pmp-form-label">Usuários Responsáveis</label>
+                        <select class="pmp-form-control" id="pmp-usuarios-responsaveis" multiple>
+                            ${renderizarOpcoesUsuarios(pmp.usuarios_responsaveis || [])}
+                        </select>
+                        <small class="pmp-form-help">Selecione um ou mais usuários responsáveis pela execução</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção: Controle -->
+            <div class="pmp-form-section">
+                <div class="pmp-form-section-title">Controle</div>
+                <div class="pmp-form-row">
+                    <div class="pmp-form-group">
+                        <label class="pmp-form-label">Data de Início do Plano</label>
+                        <input type="date" class="pmp-form-control" id="pmp-data-inicio" 
+                               value="${formatarDataParaInput(pmp.data_inicio_plano)}">
+                    </div>
+                    <div class="pmp-form-group">
+                        <label class="pmp-form-label">Data de Fim do Plano</label>
+                        <input type="date" class="pmp-form-control" id="pmp-data-fim" 
+                               value="${formatarDataParaInput(pmp.data_fim_plano)}">
+                        <small class="pmp-form-help">Opcional - deve ser posterior à data de início</small>
+                    </div>
+                </div>
+                <div class="pmp-form-row">
+                    <div class="pmp-form-group">
+                        <label class="pmp-form-label">OSs Geradas</label>
+                        <div class="pmp-contador-os">
+                            <span class="contador-numero" id="pmp-contador-os">${calcularOSsGeradas(pmp)}</span>
+                            <span class="contador-texto">ordens de serviço geradas</span>
+                        </div>
+                        <small class="pmp-form-help">Baseado na frequência e período decorrido</small>
+                    </div>
+                    <div class="pmp-form-group">
+                        <label class="pmp-form-label">Próxima Geração</label>
+                        <input type="text" class="pmp-form-control" 
+                               value="${calcularProximaGeracao(pmp)}" readonly>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <!-- Seção: Atividades da PMP -->
@@ -904,6 +975,40 @@ async function salvarAlteracoesPMP() {
         if (condicao && condicao.value !== pmpSelecionada.condicao) {
             formData.condicao = condicao.value;
             console.log('📝 condicao coletado:', formData.condicao);
+        }
+        
+        // Novos campos - Controle
+        const dataInicio = document.getElementById('pmp-data-inicio');
+        if (dataInicio && dataInicio.value !== formatarDataParaInput(pmpSelecionada.data_inicio_plano)) {
+            formData.data_inicio_plano = dataInicio.value;
+            console.log('📝 data_inicio_plano coletado:', formData.data_inicio_plano);
+        }
+        
+        const dataFim = document.getElementById('pmp-data-fim');
+        if (dataFim && dataFim.value !== formatarDataParaInput(pmpSelecionada.data_fim_plano)) {
+            // Validar se data fim é posterior à data início
+            if (dataInicio.value && dataFim.value && dataFim.value <= dataInicio.value) {
+                alert('A data de fim deve ser posterior à data de início');
+                return;
+            }
+            formData.data_fim_plano = dataFim.value || null;
+            console.log('📝 data_fim_plano coletado:', formData.data_fim_plano);
+        }
+        
+        // Novos campos - Programação
+        const usuariosResponsaveis = document.getElementById('pmp-usuarios-responsaveis');
+        if (usuariosResponsaveis) {
+            const usuariosSelecionados = Array.from(usuariosResponsaveis.selectedOptions).map(option => parseInt(option.value));
+            if (JSON.stringify(usuariosSelecionados) !== JSON.stringify(pmpSelecionada.usuarios_responsaveis || [])) {
+                formData.usuarios_responsaveis = usuariosSelecionados;
+                console.log('📝 usuarios_responsaveis coletado:', formData.usuarios_responsaveis);
+            }
+        }
+        
+        // Novos campos - Materiais (se houver alterações)
+        if (pmpSelecionada.materiais && pmpSelecionada.materiais.length > 0) {
+            formData.materiais = pmpSelecionada.materiais;
+            console.log('📝 materiais coletado:', formData.materiais);
         }
         
         console.log('📦 Dados coletados para envio:', formData);
@@ -1039,5 +1144,242 @@ function inicializarTabsComPMP() {
 document.addEventListener('DOMContentLoaded', function() {
     // Remover a chamada original de inicializarTabs() e usar a nova
     inicializarTabsComPMP();
+});
+
+
+
+// ===== FUNÇÕES AUXILIARES PARA NOVOS CAMPOS PMP =====
+
+// Calcular Hora Homem (Nº pessoas × Tempo por pessoa)
+function calcularHoraHomem(numPessoas, tempoPessoa) {
+    const resultado = (numPessoas || 1) * (tempoPessoa || 1.0);
+    return resultado.toFixed(1);
+}
+
+// Atualizar Hora Homem quando campos mudarem
+function atualizarHoraHomem() {
+    const numPessoas = parseInt(document.getElementById('pmp-num-pessoas')?.value) || 1;
+    const tempoPessoa = parseFloat(document.getElementById('pmp-tempo-pessoa')?.value) || 1.0;
+    const horaHomemField = document.getElementById('pmp-hora-homem');
+    
+    if (horaHomemField) {
+        horaHomemField.value = calcularHoraHomem(numPessoas, tempoPessoa);
+    }
+}
+
+// Renderizar lista de materiais da PMP
+function renderizarMateriaisPMP(materiais) {
+    if (!materiais || materiais.length === 0) {
+        return `
+            <div class="pmp-materiais-vazio">
+                <i class="fas fa-box-open"></i>
+                <span>Nenhum material selecionado</span>
+            </div>
+        `;
+    }
+    
+    let html = '<div class="pmp-materiais-lista">';
+    let valorTotal = 0;
+    
+    materiais.forEach((material, index) => {
+        const subtotal = (material.quantidade || 0) * (material.valor_unitario || 0);
+        valorTotal += subtotal;
+        
+        html += `
+            <div class="pmp-material-item">
+                <div class="material-info">
+                    <span class="material-nome">${material.nome || 'Material'}</span>
+                    <span class="material-codigo">${material.codigo || ''}</span>
+                </div>
+                <div class="material-valores">
+                    <input type="number" class="material-quantidade" 
+                           value="${material.quantidade || 1}" min="1" 
+                           onchange="atualizarMaterial(${index}, 'quantidade', this.value)">
+                    <span class="material-unidade">${material.unidade || 'UN'}</span>
+                    <input type="number" class="material-valor" 
+                           value="${(material.valor_unitario || 0).toFixed(2)}" step="0.01" min="0"
+                           onchange="atualizarMaterial(${index}, 'valor_unitario', this.value)">
+                    <span class="material-subtotal">R$ ${subtotal.toFixed(2)}</span>
+                    <button type="button" class="btn-remover-material" 
+                            onclick="removerMaterial(${index})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+        <div class="pmp-materiais-total">
+            <strong>Total: R$ ${valorTotal.toFixed(2)}</strong>
+        </div>
+    </div>`;
+    
+    return html;
+}
+
+// Renderizar opções de usuários da empresa
+function renderizarOpcoesUsuarios(usuariosSelecionados) {
+    // TODO: Buscar usuários reais da empresa via API
+    // Por enquanto, usar dados mock
+    const usuariosEmpresa = [
+        { id: 1, nome: 'João Silva', email: 'joao@empresa.com' },
+        { id: 2, nome: 'Maria Santos', email: 'maria@empresa.com' },
+        { id: 3, nome: 'Pedro Costa', email: 'pedro@empresa.com' },
+        { id: 4, nome: 'Ana Oliveira', email: 'ana@empresa.com' }
+    ];
+    
+    let html = '';
+    usuariosEmpresa.forEach(usuario => {
+        const selecionado = usuariosSelecionados.includes(usuario.id) ? 'selected' : '';
+        html += `<option value="${usuario.id}" ${selecionado}>${usuario.nome} (${usuario.email})</option>`;
+    });
+    
+    return html;
+}
+
+// Formatar data para input type="date"
+function formatarDataParaInput(data) {
+    if (!data) return '';
+    
+    // Se já está no formato YYYY-MM-DD, retornar como está
+    if (typeof data === 'string' && data.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return data;
+    }
+    
+    // Tentar converter para Date e formatar
+    try {
+        const dataObj = new Date(data);
+        if (isNaN(dataObj.getTime())) return '';
+        
+        const ano = dataObj.getFullYear();
+        const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+        const dia = String(dataObj.getDate()).padStart(2, '0');
+        
+        return `${ano}-${mes}-${dia}`;
+    } catch (e) {
+        return '';
+    }
+}
+
+// Calcular quantas OSs foram geradas baseado na frequência
+function calcularOSsGeradas(pmp) {
+    if (!pmp.data_inicio_plano || !pmp.frequencia) {
+        return 0;
+    }
+    
+    try {
+        const dataInicio = new Date(pmp.data_inicio_plano);
+        const dataAtual = new Date();
+        
+        if (isNaN(dataInicio.getTime()) || dataInicio > dataAtual) {
+            return 0;
+        }
+        
+        const diasDecorridos = Math.floor((dataAtual - dataInicio) / (1000 * 60 * 60 * 24));
+        
+        // Mapear frequências para dias
+        const frequenciaDias = {
+            'diaria': 1,
+            'semanal': 7,
+            'quinzenal': 15,
+            'mensal': 30,
+            'bimestral': 60,
+            'trimestral': 90,
+            'semestral': 180,
+            'anual': 365
+        };
+        
+        const frequenciaLower = (pmp.frequencia || '').toLowerCase();
+        const diasFrequencia = frequenciaDias[frequenciaLower] || 30; // Default mensal
+        
+        return Math.floor(diasDecorridos / diasFrequencia);
+        
+    } catch (e) {
+        console.error('Erro ao calcular OSs geradas:', e);
+        return 0;
+    }
+}
+
+// Calcular próxima data de geração
+function calcularProximaGeracao(pmp) {
+    if (!pmp.data_inicio_plano || !pmp.frequencia) {
+        return 'Não definido';
+    }
+    
+    try {
+        const dataInicio = new Date(pmp.data_inicio_plano);
+        const osGeradas = calcularOSsGeradas(pmp);
+        
+        // Mapear frequências para dias
+        const frequenciaDias = {
+            'diaria': 1,
+            'semanal': 7,
+            'quinzenal': 15,
+            'mensal': 30,
+            'bimestral': 60,
+            'trimestral': 90,
+            'semestral': 180,
+            'anual': 365
+        };
+        
+        const frequenciaLower = (pmp.frequencia || '').toLowerCase();
+        const diasFrequencia = frequenciaDias[frequenciaLower] || 30;
+        
+        const proximaData = new Date(dataInicio);
+        proximaData.setDate(proximaData.getDate() + ((osGeradas + 1) * diasFrequencia));
+        
+        return proximaData.toLocaleDateString('pt-BR');
+        
+    } catch (e) {
+        console.error('Erro ao calcular próxima geração:', e);
+        return 'Erro no cálculo';
+    }
+}
+
+// Abrir seletor de materiais (modal)
+function abrirSeletorMateriais() {
+    // TODO: Implementar modal de seleção de materiais
+    alert('Funcionalidade de seleção de materiais será implementada em breve');
+}
+
+// Atualizar material na lista
+function atualizarMaterial(index, campo, valor) {
+    if (!pmpSelecionada.materiais) {
+        pmpSelecionada.materiais = [];
+    }
+    
+    if (pmpSelecionada.materiais[index]) {
+        pmpSelecionada.materiais[index][campo] = parseFloat(valor) || 0;
+        
+        // Rerender a lista de materiais
+        const container = document.getElementById('pmp-materiais-lista');
+        if (container) {
+            container.innerHTML = renderizarMateriaisPMP(pmpSelecionada.materiais);
+        }
+    }
+}
+
+// Remover material da lista
+function removerMaterial(index) {
+    if (!pmpSelecionada.materiais) return;
+    
+    pmpSelecionada.materiais.splice(index, 1);
+    
+    // Rerender a lista de materiais
+    const container = document.getElementById('pmp-materiais-lista');
+    if (container) {
+        container.innerHTML = renderizarMateriaisPMP(pmpSelecionada.materiais);
+    }
+}
+
+// Adicionar event listeners para atualizar Hora Homem automaticamente
+document.addEventListener('DOMContentLoaded', function() {
+    // Adicionar listeners quando os campos forem criados
+    document.addEventListener('input', function(e) {
+        if (e.target.id === 'pmp-num-pessoas' || e.target.id === 'pmp-tempo-pessoa') {
+            atualizarHoraHomem();
+        }
+    });
 });
 

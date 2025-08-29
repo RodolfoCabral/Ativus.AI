@@ -1,5 +1,6 @@
 from datetime import datetime
 from models import db
+from datetime import datetime
 import json
 
 class PMP(db.Model):
@@ -25,6 +26,12 @@ class PMP(db.Model):
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)
     atualizado_em = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Novos campos
+    data_inicio_plano = db.Column(db.Date)  # Data de início do plano
+    data_fim_plano = db.Column(db.Date)     # Data de fim do plano
+    usuarios_responsaveis = db.Column(db.Text)  # JSON array com IDs dos usuários
+    materiais = db.Column(db.Text)          # JSON array com materiais e valores
+    
     def to_dict(self):
         return {
             'id': self.id,
@@ -43,7 +50,12 @@ class PMP(db.Model):
             'status': self.status,
             'criado_por': self.criado_por,
             'criado_em': self.criado_em.isoformat() if self.criado_em else None,
-            'atualizado_em': self.atualizado_em.isoformat() if self.atualizado_em else None
+            'atualizado_em': self.atualizado_em.isoformat() if self.atualizado_em else None,
+            # Novos campos
+            'data_inicio_plano': self.data_inicio_plano.isoformat() if self.data_inicio_plano else None,
+            'data_fim_plano': self.data_fim_plano.isoformat() if self.data_fim_plano else None,
+            'usuarios_responsaveis': json.loads(self.usuarios_responsaveis) if self.usuarios_responsaveis else [],
+            'materiais': json.loads(self.materiais) if self.materiais else []
         }
 
 class AtividadePMP(db.Model):

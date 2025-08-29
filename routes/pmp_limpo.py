@@ -339,6 +339,68 @@ def atualizar_pmp_limpo(pmp_id):
             campos_atualizados.append(f"status: '{valor_antigo}' → '{pmp.status}'")
             current_app.logger.info(f"🔄 Atualizando status")
         
+        # Novos campos - Controle
+        if 'data_inicio_plano' in data:
+            valor_antigo = pmp.data_inicio_plano
+            if data['data_inicio_plano']:
+                try:
+                    from datetime import datetime
+                    pmp.data_inicio_plano = datetime.strptime(data['data_inicio_plano'], '%Y-%m-%d').date()
+                    campos_atualizados.append(f"data_inicio_plano: {valor_antigo} → {pmp.data_inicio_plano}")
+                    current_app.logger.info(f"🔄 Atualizando data_inicio_plano: {pmp.data_inicio_plano}")
+                except ValueError as e:
+                    current_app.logger.error(f"❌ Erro ao converter data_inicio_plano: {e}")
+                    return jsonify({
+                        'success': False,
+                        'message': f'Data de início inválida: {data["data_inicio_plano"]}'
+                    }), 400
+            else:
+                pmp.data_inicio_plano = None
+                campos_atualizados.append(f"data_inicio_plano: {valor_antigo} → None")
+        
+        if 'data_fim_plano' in data:
+            valor_antigo = pmp.data_fim_plano
+            if data['data_fim_plano']:
+                try:
+                    from datetime import datetime
+                    data_fim = datetime.strptime(data['data_fim_plano'], '%Y-%m-%d').date()
+                    
+                    # Validar se data fim é posterior à data início
+                    if pmp.data_inicio_plano and data_fim <= pmp.data_inicio_plano:
+                        return jsonify({
+                            'success': False,
+                            'message': 'A data de fim deve ser posterior à data de início'
+                        }), 400
+                    
+                    pmp.data_fim_plano = data_fim
+                    campos_atualizados.append(f"data_fim_plano: {valor_antigo} → {pmp.data_fim_plano}")
+                    current_app.logger.info(f"🔄 Atualizando data_fim_plano: {pmp.data_fim_plano}")
+                except ValueError as e:
+                    current_app.logger.error(f"❌ Erro ao converter data_fim_plano: {e}")
+                    return jsonify({
+                        'success': False,
+                        'message': f'Data de fim inválida: {data["data_fim_plano"]}'
+                    }), 400
+            else:
+                pmp.data_fim_plano = None
+                campos_atualizados.append(f"data_fim_plano: {valor_antigo} → None")
+        
+        # Novos campos - Programação
+        if 'usuarios_responsaveis' in data:
+            valor_antigo = pmp.usuarios_responsaveis
+            import json
+            pmp.usuarios_responsaveis = json.dumps(data['usuarios_responsaveis']) if data['usuarios_responsaveis'] else None
+            campos_atualizados.append(f"usuarios_responsaveis: {valor_antigo} → {pmp.usuarios_responsaveis}")
+            current_app.logger.info(f"🔄 Atualizando usuarios_responsaveis")
+        
+        # Novos campos - Materiais
+        if 'materiais' in data:
+            valor_antigo = pmp.materiais
+            import json
+            pmp.materiais = json.dumps(data['materiais']) if data['materiais'] else None
+            campos_atualizados.append(f"materiais: materiais atualizados")
+            current_app.logger.info(f"🔄 Atualizando materiais: {len(data['materiais']) if data['materiais'] else 0} itens")
+        
         # 4. Atualizar timestamp de modificação
         pmp.atualizado_em = datetime.utcnow()
         current_app.logger.info(f"🕒 Timestamp atualizado: {pmp.atualizado_em}")
