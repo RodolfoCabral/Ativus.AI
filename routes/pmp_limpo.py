@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, session
 from models.pmp_limpo import PMP, AtividadePMP, HistoricoExecucaoPMP
 from assets_models import Equipamento
 from models.plano_mestre import PlanoMestre, AtividadePlanoMestre
@@ -512,9 +512,17 @@ def buscar_usuarios_empresa():
     try:
         current_app.logger.info("🔍 Buscando usuários da empresa")
         
-        # TODO: Implementar autenticação real para pegar ID do usuário logado
-        # Por enquanto, assumir usuário logado com ID = 1
-        usuario_logado_id = 1
+        # Tentar pegar usuário logado da sessão Flask
+        usuario_logado_id = None
+        
+        # Verificar se há sessão ativa
+        if 'user_id' in session:
+            usuario_logado_id = session['user_id']
+            current_app.logger.info(f"👤 Usuário da sessão: {usuario_logado_id}")
+        else:
+            # Fallback: tentar pegar do request ou usar ID padrão
+            usuario_logado_id = request.args.get('user_id', 1)
+            current_app.logger.info(f"👤 Usando usuário padrão: {usuario_logado_id}")
         
         # Buscar empresa do usuário logado
         from sqlalchemy import text
@@ -529,11 +537,11 @@ def buscar_usuarios_empresa():
         usuario_row = result_usuario.fetchone()
         
         if not usuario_row:
-            current_app.logger.error(f"❌ Usuário logado {usuario_logado_id} não encontrado")
-            raise Exception("Usuário logado não encontrado")
+            current_app.logger.warning(f"⚠️ Usuário {usuario_logado_id} não encontrado, usando dados mock")
+            raise Exception(f"Usuário {usuario_logado_id} não encontrado")
         
         company_id = usuario_row.company
-        current_app.logger.info(f"👤 Usuário logado: {usuario_logado_id}, Empresa: {company_id}")
+        current_app.logger.info(f"🏢 Empresa encontrada: {company_id}")
         
         # Buscar todos os usuários da mesma empresa
         query_usuarios = text("""
@@ -569,7 +577,8 @@ def buscar_usuarios_empresa():
             'usuarios': usuarios_lista,
             'total': len(usuarios_lista),
             'empresa_id': company_id,
-            'usuario_logado_id': usuario_logado_id
+            'usuario_logado_id': usuario_logado_id,
+            'fonte': 'banco_real'
         }), 200
         
     except Exception as e:
@@ -582,7 +591,9 @@ def buscar_usuarios_empresa():
             {'id': 4, 'nome': 'Pedro Costa', 'email': 'pedro@empresa.com', 'cargo': 'Mecânico', 'status': 'ativo'},
             {'id': 5, 'nome': 'Ana Oliveira', 'email': 'ana@empresa.com', 'cargo': 'Eletricista', 'status': 'ativo'},
             {'id': 6, 'nome': 'Carlos Ferreira', 'email': 'carlos@empresa.com', 'cargo': 'Soldador', 'status': 'ativo'},
-            {'id': 7, 'nome': 'Lucia Pereira', 'email': 'lucia@empresa.com', 'cargo': 'Técnica', 'status': 'ativo'}
+            {'id': 7, 'nome': 'Lucia Pereira', 'email': 'lucia@empresa.com', 'cargo': 'Técnica', 'status': 'ativo'},
+            {'id': 8, 'nome': 'Roberto Lima', 'email': 'roberto@empresa.com', 'cargo': 'Supervisor', 'status': 'ativo'},
+            {'id': 9, 'nome': 'Fernanda Souza', 'email': 'fernanda@empresa.com', 'cargo': 'Engenheira', 'status': 'ativo'}
         ]
         
         current_app.logger.info(f"⚠️ Usando dados mock: {len(usuarios_mock)} usuários")
@@ -592,6 +603,7 @@ def buscar_usuarios_empresa():
             'usuarios': usuarios_mock,
             'total': len(usuarios_mock),
             'mock': True,
+            'fonte': 'dados_mock',
             'erro': str(e)
         }), 200
 
