@@ -1,0 +1,302 @@
+/* ===== ESTILOS PARA SELETOR AVANÇADO DE USUÁRIOS ===== */
+
+.usuarios-selector-container {
+    position: relative;
+    width: 100%;
+}
+
+/* Campo de pesquisa */
+.usuarios-search-box {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.usuarios-search-input {
+    width: 100%;
+    padding: 12px 40px 12px 16px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 14px;
+    background-color: #fff;
+    transition: border-color 0.3s ease;
+}
+
+.usuarios-search-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.usuarios-search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: 16px;
+}
+
+/* Dropdown de usuários */
+.usuarios-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    margin-top: 4px;
+}
+
+.usuarios-loading {
+    padding: 20px;
+    text-align: center;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.usuarios-loading i {
+    margin-right: 8px;
+}
+
+/* Lista de usuários */
+.usuarios-lista {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.usuario-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f3f4;
+    transition: background-color 0.2s ease;
+}
+
+.usuario-item:hover {
+    background-color: #f8f9fa;
+}
+
+.usuario-item:last-child {
+    border-bottom: none;
+}
+
+.usuario-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.usuario-detalhes {
+    flex: 1;
+    min-width: 0;
+}
+
+.usuario-nome {
+    font-weight: 600;
+    font-size: 14px;
+    color: #212529;
+    margin-bottom: 2px;
+}
+
+.usuario-info-secundaria {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.usuario-email {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.usuario-cargo {
+    font-size: 12px;
+    color: #28a745;
+    font-weight: 500;
+}
+
+.usuario-acao {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #007bff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.usuario-item-vazio {
+    padding: 20px;
+    text-align: center;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.usuario-item-vazio i {
+    margin-bottom: 8px;
+    font-size: 24px;
+    display: block;
+}
+
+/* Usuários selecionados */
+.usuarios-selecionados {
+    margin-top: 10px;
+}
+
+.usuarios-selecionados-vazio {
+    padding: 20px;
+    text-align: center;
+    color: #6c757d;
+    font-size: 14px;
+    border: 2px dashed #e1e5e9;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.usuarios-selecionados-vazio i {
+    margin-bottom: 8px;
+    font-size: 24px;
+    display: block;
+}
+
+.usuarios-selecionados-lista {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.usuario-selecionado {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.usuario-selecionado .usuario-info {
+    display: flex;
+    flex-direction: column;
+    margin-right: 8px;
+}
+
+.usuario-selecionado .usuario-nome {
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 1.2;
+}
+
+.usuario-selecionado .usuario-cargo {
+    font-size: 11px;
+    opacity: 0.9;
+    line-height: 1.2;
+}
+
+.btn-remover-usuario {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    font-size: 10px;
+    transition: background-color 0.2s ease;
+}
+
+.btn-remover-usuario:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .usuarios-dropdown {
+        max-height: 250px;
+    }
+    
+    .usuario-item {
+        padding: 10px 12px;
+    }
+    
+    .usuario-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+    
+    .usuario-nome {
+        font-size: 13px;
+    }
+    
+    .usuario-email,
+    .usuario-cargo {
+        font-size: 11px;
+    }
+    
+    .usuarios-selecionados-lista {
+        gap: 6px;
+    }
+    
+    .usuario-selecionado {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.usuarios-dropdown {
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Scrollbar personalizada */
+.usuarios-lista::-webkit-scrollbar {
+    width: 6px;
+}
+
+.usuarios-lista::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.usuarios-lista::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.usuarios-lista::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+

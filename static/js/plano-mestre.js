@@ -717,6 +717,9 @@ function renderizarFormularioPMP(pmp) {
     // Atualizar título
     titleDisplay.textContent = pmp.codigo + ' - ' + pmp.descricao;
     
+    // Inicializar usuários selecionados
+    inicializarUsuariosSelecionados(pmp.usuarios_responsaveis || []);
+    
     // Renderizar formulário baseado na imagem fornecida
     container.innerHTML = `
         <div class="pmp-form-content">
@@ -818,10 +821,28 @@ function renderizarFormularioPMP(pmp) {
                 <div class="pmp-form-row">
                     <div class="pmp-form-group full-width">
                         <label class="pmp-form-label">Usuários Responsáveis</label>
-                        <select class="pmp-form-control" id="pmp-usuarios-responsaveis" multiple>
-                            ${renderizarOpcoesUsuarios(pmp.usuarios_responsaveis || [])}
-                        </select>
-                        <small class="pmp-form-help">Selecione um ou mais usuários responsáveis pela execução</small>
+                        <div class="usuarios-selector-container">
+                            <div class="usuarios-search-box">
+                                <input type="text" class="usuarios-search-input" 
+                                       placeholder="Pesquisar usuários..." 
+                                       id="usuarios-search"
+                                       onkeyup="filtrarUsuarios(this.value)">
+                                <i class="fas fa-search usuarios-search-icon"></i>
+                            </div>
+                            <div class="usuarios-dropdown" id="usuarios-dropdown" style="display: none;">
+                                <div class="usuarios-loading" id="usuarios-loading">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    Carregando usuários...
+                                </div>
+                                <div class="usuarios-lista" id="usuarios-lista">
+                                    <!-- Usuários serão carregados aqui -->
+                                </div>
+                            </div>
+                            <div class="usuarios-selecionados" id="usuarios-selecionados">
+                                ${renderizarUsuariosSelecionados(pmp.usuarios_responsaveis || [])}
+                            </div>
+                        </div>
+                        <small class="pmp-form-help">Digite para pesquisar e clique para selecionar usuários responsáveis</small>
                     </div>
                 </div>
             </div>
@@ -996,13 +1017,15 @@ async function salvarAlteracoesPMP() {
         }
         
         // Novos campos - Programação
-        const usuariosResponsaveis = document.getElementById('pmp-usuarios-responsaveis');
-        if (usuariosResponsaveis) {
-            const usuariosSelecionados = Array.from(usuariosResponsaveis.selectedOptions).map(option => parseInt(option.value));
+        if (usuariosSelecionados && usuariosSelecionados.length > 0) {
             if (JSON.stringify(usuariosSelecionados) !== JSON.stringify(pmpSelecionada.usuarios_responsaveis || [])) {
                 formData.usuarios_responsaveis = usuariosSelecionados;
                 console.log('📝 usuarios_responsaveis coletado:', formData.usuarios_responsaveis);
             }
+        } else if (pmpSelecionada.usuarios_responsaveis && pmpSelecionada.usuarios_responsaveis.length > 0) {
+            // Se não há usuários selecionados mas havia antes, limpar
+            formData.usuarios_responsaveis = [];
+            console.log('📝 usuarios_responsaveis limpo');
         }
         
         // Novos campos - Materiais (se houver alterações)
@@ -1218,25 +1241,232 @@ function renderizarMateriaisPMP(materiais) {
     return html;
 }
 
-// Renderizar opções de usuários da empresa
-function renderizarOpcoesUsuarios(usuariosSelecionados) {
-    // TODO: Buscar usuários reais da empresa via API
-    // Por enquanto, usar dados mock
-    const usuariosEmpresa = [
-        { id: 1, nome: 'João Silva', email: 'joao@empresa.com' },
-        { id: 2, nome: 'Maria Santos', email: 'maria@empresa.com' },
-        { id: 3, nome: 'Pedro Costa', email: 'pedro@empresa.com' },
-        { id: 4, nome: 'Ana Oliveira', email: 'ana@empresa.com' }
-    ];
+// ===== GERENCIAMENTO DE USUÁRIOS RESPONSÁVEIS =====
+
+// Variáveis globais para usuários
+let usuariosEmpresa = [];
+let usuariosSelecionados = [];
+
+// Carregar usuários da empresa via API
+async function carregarUsuariosEmpresa() {
+    try {
+        console.log('🔍 Carregando usuários da empresa...');
+        
+        const response = await fetch('/api/usuarios/empresa');
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        
+        const resultado = await response.json();
+        console.log('✅ Usuários carregados:', resultado);
+        
+        if (resultado.success) {
+            usuariosEmpresa = resultado.usuarios || [];
+            console.log(`📋 ${usuariosEmpresa.length} usuários disponíveis`);
+            
+            if (resultado.mock) {
+                console.log('⚠️ Usando dados mock de usuários');
+            }
+        } else {
+            throw new Error('Falha ao carregar usuários');
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar usuários:', error);
+        
+        // Fallback para dados mock
+        usuariosEmpresa = [
+            {id: 1, nome: 'João Silva', email: 'joao@empresa.com', cargo: 'Técnico de Manutenção'},
+            {id: 2, nome: 'Maria Santos', email: 'maria@empresa.com', cargo: 'Supervisora'},
+            {id: 3, nome: 'Pedro Costa', email: 'pedro@empresa.com', cargo: 'Mecânico'},
+            {id: 4, nome: 'Ana Oliveira', email: 'ana@empresa.com', cargo: 'Eletricista'}
+        ];
+        console.log('⚠️ Usando dados fallback de usuários');
+    }
+}
+
+// Renderizar usuários selecionados
+function renderizarUsuariosSelecionados(usuariosIds) {
+    if (!usuariosIds || usuariosIds.length === 0) {
+        return `
+            <div class="usuarios-selecionados-vazio">
+                <i class="fas fa-users"></i>
+                <span>Nenhum usuário selecionado</span>
+            </div>
+        `;
+    }
     
-    let html = '';
-    usuariosEmpresa.forEach(usuario => {
-        const selecionado = usuariosSelecionados.includes(usuario.id) ? 'selected' : '';
-        html += `<option value="${usuario.id}" ${selecionado}>${usuario.nome} (${usuario.email})</option>`;
+    let html = '<div class="usuarios-selecionados-lista">';
+    
+    usuariosIds.forEach(userId => {
+        const usuario = usuariosEmpresa.find(u => u.id === userId);
+        if (usuario) {
+            html += `
+                <div class="usuario-selecionado" data-user-id="${usuario.id}">
+                    <div class="usuario-info">
+                        <span class="usuario-nome">${usuario.nome}</span>
+                        <span class="usuario-cargo">${usuario.cargo}</span>
+                    </div>
+                    <button type="button" class="btn-remover-usuario" 
+                            onclick="removerUsuarioSelecionado(${usuario.id})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+        }
     });
     
+    html += '</div>';
     return html;
 }
+
+// Renderizar lista de usuários no dropdown
+function renderizarListaUsuarios(usuarios, filtro = '') {
+    const container = document.getElementById('usuarios-lista');
+    if (!container) return;
+    
+    // Filtrar usuários se houver filtro
+    let usuariosFiltrados = usuarios;
+    if (filtro) {
+        const filtroLower = filtro.toLowerCase();
+        usuariosFiltrados = usuarios.filter(usuario => 
+            usuario.nome.toLowerCase().includes(filtroLower) ||
+            usuario.email.toLowerCase().includes(filtroLower) ||
+            usuario.cargo.toLowerCase().includes(filtroLower)
+        );
+    }
+    
+    // Excluir usuários já selecionados
+    usuariosFiltrados = usuariosFiltrados.filter(usuario => 
+        !usuariosSelecionados.includes(usuario.id)
+    );
+    
+    if (usuariosFiltrados.length === 0) {
+        container.innerHTML = `
+            <div class="usuario-item-vazio">
+                <i class="fas fa-search"></i>
+                <span>${filtro ? 'Nenhum usuário encontrado' : 'Todos os usuários já foram selecionados'}</span>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    usuariosFiltrados.forEach(usuario => {
+        html += `
+            <div class="usuario-item" onclick="selecionarUsuario(${usuario.id})">
+                <div class="usuario-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="usuario-detalhes">
+                    <div class="usuario-nome">${usuario.nome}</div>
+                    <div class="usuario-info-secundaria">
+                        <span class="usuario-email">${usuario.email}</span>
+                        <span class="usuario-cargo">${usuario.cargo}</span>
+                    </div>
+                </div>
+                <div class="usuario-acao">
+                    <i class="fas fa-plus"></i>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Filtrar usuários conforme digitação
+function filtrarUsuarios(filtro) {
+    console.log('🔍 Filtrando usuários:', filtro);
+    
+    // Mostrar dropdown se houver texto
+    const dropdown = document.getElementById('usuarios-dropdown');
+    if (filtro.length > 0) {
+        dropdown.style.display = 'block';
+        renderizarListaUsuarios(usuariosEmpresa, filtro);
+    } else {
+        dropdown.style.display = 'none';
+    }
+}
+
+// Selecionar usuário
+function selecionarUsuario(userId) {
+    console.log('👤 Selecionando usuário:', userId);
+    
+    if (!usuariosSelecionados.includes(userId)) {
+        usuariosSelecionados.push(userId);
+        
+        // Atualizar interface
+        atualizarUsuariosSelecionados();
+        
+        // Limpar pesquisa
+        const searchInput = document.getElementById('usuarios-search');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+        
+        // Esconder dropdown
+        const dropdown = document.getElementById('usuarios-dropdown');
+        if (dropdown) {
+            dropdown.style.display = 'none';
+        }
+        
+        console.log('✅ Usuários selecionados:', usuariosSelecionados);
+    }
+}
+
+// Remover usuário selecionado
+function removerUsuarioSelecionado(userId) {
+    console.log('❌ Removendo usuário:', userId);
+    
+    const index = usuariosSelecionados.indexOf(userId);
+    if (index > -1) {
+        usuariosSelecionados.splice(index, 1);
+        atualizarUsuariosSelecionados();
+        console.log('✅ Usuário removido. Lista atual:', usuariosSelecionados);
+    }
+}
+
+// Atualizar interface de usuários selecionados
+function atualizarUsuariosSelecionados() {
+    const container = document.getElementById('usuarios-selecionados');
+    if (container) {
+        container.innerHTML = renderizarUsuariosSelecionados(usuariosSelecionados);
+    }
+}
+
+// Inicializar usuários selecionados a partir da PMP
+function inicializarUsuariosSelecionados(usuariosIds) {
+    usuariosSelecionados = [...(usuariosIds || [])];
+    console.log('🔄 Usuários inicializados:', usuariosSelecionados);
+}
+
+// Event listeners para o seletor de usuários
+document.addEventListener('DOMContentLoaded', function() {
+    // Carregar usuários da empresa
+    carregarUsuariosEmpresa();
+    
+    // Fechar dropdown ao clicar fora
+    document.addEventListener('click', function(e) {
+        const container = document.querySelector('.usuarios-selector-container');
+        const dropdown = document.getElementById('usuarios-dropdown');
+        
+        if (container && dropdown && !container.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+    
+    // Mostrar dropdown ao focar no campo de pesquisa
+    document.addEventListener('focus', function(e) {
+        if (e.target.id === 'usuarios-search') {
+            const dropdown = document.getElementById('usuarios-dropdown');
+            if (dropdown && usuariosEmpresa.length > 0) {
+                renderizarListaUsuarios(usuariosEmpresa);
+                dropdown.style.display = 'block';
+            }
+        }
+    }, true);
+});
 
 // Formatar data para input type="date"
 function formatarDataParaInput(data) {
