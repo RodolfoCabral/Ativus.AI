@@ -1,103 +1,139 @@
-/* ===== ESTILOS PARA SELETOR AVANÇADO DE USUÁRIOS ===== */
+/* ===== ESTILOS ELEGANTES PARA SELETOR DE USUÁRIOS ===== */
 
 .usuarios-selector-container {
     position: relative;
     width: 100%;
 }
 
-/* Campo de pesquisa */
+/* Campo de pesquisa elegante */
 .usuarios-search-box {
     position: relative;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .usuarios-search-input {
     width: 100%;
-    padding: 12px 40px 12px 16px;
-    border: 2px solid #e1e5e9;
-    border-radius: 8px;
-    font-size: 14px;
-    background-color: #fff;
-    transition: border-color 0.3s ease;
+    padding: 14px 45px 14px 18px;
+    border: 2px solid #e8ecef;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 400;
+    background: linear-gradient(145deg, #ffffff, #f8f9fa);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .usuarios-search-input:focus {
     outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    border-color: #4f46e5;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1), 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+.usuarios-search-input::placeholder {
+    color: #9ca3af;
+    font-weight: 400;
 }
 
 .usuarios-search-icon {
     position: absolute;
-    right: 12px;
+    right: 16px;
     top: 50%;
     transform: translateY(-50%);
-    color: #6c757d;
+    color: #6b7280;
     font-size: 16px;
+    transition: color 0.3s ease;
 }
 
-/* Dropdown de usuários */
+.usuarios-search-input:focus + .usuarios-search-icon {
+    color: #4f46e5;
+}
+
+/* Dropdown elegante */
 .usuarios-dropdown {
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
-    background: #fff;
-    border: 2px solid #e1e5e9;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    max-height: 300px;
-    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    max-height: 320px;
+    overflow: hidden;
     z-index: 1000;
-    margin-top: 4px;
+    margin-top: 8px;
+    backdrop-filter: blur(10px);
 }
 
 .usuarios-loading {
-    padding: 20px;
+    padding: 24px;
     text-align: center;
-    color: #6c757d;
+    color: #6b7280;
     font-size: 14px;
+    font-weight: 500;
 }
 
 .usuarios-loading i {
-    margin-right: 8px;
+    margin-right: 10px;
+    color: #4f46e5;
 }
 
-/* Lista de usuários */
+/* Lista de usuários elegante */
 .usuarios-lista {
-    max-height: 280px;
+    max-height: 300px;
     overflow-y: auto;
+    padding: 8px;
 }
 
 .usuario-item {
     display: flex;
     align-items: center;
-    padding: 12px 16px;
+    padding: 16px 18px;
     cursor: pointer;
-    border-bottom: 1px solid #f1f3f4;
-    transition: background-color 0.2s ease;
+    border-radius: 12px;
+    margin-bottom: 4px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
 }
 
 .usuario-item:hover {
-    background-color: #f8f9fa;
+    background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .usuario-item:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
 }
 
 .usuario-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #007bff, #0056b3);
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-size: 16px;
-    margin-right: 12px;
+    font-weight: 600;
+    margin-right: 16px;
     flex-shrink: 0;
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.usuario-avatar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
 }
 
 .usuario-detalhes {
@@ -107,9 +143,10 @@
 
 .usuario-nome {
     font-weight: 600;
-    font-size: 14px;
-    color: #212529;
-    margin-bottom: 2px;
+    font-size: 15px;
+    color: #1f2937;
+    margin-bottom: 4px;
+    line-height: 1.3;
 }
 
 .usuario-info-secundaria {
@@ -119,157 +156,216 @@
 }
 
 .usuario-email {
-    font-size: 12px;
-    color: #6c757d;
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: 400;
 }
 
 .usuario-cargo {
     font-size: 12px;
-    color: #28a745;
+    color: #059669;
     font-weight: 500;
+    background: rgba(5, 150, 105, 0.1);
+    padding: 2px 8px;
+    border-radius: 6px;
+    display: inline-block;
+    width: fit-content;
 }
 
 .usuario-acao {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: #007bff;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 12px;
+    font-size: 14px;
     flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+    transition: all 0.2s ease;
+}
+
+.usuario-item:hover .usuario-acao {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
 }
 
 .usuario-item-vazio {
-    padding: 20px;
+    padding: 32px 24px;
     text-align: center;
-    color: #6c757d;
+    color: #9ca3af;
     font-size: 14px;
+    font-weight: 500;
 }
 
 .usuario-item-vazio i {
-    margin-bottom: 8px;
-    font-size: 24px;
+    margin-bottom: 12px;
+    font-size: 28px;
     display: block;
+    color: #d1d5db;
 }
 
-/* Usuários selecionados */
+/* Usuários selecionados elegantes */
 .usuarios-selecionados {
-    margin-top: 10px;
+    margin-top: 16px;
 }
 
 .usuarios-selecionados-vazio {
-    padding: 20px;
+    padding: 24px;
     text-align: center;
-    color: #6c757d;
+    color: #9ca3af;
     font-size: 14px;
-    border: 2px dashed #e1e5e9;
-    border-radius: 8px;
-    background-color: #f8f9fa;
+    font-weight: 500;
+    border: 2px dashed #e5e7eb;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #f9fafb, #f3f4f6);
 }
 
 .usuarios-selecionados-vazio i {
-    margin-bottom: 8px;
-    font-size: 24px;
+    margin-bottom: 12px;
+    font-size: 28px;
     display: block;
+    color: #d1d5db;
 }
 
 .usuarios-selecionados-lista {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
 }
 
 .usuario-selecionado {
     display: flex;
     align-items: center;
-    background: linear-gradient(135deg, #007bff, #0056b3);
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
     color: white;
-    padding: 8px 12px;
-    border-radius: 20px;
+    padding: 10px 16px;
+    border-radius: 24px;
     font-size: 13px;
-    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.usuario-selecionado::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+}
+
+.usuario-selecionado:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
 }
 
 .usuario-selecionado .usuario-info {
     display: flex;
     flex-direction: column;
-    margin-right: 8px;
+    margin-right: 12px;
+    position: relative;
+    z-index: 1;
 }
 
 .usuario-selecionado .usuario-nome {
     font-weight: 600;
     font-size: 13px;
     line-height: 1.2;
+    color: white;
 }
 
 .usuario-selecionado .usuario-cargo {
     font-size: 11px;
     opacity: 0.9;
     line-height: 1.2;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .btn-remover-usuario {
     background: rgba(255, 255, 255, 0.2);
     border: none;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     cursor: pointer;
-    font-size: 10px;
-    transition: background-color 0.2s ease;
+    font-size: 11px;
+    transition: all 0.2s ease;
+    position: relative;
+    z-index: 1;
 }
 
 .btn-remover-usuario:hover {
     background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
 }
 
-/* Responsividade */
+/* Responsividade elegante */
 @media (max-width: 768px) {
     .usuarios-dropdown {
-        max-height: 250px;
+        max-height: 280px;
+        border-radius: 12px;
     }
     
     .usuario-item {
-        padding: 10px 12px;
+        padding: 14px 16px;
     }
     
     .usuario-avatar {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
         font-size: 14px;
     }
     
     .usuario-nome {
-        font-size: 13px;
+        font-size: 14px;
     }
     
-    .usuario-email,
+    .usuario-email {
+        font-size: 12px;
+    }
+    
     .usuario-cargo {
         font-size: 11px;
     }
     
     .usuarios-selecionados-lista {
-        gap: 6px;
+        gap: 8px;
     }
     
     .usuario-selecionado {
-        padding: 6px 10px;
+        padding: 8px 14px;
         font-size: 12px;
     }
 }
 
-/* Animações */
-@keyframes fadeIn {
+/* Animações elegantes */
+@keyframes slideInDown {
     from {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
     }
     to {
         opacity: 1;
@@ -278,25 +374,55 @@
 }
 
 .usuarios-dropdown {
-    animation: fadeIn 0.2s ease-out;
+    animation: slideInDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Scrollbar personalizada */
+.usuario-item {
+    animation: fadeInUp 0.2s ease-out;
+}
+
+.usuario-selecionado {
+    animation: fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Scrollbar elegante */
 .usuarios-lista::-webkit-scrollbar {
     width: 6px;
 }
 
 .usuarios-lista::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
+    background: transparent;
 }
 
 .usuarios-lista::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
+    background: linear-gradient(135deg, #e5e7eb, #d1d5db);
     border-radius: 3px;
 }
 
 .usuarios-lista::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+    background: linear-gradient(135deg, #d1d5db, #9ca3af);
+}
+
+/* Estados de foco elegantes */
+.usuarios-selector-container:focus-within .usuarios-search-box {
+    transform: translateY(-1px);
+}
+
+/* Efeitos de hover suaves */
+.usuario-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-radius: 12px 0 0 12px;
+    transition: width 0.3s ease;
+    opacity: 0.1;
+}
+
+.usuario-item:hover::before {
+    width: 4px;
 }
 

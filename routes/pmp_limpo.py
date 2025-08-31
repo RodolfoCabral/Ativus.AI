@@ -512,43 +512,64 @@ def buscar_usuarios_empresa():
     try:
         current_app.logger.info("🔍 Buscando usuários da empresa")
         
-        # TODO: Implementar autenticação real para pegar empresa do usuário logado
-        # Por enquanto, usar empresa_id = 1 como padrão
-        empresa_id = 1
+        # TODO: Implementar autenticação real para pegar ID do usuário logado
+        # Por enquanto, assumir usuário logado com ID = 1
+        usuario_logado_id = 1
         
-        # Buscar usuários da empresa
-        # Assumindo que existe uma tabela 'users' com campo 'empresa_id'
+        # Buscar empresa do usuário logado
         from sqlalchemy import text
         
-        # Query SQL direta para buscar usuários
-        query = text("""
-            SELECT id, nome, email, cargo, status
-            FROM users 
-            WHERE empresa_id = :empresa_id 
-            AND status = 'ativo'
-            ORDER BY nome
+        query_usuario = text("""
+            SELECT company 
+            FROM "user" 
+            WHERE id = :user_id
         """)
         
-        result = db.session.execute(query, {'empresa_id': empresa_id})
-        usuarios = result.fetchall()
+        result_usuario = db.session.execute(query_usuario, {'user_id': usuario_logado_id})
+        usuario_row = result_usuario.fetchone()
+        
+        if not usuario_row:
+            current_app.logger.error(f"❌ Usuário logado {usuario_logado_id} não encontrado")
+            raise Exception("Usuário logado não encontrado")
+        
+        company_id = usuario_row.company
+        current_app.logger.info(f"👤 Usuário logado: {usuario_logado_id}, Empresa: {company_id}")
+        
+        # Buscar todos os usuários da mesma empresa
+        query_usuarios = text("""
+            SELECT id, name, email, cargo, status
+            FROM "user" 
+            WHERE company = :company_id 
+            AND status = 'ativo'
+            AND id != :user_id
+            ORDER BY name
+        """)
+        
+        result_usuarios = db.session.execute(query_usuarios, {
+            'company_id': company_id,
+            'user_id': usuario_logado_id
+        })
+        usuarios = result_usuarios.fetchall()
         
         # Converter para lista de dicionários
         usuarios_lista = []
         for usuario in usuarios:
             usuarios_lista.append({
                 'id': usuario.id,
-                'nome': usuario.nome,
+                'nome': usuario.name,
                 'email': usuario.email,
                 'cargo': usuario.cargo or 'Não informado',
                 'status': usuario.status
             })
         
-        current_app.logger.info(f"✅ Encontrados {len(usuarios_lista)} usuários da empresa {empresa_id}")
+        current_app.logger.info(f"✅ Encontrados {len(usuarios_lista)} usuários da empresa {company_id}")
         
         return jsonify({
             'success': True,
             'usuarios': usuarios_lista,
-            'total': len(usuarios_lista)
+            'total': len(usuarios_lista),
+            'empresa_id': company_id,
+            'usuario_logado_id': usuario_logado_id
         }), 200
         
     except Exception as e:
@@ -556,12 +577,12 @@ def buscar_usuarios_empresa():
         
         # Retornar dados mock em caso de erro
         usuarios_mock = [
-            {'id': 1, 'nome': 'João Silva', 'email': 'joao@empresa.com', 'cargo': 'Técnico de Manutenção', 'status': 'ativo'},
-            {'id': 2, 'nome': 'Maria Santos', 'email': 'maria@empresa.com', 'cargo': 'Supervisora', 'status': 'ativo'},
-            {'id': 3, 'nome': 'Pedro Costa', 'email': 'pedro@empresa.com', 'cargo': 'Mecânico', 'status': 'ativo'},
-            {'id': 4, 'nome': 'Ana Oliveira', 'email': 'ana@empresa.com', 'cargo': 'Eletricista', 'status': 'ativo'},
-            {'id': 5, 'nome': 'Carlos Ferreira', 'email': 'carlos@empresa.com', 'cargo': 'Soldador', 'status': 'ativo'},
-            {'id': 6, 'nome': 'Lucia Pereira', 'email': 'lucia@empresa.com', 'cargo': 'Técnica', 'status': 'ativo'}
+            {'id': 2, 'nome': 'João Silva', 'email': 'joao@empresa.com', 'cargo': 'Técnico de Manutenção', 'status': 'ativo'},
+            {'id': 3, 'nome': 'Maria Santos', 'email': 'maria@empresa.com', 'cargo': 'Supervisora', 'status': 'ativo'},
+            {'id': 4, 'nome': 'Pedro Costa', 'email': 'pedro@empresa.com', 'cargo': 'Mecânico', 'status': 'ativo'},
+            {'id': 5, 'nome': 'Ana Oliveira', 'email': 'ana@empresa.com', 'cargo': 'Eletricista', 'status': 'ativo'},
+            {'id': 6, 'nome': 'Carlos Ferreira', 'email': 'carlos@empresa.com', 'cargo': 'Soldador', 'status': 'ativo'},
+            {'id': 7, 'nome': 'Lucia Pereira', 'email': 'lucia@empresa.com', 'cargo': 'Técnica', 'status': 'ativo'}
         ]
         
         current_app.logger.info(f"⚠️ Usando dados mock: {len(usuarios_mock)} usuários")
@@ -570,6 +591,7 @@ def buscar_usuarios_empresa():
             'success': True,
             'usuarios': usuarios_mock,
             'total': len(usuarios_mock),
-            'mock': True
+            'mock': True,
+            'erro': str(e)
         }), 200
 
