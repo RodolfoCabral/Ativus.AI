@@ -524,62 +524,77 @@ def buscar_usuarios_empresa():
             usuario_logado_id = request.args.get('user_id', 1)
             current_app.logger.info(f"👤 Usando usuário padrão: {usuario_logado_id}")
         
-        # Buscar empresa do usuário logado
+        # Tentar diferentes nomes de tabela
+        nomes_tabela = ['user', 'users', 'User', 'Users', 'usuario', 'usuarios']
+        
         from sqlalchemy import text
         
-        query_usuario = text("""
-            SELECT company 
-            FROM "user" 
-            WHERE id = :user_id
-        """)
+        for nome_tabela in nomes_tabela:
+            try:
+                current_app.logger.info(f"🔍 Tentando tabela: {nome_tabela}")
+                
+                # Buscar empresa do usuário logado
+                query_usuario = text(f'''
+                    SELECT company 
+                    FROM "{nome_tabela}" 
+                    WHERE id = :user_id
+                ''')
+                
+                result_usuario = db.session.execute(query_usuario, {'user_id': usuario_logado_id})
+                usuario_row = result_usuario.fetchone()
+                
+                if not usuario_row:
+                    current_app.logger.info(f"⚠️ Usuário {usuario_logado_id} não encontrado na tabela {nome_tabela}")
+                    continue
+                
+                company_id = usuario_row.company
+                current_app.logger.info(f"🏢 Empresa encontrada: {company_id} (tabela: {nome_tabela})")
+                
+                # Buscar todos os usuários da mesma empresa
+                query_usuarios = text(f'''
+                    SELECT id, name, email, cargo, status
+                    FROM "{nome_tabela}" 
+                    WHERE company = :company_id 
+                    AND (status = 'ativo' OR status IS NULL)
+                    AND id != :user_id
+                    ORDER BY name
+                ''')
+                
+                result_usuarios = db.session.execute(query_usuarios, {
+                    'company_id': company_id,
+                    'user_id': usuario_logado_id
+                })
+                usuarios = result_usuarios.fetchall()
+                
+                # Converter para lista de dicionários
+                usuarios_lista = []
+                for usuario in usuarios:
+                    usuarios_lista.append({
+                        'id': usuario.id,
+                        'nome': usuario.name,
+                        'email': usuario.email,
+                        'cargo': usuario.cargo or 'Não informado',
+                        'status': usuario.status or 'ativo'
+                    })
+                
+                current_app.logger.info(f"✅ Encontrados {len(usuarios_lista)} usuários da empresa {company_id}")
+                
+                return jsonify({
+                    'success': True,
+                    'usuarios': usuarios_lista,
+                    'total': len(usuarios_lista),
+                    'empresa_id': company_id,
+                    'usuario_logado_id': usuario_logado_id,
+                    'tabela_usada': nome_tabela,
+                    'fonte': 'banco_real'
+                }), 200
+                
+            except Exception as e:
+                current_app.logger.info(f"⚠️ Erro na tabela {nome_tabela}: {e}")
+                continue
         
-        result_usuario = db.session.execute(query_usuario, {'user_id': usuario_logado_id})
-        usuario_row = result_usuario.fetchone()
-        
-        if not usuario_row:
-            current_app.logger.warning(f"⚠️ Usuário {usuario_logado_id} não encontrado, usando dados mock")
-            raise Exception(f"Usuário {usuario_logado_id} não encontrado")
-        
-        company_id = usuario_row.company
-        current_app.logger.info(f"🏢 Empresa encontrada: {company_id}")
-        
-        # Buscar todos os usuários da mesma empresa
-        query_usuarios = text("""
-            SELECT id, name, email, cargo, status
-            FROM "user" 
-            WHERE company = :company_id 
-            AND status = 'ativo'
-            AND id != :user_id
-            ORDER BY name
-        """)
-        
-        result_usuarios = db.session.execute(query_usuarios, {
-            'company_id': company_id,
-            'user_id': usuario_logado_id
-        })
-        usuarios = result_usuarios.fetchall()
-        
-        # Converter para lista de dicionários
-        usuarios_lista = []
-        for usuario in usuarios:
-            usuarios_lista.append({
-                'id': usuario.id,
-                'nome': usuario.name,
-                'email': usuario.email,
-                'cargo': usuario.cargo or 'Não informado',
-                'status': usuario.status
-            })
-        
-        current_app.logger.info(f"✅ Encontrados {len(usuarios_lista)} usuários da empresa {company_id}")
-        
-        return jsonify({
-            'success': True,
-            'usuarios': usuarios_lista,
-            'total': len(usuarios_lista),
-            'empresa_id': company_id,
-            'usuario_logado_id': usuario_logado_id,
-            'fonte': 'banco_real'
-        }), 200
+        # Se chegou aqui, nenhuma tabela funcionou
+        raise Exception("Nenhuma tabela de usuários encontrada ou acessível")
         
     except Exception as e:
         current_app.logger.error(f"❌ Erro ao buscar usuários da empresa: {e}", exc_info=True)
@@ -604,6 +619,7 @@ def buscar_usuarios_empresa():
             'total': len(usuarios_mock),
             'mock': True,
             'fonte': 'dados_mock',
-            'erro': str(e)
+            'erro': str(e),
+            'instrucoes': 'Execute debug_tabela_user.py para verificar a estrutura do banco'
         }), 200
 
