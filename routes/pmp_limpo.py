@@ -583,7 +583,7 @@ def buscar_usuarios_empresa():
                 
                 # 3. Buscar colegas da mesma empresa
                 colegas_query = text(f'''
-                    SELECT id, name, email, cargo
+                    SELECT id, name, email
                     FROM "{nome_tabela}" 
                     WHERE company = :company_id 
                     AND id != :user_id
@@ -605,11 +605,11 @@ def buscar_usuarios_empresa():
                         'id': colega.id,
                         'nome': colega.name,
                         'email': colega.email,
-                        'cargo': colega.cargo if hasattr(colega, 'cargo') and colega.cargo else 'Não informado',
+                        'cargo': 'Não informado',  # Coluna cargo não existe na tabela
                         'status': 'ativo'
                     }
                     usuarios_lista.append(usuario_dict)
-                    current_app.logger.info(f"  ✅ {usuario_dict['nome']} ({usuario_dict['email']}) - {usuario_dict['cargo']}")
+                    current_app.logger.info(f"  ✅ {usuario_dict['nome']} ({usuario_dict['email']})")
                 
                 # 5. SUCESSO! Retornar dados reais
                 current_app.logger.info(f"🎉 SUCESSO! Retornando {len(usuarios_lista)} usuários REAIS da empresa {company_id}")
@@ -626,11 +626,17 @@ def buscar_usuarios_empresa():
                     },
                     'tabela_usada': nome_tabela,
                     'fonte': 'BANCO_REAL',
-                    'debug': f'Encontrados {len(usuarios_lista)} usuários reais'
+                    'debug': f'Encontrados {len(usuarios_lista)} usuários reais da empresa {company_id}',
+                    'observacao': 'Coluna cargo não existe na tabela user'
                 }), 200
                 
             except Exception as e:
                 current_app.logger.error(f"❌ Erro ao testar tabela {nome_tabela}: {e}")
+                # Fazer rollback para evitar transação abortada
+                try:
+                    db.session.rollback()
+                except:
+                    pass
                 continue
         
         # Se chegou aqui, nenhuma tabela funcionou
