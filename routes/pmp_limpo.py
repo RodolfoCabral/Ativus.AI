@@ -507,119 +507,162 @@ def executar_pmp_limpo(pmp_id):
 @pmp_limpo_bp.route('/api/usuarios/empresa', methods=['GET'])
 def buscar_usuarios_empresa():
     """
-    Busca todos os usuários da mesma empresa do usuário logado
+    Busca usuários REAIS da mesma empresa - VERSÃO ROBUSTA
     """
     try:
-        current_app.logger.info("🔍 Buscando usuários da empresa")
+        current_app.logger.info("🔍 INICIANDO BUSCA DE USUÁRIOS REAIS")
         
-        # Tentar pegar usuário logado da sessão Flask
-        usuario_logado_id = None
-        
-        # Verificar se há sessão ativa
-        if 'user_id' in session:
-            usuario_logado_id = session['user_id']
-            current_app.logger.info(f"👤 Usuário da sessão: {usuario_logado_id}")
-        else:
-            # Fallback: tentar pegar do request ou usar ID padrão
-            usuario_logado_id = request.args.get('user_id', 1)
-            current_app.logger.info(f"👤 Usando usuário padrão: {usuario_logado_id}")
-        
-        # Tentar diferentes nomes de tabela
-        nomes_tabela = ['user', 'users', 'User', 'Users', 'usuario', 'usuarios']
+        # Pegar usuário logado (ajustar conforme autenticação)
+        usuario_logado_id = 1  # TODO: Pegar da sessão real
+        current_app.logger.info(f"👤 Buscando para usuário ID: {usuario_logado_id}")
         
         from sqlalchemy import text
         
-        for nome_tabela in nomes_tabela:
-            try:
-                current_app.logger.info(f"🔍 Tentando tabela: {nome_tabela}")
+        # TESTE DE CONEXÃO PRIMEIRO
+        try:
+            db.session.execute(text("SELECT 1"))
+            current_app.logger.info("✅ Conexão com banco estabelecida")
+        except Exception as e:
+            current_app.logger.error(f"❌ ERRO DE CONEXÃO: {e}")
+            raise Exception(f"Falha na conexão: {e}")
+        
+        # DESCOBRIR TABELAS DE USUÁRIOS DISPONÍVEIS
+        try:
+            result_tables = db.session.execute(text("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND (table_name ILIKE '%user%' OR table_name ILIKE '%usuario%')
+                ORDER BY table_name
+            """))
+            
+            tabelas_encontradas = [row[0] for row in result_tables.fetchall()]
+            current_app.logger.info(f"📋 Tabelas encontradas: {tabelas_encontradas}")
+            
+            if not tabelas_encontradas:
+                # Tentar nomes comuns se não encontrar
+                tabelas_encontradas = ['user', 'users', 'User', 'Users']
+                current_app.logger.info("⚠️ Usando nomes padrão de tabelas")
                 
-                # Buscar empresa do usuário logado
-                query_usuario = text(f'''
-                    SELECT company 
+        except Exception as e:
+            current_app.logger.error(f"❌ Erro ao listar tabelas: {e}")
+            tabelas_encontradas = ['user', 'users']
+        
+        # TESTAR CADA TABELA ATÉ ENCONTRAR DADOS
+        for nome_tabela in tabelas_encontradas:
+            try:
+                current_app.logger.info(f"🔍 TESTANDO TABELA: {nome_tabela}")
+                
+                # 1. Verificar se tabela existe e tem dados
+                count_query = text(f'SELECT COUNT(*) FROM "{nome_tabela}"')
+                result_count = db.session.execute(count_query)
+                total_registros = result_count.scalar()
+                
+                current_app.logger.info(f"📊 Registros na tabela {nome_tabela}: {total_registros}")
+                
+                if total_registros == 0:
+                    current_app.logger.info(f"⚠️ Tabela {nome_tabela} está vazia")
+                    continue
+                
+                # 2. Verificar se usuário logado existe
+                user_query = text(f'''
+                    SELECT id, name, email, company 
                     FROM "{nome_tabela}" 
                     WHERE id = :user_id
                 ''')
                 
-                result_usuario = db.session.execute(query_usuario, {'user_id': usuario_logado_id})
-                usuario_row = result_usuario.fetchone()
+                result_user = db.session.execute(user_query, {'user_id': usuario_logado_id})
+                usuario_data = result_user.fetchone()
                 
-                if not usuario_row:
-                    current_app.logger.info(f"⚠️ Usuário {usuario_logado_id} não encontrado na tabela {nome_tabela}")
+                if not usuario_data:
+                    current_app.logger.info(f"⚠️ Usuário {usuario_logado_id} não existe em {nome_tabela}")
                     continue
                 
-                company_id = usuario_row.company
-                current_app.logger.info(f"🏢 Empresa encontrada: {company_id} (tabela: {nome_tabela})")
+                user_id, user_name, user_email, company_id = usuario_data
+                current_app.logger.info(f"👤 USUÁRIO ENCONTRADO: {user_name} ({user_email}) - Empresa: {company_id}")
                 
-                # Buscar todos os usuários da mesma empresa
-                query_usuarios = text(f'''
-                    SELECT id, name, email, cargo, status
+                # 3. Buscar colegas da mesma empresa
+                colegas_query = text(f'''
+                    SELECT id, name, email, cargo
                     FROM "{nome_tabela}" 
                     WHERE company = :company_id 
-                    AND (status = 'ativo' OR status IS NULL)
                     AND id != :user_id
                     ORDER BY name
                 ''')
                 
-                result_usuarios = db.session.execute(query_usuarios, {
+                result_colegas = db.session.execute(colegas_query, {
                     'company_id': company_id,
                     'user_id': usuario_logado_id
                 })
-                usuarios = result_usuarios.fetchall()
                 
-                # Converter para lista de dicionários
+                colegas_raw = result_colegas.fetchall()
+                current_app.logger.info(f"👥 Colegas encontrados: {len(colegas_raw)}")
+                
+                # 4. Converter para formato da API
                 usuarios_lista = []
-                for usuario in usuarios:
-                    usuarios_lista.append({
-                        'id': usuario.id,
-                        'nome': usuario.name,
-                        'email': usuario.email,
-                        'cargo': usuario.cargo or 'Não informado',
-                        'status': usuario.status or 'ativo'
-                    })
+                for colega in colegas_raw:
+                    usuario_dict = {
+                        'id': colega.id,
+                        'nome': colega.name,
+                        'email': colega.email,
+                        'cargo': colega.cargo if hasattr(colega, 'cargo') and colega.cargo else 'Não informado',
+                        'status': 'ativo'
+                    }
+                    usuarios_lista.append(usuario_dict)
+                    current_app.logger.info(f"  ✅ {usuario_dict['nome']} ({usuario_dict['email']}) - {usuario_dict['cargo']}")
                 
-                current_app.logger.info(f"✅ Encontrados {len(usuarios_lista)} usuários da empresa {company_id}")
+                # 5. SUCESSO! Retornar dados reais
+                current_app.logger.info(f"🎉 SUCESSO! Retornando {len(usuarios_lista)} usuários REAIS da empresa {company_id}")
                 
                 return jsonify({
                     'success': True,
                     'usuarios': usuarios_lista,
                     'total': len(usuarios_lista),
                     'empresa_id': company_id,
-                    'usuario_logado_id': usuario_logado_id,
+                    'usuario_logado': {
+                        'id': user_id,
+                        'nome': user_name,
+                        'email': user_email
+                    },
                     'tabela_usada': nome_tabela,
-                    'fonte': 'banco_real'
+                    'fonte': 'BANCO_REAL',
+                    'debug': f'Encontrados {len(usuarios_lista)} usuários reais'
                 }), 200
                 
             except Exception as e:
-                current_app.logger.info(f"⚠️ Erro na tabela {nome_tabela}: {e}")
+                current_app.logger.error(f"❌ Erro ao testar tabela {nome_tabela}: {e}")
                 continue
         
         # Se chegou aqui, nenhuma tabela funcionou
-        raise Exception("Nenhuma tabela de usuários encontrada ou acessível")
+        raise Exception("NENHUMA TABELA DE USUÁRIOS ACESSÍVEL")
         
     except Exception as e:
-        current_app.logger.error(f"❌ Erro ao buscar usuários da empresa: {e}", exc_info=True)
+        current_app.logger.error(f"❌ ERRO CRÍTICO: {e}", exc_info=True)
         
-        # Retornar dados mock em caso de erro
-        usuarios_mock = [
-            {'id': 2, 'nome': 'João Silva', 'email': 'joao@empresa.com', 'cargo': 'Técnico de Manutenção', 'status': 'ativo'},
-            {'id': 3, 'nome': 'Maria Santos', 'email': 'maria@empresa.com', 'cargo': 'Supervisora', 'status': 'ativo'},
-            {'id': 4, 'nome': 'Pedro Costa', 'email': 'pedro@empresa.com', 'cargo': 'Mecânico', 'status': 'ativo'},
-            {'id': 5, 'nome': 'Ana Oliveira', 'email': 'ana@empresa.com', 'cargo': 'Eletricista', 'status': 'ativo'},
-            {'id': 6, 'nome': 'Carlos Ferreira', 'email': 'carlos@empresa.com', 'cargo': 'Soldador', 'status': 'ativo'},
-            {'id': 7, 'nome': 'Lucia Pereira', 'email': 'lucia@empresa.com', 'cargo': 'Técnica', 'status': 'ativo'},
-            {'id': 8, 'nome': 'Roberto Lima', 'email': 'roberto@empresa.com', 'cargo': 'Supervisor', 'status': 'ativo'},
-            {'id': 9, 'nome': 'Fernanda Souza', 'email': 'fernanda@empresa.com', 'cargo': 'Engenheira', 'status': 'ativo'}
+        # ÚLTIMO RECURSO: Mock com indicação clara de erro
+        usuarios_erro = [
+            {
+                'id': 999,
+                'nome': '❌ ERRO: Não foi possível acessar usuários reais',
+                'email': 'erro@banco.com',
+                'cargo': 'Verifique logs do servidor',
+                'status': 'erro'
+            }
         ]
-        
-        current_app.logger.info(f"⚠️ Usando dados mock: {len(usuarios_mock)} usuários")
         
         return jsonify({
             'success': True,
-            'usuarios': usuarios_mock,
-            'total': len(usuarios_mock),
+            'usuarios': usuarios_erro,
+            'total': len(usuarios_erro),
             'mock': True,
-            'fonte': 'dados_mock',
-            'erro': str(e),
-            'instrucoes': 'Execute debug_tabela_user.py para verificar a estrutura do banco'
+            'ERRO_CRITICO': True,
+            'fonte': 'ERRO_MOCK',
+            'erro_detalhado': str(e),
+            'instrucoes': [
+                '1. Verifique se DATABASE_URL está configurada',
+                '2. Verifique se tabela user/users existe',
+                '3. Verifique se coluna company existe',
+                '4. Execute debug_conexao_banco.py para mais detalhes'
+            ]
         }), 200
 
