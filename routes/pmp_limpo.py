@@ -507,18 +507,53 @@ def executar_pmp_limpo(pmp_id):
 @pmp_limpo_bp.route('/api/usuarios/empresa', methods=['GET'])
 def buscar_usuarios_empresa():
     """
-    Busca usuários da mesma empresa - VERSÃO SIMPLIFICADA
+    Busca usuários da mesma empresa - PEGANDO USUÁRIO REAL DA SESSÃO
     """
     try:
         current_app.logger.info("🔍 Buscando usuários da mesma empresa")
         
-        # 1. Pegar ID do usuário logado (ajustar conforme sua autenticação)
-        usuario_logado_id = 1  # TODO: Pegar da sessão real
-        current_app.logger.info(f"👤 ID do usuário logado: {usuario_logado_id}")
+        # 1. PEGAR ID REAL DO USUÁRIO LOGADO DA SESSÃO
+        usuario_logado_id = None
+        
+        # Tentar diferentes formas de pegar o usuário logado
+        if 'user_id' in session:
+            usuario_logado_id = session['user_id']
+            current_app.logger.info(f"👤 Usuário da sessão Flask: {usuario_logado_id}")
+        elif 'id' in session:
+            usuario_logado_id = session['id']
+            current_app.logger.info(f"👤 Usuário da sessão (id): {usuario_logado_id}")
+        elif 'current_user_id' in session:
+            usuario_logado_id = session['current_user_id']
+            current_app.logger.info(f"👤 Usuário da sessão (current_user_id): {usuario_logado_id}")
+        else:
+            # Tentar pegar do request
+            usuario_logado_id = request.args.get('user_id')
+            if usuario_logado_id:
+                usuario_logado_id = int(usuario_logado_id)
+                current_app.logger.info(f"👤 Usuário do request: {usuario_logado_id}")
+            else:
+                # Último recurso: verificar se há alguma chave na sessão
+                current_app.logger.info(f"🔍 Chaves na sessão: {list(session.keys())}")
+                
+                # Tentar encontrar qualquer ID na sessão
+                for key in session.keys():
+                    if 'user' in key.lower() or 'id' in key.lower():
+                        try:
+                            usuario_logado_id = int(session[key])
+                            current_app.logger.info(f"👤 Usuário encontrado na sessão[{key}]: {usuario_logado_id}")
+                            break
+                        except:
+                            continue
+                
+                if not usuario_logado_id:
+                    current_app.logger.error("❌ NENHUM USUÁRIO ENCONTRADO NA SESSÃO")
+                    raise Exception("Usuário não está logado - sessão inválida")
+        
+        current_app.logger.info(f"👤 ID FINAL do usuário logado: {usuario_logado_id}")
         
         from sqlalchemy import text
         
-        # 2. Buscar o nome da empresa (coluna company) do usuário logado
+        # 2. Buscar o nome da empresa (coluna company) do usuário logado REAL
         query_empresa = text("""
             SELECT company 
             FROM "user" 
@@ -533,7 +568,7 @@ def buscar_usuarios_empresa():
             raise Exception(f"Usuário {usuario_logado_id} não encontrado")
         
         nome_empresa = empresa_row.company
-        current_app.logger.info(f"🏢 Empresa do usuário: {nome_empresa}")
+        current_app.logger.info(f"🏢 Empresa REAL do usuário {usuario_logado_id}: {nome_empresa}")
         
         # 3. Listar todos os usuários (coluna name) que possuem a mesma company
         query_usuarios = text("""
@@ -577,11 +612,15 @@ def buscar_usuarios_empresa():
             'total': len(usuarios_lista),
             'empresa_nome': nome_empresa,
             'usuario_logado_id': usuario_logado_id,
-            'fonte': 'BANCO_REAL'
+            'fonte': 'BANCO_REAL',
+            'debug_sessao': dict(session)  # Para debug
         }), 200
         
     except Exception as e:
         current_app.logger.error(f"❌ Erro ao buscar usuários: {e}", exc_info=True)
+        
+        # Log da sessão para debug
+        current_app.logger.error(f"🔍 Sessão atual: {dict(session)}")
         
         # Fallback para dados mock apenas em caso de erro
         usuarios_mock = [
@@ -596,6 +635,7 @@ def buscar_usuarios_empresa():
             'usuarios': usuarios_mock,
             'total': len(usuarios_mock),
             'mock': True,
-            'erro': str(e)
+            'erro': str(e),
+            'debug_sessao': dict(session)
         }), 200
 
