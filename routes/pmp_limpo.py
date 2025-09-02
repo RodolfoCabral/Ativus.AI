@@ -540,13 +540,11 @@ def buscar_usuarios_empresa():
             SELECT id, name, email
             FROM "user" 
             WHERE company = :company_name
-            AND id != :user_id
             ORDER BY name
         """)
         
         result_usuarios = db.session.execute(query_usuarios, {
-            'company_name': nome_empresa,
-            'user_id': usuario_logado_id
+            'company_name': nome_empresa
         })
         
         usuarios_raw = result_usuarios.fetchall()
@@ -555,6 +553,11 @@ def buscar_usuarios_empresa():
         # 4. Converter para formato da API
         usuarios_lista = []
         for usuario in usuarios_raw:
+            # Pular o próprio usuário logado na lista de seleção
+            if usuario.id == usuario_logado_id:
+                current_app.logger.info(f"  ⏭️ Pulando usuário logado: {usuario.name}")
+                continue
+                
             usuario_dict = {
                 'id': usuario.id,
                 'nome': usuario.name,
