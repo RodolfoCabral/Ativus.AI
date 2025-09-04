@@ -181,6 +181,12 @@ class OrdemServico(db.Model):
     empresa = db.Column(db.String(100), nullable=False)
     usuario_criacao = db.Column(db.String(100), nullable=False)
     usuario_responsavel = db.Column(db.String(100), nullable=True)  # Usuário que executará a OS
+
+    # Campos para integração com PMP
+    pmp_id = db.Column(db.Integer, db.ForeignKey('pmps.id'), nullable=True)
+    data_proxima_geracao = db.Column(db.Date, nullable=True)
+    frequencia_origem = db.Column(db.String(20), nullable=True)
+    numero_sequencia = db.Column(db.Integer, nullable=False, default=1)
     
     # Datas
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
@@ -231,6 +237,10 @@ class OrdemServico(db.Model):
             'empresa': self.empresa,
             'usuario_criacao': self.usuario_criacao,
             'usuario_responsavel': self.usuario_responsavel,
+            'pmp_id': self.pmp_id,
+            'data_proxima_geracao': self.data_proxima_geracao.isoformat() if self.data_proxima_geracao else None,
+            'frequencia_origem': self.frequencia_origem,
+            'numero_sequencia': self.numero_sequencia,
             'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
             'data_programada': self.data_programada.isoformat() if self.data_programada else None,
             'data_inicio': self.data_inicio.isoformat() if self.data_inicio else None,

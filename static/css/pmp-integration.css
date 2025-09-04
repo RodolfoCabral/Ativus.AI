@@ -1,0 +1,417 @@
+/* Estilos para integração PMP na tela de programação */
+
+/* Botões de geração automática */
+.btn-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #9956a8, #bb8fba);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #7d4691, #9956a8);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(153, 86, 152, 0.3);
+}
+
+.btn-secondary {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.btn-secondary:hover {
+    background: #e9ecef;
+    color: #495057;
+    transform: translateY(-1px);
+}
+
+/* Indicadores de OS PMP */
+.os-pmp {
+    position: relative;
+    border-left: 4px solid #9956a8 !important;
+}
+
+.pmp-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: linear-gradient(135deg, #9956a8, #bb8fba);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    z-index: 10;
+}
+
+.pmp-badge i {
+    font-size: 8px;
+}
+
+.frequencia-info {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(153, 86, 152, 0.1);
+    color: #9956a8;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.frequencia-info i {
+    font-size: 8px;
+}
+
+/* Animações para OS PMP */
+.os-pmp .chamado-card {
+    animation: pmpGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes pmpGlow {
+    0% {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    100% {
+        box-shadow: 0 2px 8px rgba(153, 86, 152, 0.2);
+    }
+}
+
+/* Notificações específicas para PMP */
+.notification.pmp-notification {
+    border-left: 4px solid #9956a8;
+}
+
+.notification.pmp-notification .notification-icon {
+    color: #9956a8;
+}
+
+/* Melhorias no layout dos chamados */
+.chamado-card {
+    position: relative;
+    padding-right: 80px; /* Espaço para badges */
+    padding-bottom: 30px; /* Espaço para info de frequência */
+}
+
+/* Indicador de workload para OS PMP */
+.dia-container.has-pmp-os {
+    border: 2px dashed #9956a8;
+}
+
+.dia-container.has-pmp-os .workload-indicator {
+    background: linear-gradient(45deg, #9956a8, #bb8fba);
+}
+
+/* Tooltip para informações PMP */
+.pmp-tooltip {
+    position: absolute;
+    background: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.pmp-tooltip.show {
+    opacity: 1;
+}
+
+.pmp-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .btn-container {
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .pmp-badge {
+        font-size: 9px;
+        padding: 3px 6px;
+    }
+    
+    .frequencia-info {
+        font-size: 8px;
+        padding: 2px 4px;
+    }
+}
+
+/* Estados de loading */
+.btn.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn.loading i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Melhorias na seção de chamados preventivos */
+.priority-line.preventiva {
+    background: linear-gradient(135deg, rgba(153, 86, 152, 0.05), rgba(187, 143, 186, 0.05));
+    border-left-color: #9956a8;
+    border-left-width: 5px;
+}
+
+.priority-line.preventiva .priority-label {
+    color: #9956a8;
+    font-weight: 600;
+}
+
+.priority-line.preventiva .priority-label::after {
+    content: ' (PMP)';
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+
+/* Drag and drop entre prioridades */
+.priority-drag-over {
+    background: linear-gradient(135deg, rgba(153, 86, 152, 0.1), rgba(187, 143, 186, 0.1));
+    border: 2px dashed #9956a8 !important;
+    transform: scale(1.02);
+    transition: all 0.3s ease;
+}
+
+.priority-line {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.priority-line:hover {
+    background: rgba(153, 86, 152, 0.05);
+}
+
+/* Botão de desprogramar */
+.btn-desprogramar {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.chamado-agendado {
+    position: relative;
+}
+
+.chamado-agendado:hover .btn-desprogramar {
+    opacity: 1;
+}
+
+.btn-desprogramar:hover {
+    background: #c82333;
+    transform: scale(1.1);
+}
+
+/* Melhorias no drag visual */
+.chamado-card.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+    z-index: 1000;
+}
+
+.dia-container.drag-over {
+    background: linear-gradient(135deg, rgba(153, 86, 152, 0.1), rgba(187, 143, 186, 0.1));
+    border: 2px dashed #9956a8;
+    transform: scale(1.05);
+}
+
+/* Confirmação visual para OS de PMP */
+.os-pmp.dragging::after {
+    content: 'OS de PMP';
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #9956a8;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    z-index: 1001;
+}
+
+/* Indicadores de drop válido/inválido */
+.drop-zone-valid {
+    border-color: #28a745 !important;
+    background: rgba(40, 167, 69, 0.1) !important;
+}
+
+.drop-zone-invalid {
+    border-color: #dc3545 !important;
+    background: rgba(220, 53, 69, 0.1) !important;
+}
+
+/* Animações melhoradas */
+@keyframes dropSuccess {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.drop-success {
+    animation: dropSuccess 0.5s ease;
+}
+
+/* Tooltip para drag and drop */
+.drag-tooltip {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.drag-tooltip.show {
+    opacity: 1;
+}
+
+/* Estados de loading para operações */
+.os-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.os-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #9956a8;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Melhorias na responsividade do drag */
+@media (max-width: 768px) {
+    .btn-desprogramar {
+        opacity: 1; /* Sempre visível no mobile */
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+    }
+    
+    .drag-tooltip {
+        font-size: 14px;
+        padding: 10px 14px;
+    }
+    
+    .priority-drag-over {
+        transform: scale(1.01);
+    }
+}
+
+/* Indicadores de frequência melhorados */
+.frequencia-badge {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    background: linear-gradient(45deg, #9956a8, #bb8fba);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: bold;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.frequencia-badge.diaria { background: linear-gradient(45deg, #ff6b6b, #ff8e8e); }
+.frequencia-badge.semanal { background: linear-gradient(45deg, #4ecdc4, #7ed6d1); }
+.frequencia-badge.mensal { background: linear-gradient(45deg, #45b7d1, #6cc5dc); }
+.frequencia-badge.anual { background: linear-gradient(45deg, #f39c12, #f5b041); }
+
+/* Contador de sequência */
+.sequencia-counter {
+    position: absolute;
+    bottom: -8px;
+    right: -8px;
+    background: #28a745;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+

@@ -142,6 +142,42 @@ def create_app():
         print(f"Erro ao registrar blueprint de PMP LIMPO: {e}")
         print("Sistema funcionará sem funcionalidades de PMP.")
     
+    # Importar e registrar blueprint de geração de OS baseada em PMP
+    try:
+        from routes.pmp_os_generator import pmp_os_generator_bp
+        app.register_blueprint(pmp_os_generator_bp)
+        print("Blueprint de geração de OS PMP registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar pmp_os_generator_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de geração automática de OS.")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de geração de OS PMP: {e}")
+        print("Sistema funcionará sem funcionalidades de geração automática de OS.")
+    
+    # Importar e registrar blueprint de agendamento por frequência
+    try:
+        from routes.pmp_scheduler import pmp_scheduler_bp
+        app.register_blueprint(pmp_scheduler_bp)
+        print("Blueprint de agendamento PMP registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar pmp_scheduler_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de agendamento.")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de agendamento PMP: {e}")
+        print("Sistema funcionará sem funcionalidades de agendamento.")
+    
+    # Importar e registrar blueprint de API de programação
+    try:
+        from routes.programacao_api import programacao_api_bp
+        app.register_blueprint(programacao_api_bp)
+        print("Blueprint de API de programação registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar programacao_api_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de programação via API.")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de API de programação: {e}")
+        print("Sistema funcionará sem funcionalidades de programação via API.")
+    
     # Rotas para arquivos estáticos
     @app.route('/')
     def index():

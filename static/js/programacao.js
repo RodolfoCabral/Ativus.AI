@@ -39,14 +39,32 @@ async function loadData() {
 // Carregar ordens de serviço em aberto
 async function loadOrdensServico() {
     try {
+        // Carregar OS normais (abertas)
         const response = await fetch('/api/ordens-servico?status=abertas');
         if (response.ok) {
             const data = await response.json();
             ordensServico = data.ordens_servico || [];
-            console.log('OS carregadas:', ordensServico.length);
+            console.log('OS normais carregadas:', ordensServico.length);
         } else {
             throw new Error('Erro ao carregar ordens de serviço');
         }
+        
+        // Carregar também OS programadas (com usuário responsável)
+        try {
+            const responseProgramadas = await fetch('/api/ordens-servico?status=programada');
+            if (responseProgramadas.ok) {
+                const dataProgramadas = await responseProgramadas.json();
+                const osProgramadas = dataProgramadas.ordens_servico || [];
+                
+                // Adicionar OS programadas à lista
+                ordensServico = [...ordensServico, ...osProgramadas];
+                console.log('OS programadas adicionadas:', osProgramadas.length);
+                console.log('Total de OS:', ordensServico.length);
+            }
+        } catch (error) {
+            console.warn('Erro ao carregar OS programadas:', error);
+        }
+        
     } catch (error) {
         console.error('Erro ao carregar OS:', error);
         ordensServico = [];
@@ -88,7 +106,22 @@ function renderPriorityLines() {
         const container = document.getElementById(`chamados-${prioridade}`);
         if (!container) return;
         
-        const osFiltered = ordensServico.filter(os => os.prioridade === prioridade && os.status === 'aberta');
+        // Filtrar OS por prioridade e status
+        let osFiltered;
+        if (prioridade === 'preventiva') {
+            // Para preventivas: incluir status 'aberta' (sem usuário responsável)
+            osFiltered = ordensServico.filter(os => 
+                os.prioridade === prioridade && 
+                os.status === 'aberta' &&
+                (!os.usuario_responsavel || os.usuario_responsavel === null || os.usuario_responsavel === '')
+            );
+        } else {
+            // Para outras prioridades: apenas status 'aberta'
+            osFiltered = ordensServico.filter(os => 
+                os.prioridade === prioridade && 
+                os.status === 'aberta'
+            );
+        }
         
         if (osFiltered.length === 0) {
             container.innerHTML = '<div class="empty-priority">Nenhuma OS nesta prioridade</div>';
@@ -222,10 +255,20 @@ async function verificarExecucaoOS(osId) {
 
 // Obter OS agendadas para uma data e usuário
 function getOSAgendadas(date, userId) {
-    return ordensServico.filter(os => 
-        os.data_programada === date && 
-        os.usuario_responsavel === getUserById(userId)?.name
-    );
+    const usuario = getUserById(userId);
+    if (!usuario) return [];
+    
+    return ordensServico.filter(os => {
+        // Verificar se a OS está programada para esta data
+        const dataMatch = os.data_programada === date;
+        
+        // Verificar se o usuário é responsável pela OS
+        const usuarioMatch = os.usuario_responsavel === usuario.name || 
+                           os.usuario_responsavel === usuario.id ||
+                           (os.status === 'programada' && os.usuario_responsavel === usuario.name);
+        
+        return dataMatch && usuarioMatch;
+    });
 }
 
 // Obter usuário por ID
