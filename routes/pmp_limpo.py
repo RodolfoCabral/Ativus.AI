@@ -65,157 +65,79 @@ def gerar_pmps_limpo(equipamento_id):
         
         current_app.logger.info(f"📊 Encontrados {len(grupos)} grupos de atividades para equipamento {equipamento_id}")
         
-        # 5. PRESERVAR PMPs existentes com dados personalizados
-        pmps_existentes = PMP.query.filter_by(equipamento_id=equipamento_id).all()
-        pmps_existentes_dict = {}
+        # 5. Limpar PMPs antigas para este equipamento
+        pmps_antigas = PMP.query.filter_by(equipamento_id=equipamento_id).all()
+        for pmp_antiga in pmps_antigas:
+            # Deletar atividades da PMP antiga
+            AtividadePMP.query.filter_by(pmp_id=pmp_antiga.id).delete()
+            # Deletar histórico da PMP antiga
+            HistoricoExecucaoPMP.query.filter_by(pmp_id=pmp_antiga.id).delete()
+        # Deletar PMPs antigas
+        PMP.query.filter_by(equipamento_id=equipamento_id).delete()
         
-        # Mapear PMPs existentes por critérios de agrupamento
-        for pmp_existente in pmps_existentes:
-            chave_existente = (pmp_existente.oficina, pmp_existente.frequencia, 
-                             pmp_existente.tipo, pmp_existente.condicao)
-            pmps_existentes_dict[chave_existente] = pmp_existente
-            current_app.logger.info(f"📋 PMP existente preservada: {pmp_existente.codigo} - {chave_existente}")
-        
-        # 6. Criar/atualizar PMPs (preservando dados personalizados)
-        contador = len(pmps_existentes) + 1
-        pmps_processadas = []
+        # 6. Criar novas PMPs
+        contador = 1
+        novas_pmps = []
         
         for chave, atividades_grupo in grupos.items():
             oficina, frequencia, tipo_manutencao, condicao = chave
             
-            # Verificar se já existe PMP com esses critérios
-            if chave in pmps_existentes_dict:
-                # PMP JÁ EXISTE - PRESERVAR dados personalizados
-                pmp_existente = pmps_existentes_dict[chave]
-                current_app.logger.info(f"✅ PMP existente preservada: {pmp_existente.codigo}")
-                
-                # Apenas atualizar atividades se necessário (sem tocar nos dados personalizados)
-                atividades_existentes = AtividadePMP.query.filter_by(pmp_id=pmp_existente.id).all()
-                
-                # Verificar se precisa atualizar atividades
-                if len(atividades_existentes) != len(atividades_grupo):
-                    current_app.logger.info(f"🔄 Atualizando atividades da PMP {pmp_existente.codigo}")
-                    
-                    # Deletar apenas atividades antigas
-                    AtividadePMP.query.filter_by(pmp_id=pmp_existente.id).delete()
-                    
-                    # Recriar atividades
-                    ordem = 1
-                    for atividade_plano in atividades_grupo:
-                        nova_atividade_pmp = AtividadePMP(
-                            pmp_id=pmp_existente.id,
-                            atividade_plano_mestre_id=atividade_plano.id,
-                            ordem=ordem,
-                            status='ativo',
-                            descricao=atividade_plano.descricao,
-                            oficina=atividade_plano.oficina,
-                            frequencia=atividade_plano.frequencia,
-                            tipo_manutencao=atividade_plano.tipo_manutencao,
-                            conjunto=atividade_plano.conjunto,
-                            ponto_controle=atividade_plano.ponto_controle,
-                            valor_frequencia=atividade_plano.valor_frequencia,
-                            condicao=atividade_plano.condicao
-                        )
-                        db.session.add(nova_atividade_pmp)
-                        ordem += 1
-                
-                pmps_processadas.append(pmp_existente)
-                
-            else:
-                # PMP NÃO EXISTE - CRIAR NOVA com valores padrão
-                current_app.logger.info(f"🆕 Criando nova PMP para: {chave}")
-                
-                # Gerar código único da PMP
-                codigo_pmp = f"PMP-{contador:02d}-{equipamento.tag}"
-                
-                # Gerar descrição baseada nos critérios de agrupamento
-                descricao_pmp = f"PREVENTIVA {frequencia.upper()} - {oficina.upper()}"
-                
-                # Criar nova PMP com valores padrão
-                nova_pmp = PMP(
-                    equipamento_id=equipamento_id,
-                    codigo=codigo_pmp,
-                    descricao=descricao_pmp,
-                    tipo=tipo_manutencao,
-                    oficina=oficina,
-                    frequencia=frequencia,
-                    condicao=condicao,
-                    status='ativo',
-                    criado_por=1,  # TODO: usar current_user.id
-                    # Valores padrão para novos campos (serão personalizados pelo usuário)
-                    num_pessoas=2,
-                    dias_antecipacao=2,
-                    tempo_pessoa=5.0,
-                    forma_impressao='digital'
-                )
-                
-                db.session.add(nova_pmp)
-                db.session.flush()  # Para obter o ID da nova PMP
-                
-                current_app.logger.info(f"✅ Nova PMP criada: {codigo_pmp} (ID: {nova_pmp.id})")
-                
-                # Criar atividades da nova PMP
-                ordem = 1
-                for atividade_plano in atividades_grupo:
-                    nova_atividade_pmp = AtividadePMP(
-                        pmp_id=nova_pmp.id,
-                        atividade_plano_mestre_id=atividade_plano.id,
-                        ordem=ordem,
-                        status='ativo',
-                        descricao=atividade_plano.descricao,
-                        oficina=atividade_plano.oficina,
-                        frequencia=atividade_plano.frequencia,
-                        tipo_manutencao=atividade_plano.tipo_manutencao,
-                        conjunto=atividade_plano.conjunto,
-                        ponto_controle=atividade_plano.ponto_controle,
-                        valor_frequencia=atividade_plano.valor_frequencia,
-                        condicao=atividade_plano.condicao
-                    )
-                    db.session.add(nova_atividade_pmp)
-                    ordem += 1
-                
-                pmps_processadas.append(nova_pmp)
-                contador += 1
-        
-        # 7. Remover PMPs órfãs (que não têm mais atividades correspondentes no plano mestre)
-        chaves_atuais = set(grupos.keys())
-        pmps_para_remover = []
-        
-        for pmp_existente in pmps_existentes:
-            chave_existente = (pmp_existente.oficina, pmp_existente.frequencia, 
-                             pmp_existente.tipo, pmp_existente.condicao)
+            # Gerar código único da PMP
+            codigo_pmp = f"PMP-{contador:02d}-{equipamento.tag}"
             
-            if chave_existente not in chaves_atuais:
-                # Esta PMP não tem mais atividades correspondentes no plano mestre
-                # Só remover se não tiver dados personalizados importantes
-                if (not pmp_existente.data_inicio_plano and 
-                    not pmp_existente.usuarios_responsaveis and
-                    pmp_existente.num_pessoas == 2 and 
-                    pmp_existente.dias_antecipacao == 2):
-                    
-                    current_app.logger.info(f"🗑️ Removendo PMP órfã sem dados personalizados: {pmp_existente.codigo}")
-                    pmps_para_remover.append(pmp_existente)
-                else:
-                    current_app.logger.info(f"⚠️ PMP órfã mantida (tem dados personalizados): {pmp_existente.codigo}")
-                    pmps_processadas.append(pmp_existente)  # Manter na lista
+            # Gerar descrição baseada nos critérios de agrupamento
+            descricao_pmp = f"PREVENTIVA {frequencia.upper()} - {oficina.upper()}"
+            
+            # Criar nova PMP
+            nova_pmp = PMP(
+                equipamento_id=equipamento_id,
+                codigo=codigo_pmp,
+                descricao=descricao_pmp,
+                tipo=tipo_manutencao,
+                oficina=oficina,
+                frequencia=frequencia,
+                condicao=condicao,
+                status='ativo',
+                criado_por=1  # TODO: usar current_user.id quando autenticação estiver funcionando
+            )
+            
+            db.session.add(nova_pmp)
+            db.session.flush()  # Para obter o ID da nova PMP
+            
+            current_app.logger.info(f"✅ PMP criada: {codigo_pmp} (ID: {nova_pmp.id})")
+            
+            # 7. Criar atividades da PMP com referência ao plano mestre
+            ordem = 1
+            for atividade_plano in atividades_grupo:
+                nova_atividade_pmp = AtividadePMP(
+                    pmp_id=nova_pmp.id,
+                    atividade_plano_mestre_id=atividade_plano.id,  # ✅ CAMPO OBRIGATÓRIO
+                    ordem=ordem,
+                    status='ativo',
+                    # Campos duplicados para performance
+                    descricao=atividade_plano.descricao,
+                    oficina=atividade_plano.oficina,
+                    frequencia=atividade_plano.frequencia,
+                    tipo_manutencao=atividade_plano.tipo_manutencao,
+                    conjunto=atividade_plano.conjunto,
+                    ponto_controle=atividade_plano.ponto_controle,
+                    valor_frequencia=atividade_plano.valor_frequencia,
+                    condicao=atividade_plano.condicao
+                )
+                db.session.add(nova_atividade_pmp)
+                ordem += 1
+            
+            novas_pmps.append(nova_pmp)
+            contador += 1
         
-        # Remover PMPs órfãs sem dados personalizados
-        for pmp_remover in pmps_para_remover:
-            AtividadePMP.query.filter_by(pmp_id=pmp_remover.id).delete()
-            HistoricoExecucaoPMP.query.filter_by(pmp_id=pmp_remover.id).delete()
-            db.session.delete(pmp_remover)
-        
-        # 8. Commit das alterações
+        # 8. Salvar no banco
         db.session.commit()
         
-        current_app.logger.info(f"🎉 Processamento concluído:")
-        current_app.logger.info(f"   - PMPs preservadas: {len([p for p in pmps_processadas if p in pmps_existentes])}")
-        current_app.logger.info(f"   - PMPs criadas: {len([p for p in pmps_processadas if p not in pmps_existentes])}")
-        current_app.logger.info(f"   - PMPs removidas: {len(pmps_para_remover)}")
+        current_app.logger.info(f"🎉 Criadas {len(novas_pmps)} PMPs para equipamento {equipamento_id}")
         
-        # 9. Retornar PMPs processadas com contagem de atividades
+        # 9. Retornar PMPs criadas com contagem de atividades
         resultado = []
-        for pmp in pmps_processadas:
+        for pmp in novas_pmps:
             pmp_dict = pmp.to_dict()
             # Contar atividades da PMP
             pmp_dict['atividades_count'] = AtividadePMP.query.filter_by(pmp_id=pmp.id).count()
@@ -223,18 +145,13 @@ def gerar_pmps_limpo(equipamento_id):
         
         return jsonify({
             'success': True,
-            'message': f'Processadas {len(pmps_processadas)} PMPs (preservando dados personalizados)',
-            'pmps': resultado,
-            'estatisticas': {
-                'preservadas': len([p for p in pmps_processadas if p in pmps_existentes]),
-                'criadas': len([p for p in pmps_processadas if p not in pmps_existentes]),
-                'removidas': len(pmps_para_remover)
-            }
-        }), 200
+            'message': f'Criadas {len(novas_pmps)} PMPs com sucesso',
+            'pmps': resultado
+        }), 201
         
     except Exception as e:
-        current_app.logger.error(f"❌ Erro ao gerar PMPs: {e}", exc_info=True)
         db.session.rollback()
+        current_app.logger.error(f"❌ Erro ao gerar PMPs: {e}", exc_info=True)
         return jsonify({
             'success': False,
             'message': f'Erro interno: {str(e)}'
@@ -427,6 +344,7 @@ def atualizar_pmp_limpo(pmp_id):
             valor_antigo = pmp.data_inicio_plano
             if data['data_inicio_plano']:
                 try:
+                    from datetime import datetime
                     pmp.data_inicio_plano = datetime.strptime(data['data_inicio_plano'], '%Y-%m-%d').date()
                     campos_atualizados.append(f"data_inicio_plano: {valor_antigo} → {pmp.data_inicio_plano}")
                     current_app.logger.info(f"🔄 Atualizando data_inicio_plano: {pmp.data_inicio_plano}")
@@ -444,6 +362,7 @@ def atualizar_pmp_limpo(pmp_id):
             valor_antigo = pmp.data_fim_plano
             if data['data_fim_plano']:
                 try:
+                    from datetime import datetime
                     data_fim = datetime.strptime(data['data_fim_plano'], '%Y-%m-%d').date()
                     
                     # Validar se data fim é posterior à data início

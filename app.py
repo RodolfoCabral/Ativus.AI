@@ -178,18 +178,6 @@ def create_app():
         print(f"Erro ao registrar blueprint de API de programação: {e}")
         print("Sistema funcionará sem funcionalidades de programação via API.")
     
-    # Importar e registrar blueprint de analytics PMP
-    try:
-        from routes.pmp_analytics import pmp_analytics_bp
-        app.register_blueprint(pmp_analytics_bp)
-        print("Blueprint de analytics PMP registrado com sucesso")
-    except ImportError as e:
-        print(f"Aviso: Não foi possível importar pmp_analytics_bp: {e}")
-        print("Sistema funcionará sem funcionalidades de analytics.")
-    except Exception as e:
-        print(f"Erro ao registrar blueprint de analytics PMP: {e}")
-        print("Sistema funcionará sem funcionalidades de analytics.")
-    
     # Rotas para arquivos estáticos
     @app.route('/')
     def index():
