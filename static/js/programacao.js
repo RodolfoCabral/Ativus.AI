@@ -109,17 +109,24 @@ function renderPriorityLines() {
         // Filtrar OS por prioridade e status
         let osFiltered;
         if (prioridade === 'preventiva') {
-            // Para preventivas: incluir status 'aberta' (sem usuário responsável)
+            // CORREÇÃO: Para preventivas, incluir OS abertas sem usuário E OS de PMP
+            osFiltered = ordensServico.filter(os => {
+                // Condição 1: Prioridade preventiva e status aberta sem usuário responsável
+                const condicao1 = os.prioridade === prioridade && 
+                                 os.status === 'aberta' &&
+                                 (!os.usuario_responsavel || os.usuario_responsavel === null || os.usuario_responsavel === '');
+                
+                // Condição 2: OS gerada por PMP (independente do status, mas apenas abertas)
+                const condicao2 = os.pmp_id && os.pmp_id !== null && os.status === 'aberta';
+                
+                return condicao1 || condicao2;
+            });
+        } else {
+            // Para outras prioridades: apenas status 'aberta' e não PMP
             osFiltered = ordensServico.filter(os => 
                 os.prioridade === prioridade && 
                 os.status === 'aberta' &&
-                (!os.usuario_responsavel || os.usuario_responsavel === null || os.usuario_responsavel === '')
-            );
-        } else {
-            // Para outras prioridades: apenas status 'aberta'
-            osFiltered = ordensServico.filter(os => 
-                os.prioridade === prioridade && 
-                os.status === 'aberta'
+                (!os.pmp_id || os.pmp_id === null) // Excluir OS de PMP das outras prioridades
             );
         }
         
@@ -142,9 +149,21 @@ function renderPriorityLines() {
 
 // Criar card de OS
 function createOSCard(os) {
+    // Verificar se é OS de PMP
+    const isPMP = os.pmp_id && os.pmp_id !== null;
+    const pmpBadge = isPMP ? `<div class="pmp-badge">PMP</div>` : '';
+    const frequenciaBadge = isPMP && os.frequencia_origem ? 
+        `<div class="frequencia-badge">${os.frequencia_origem}</div>` : '';
+    
     return `
-        <div class="chamado-card" data-os-id="${os.id}" draggable="true" onclick="verificarExecucaoOS(${os.id})">
-            <div class="chamado-id">OS #${os.id}</div>
+        <div class="chamado-card ${isPMP ? 'pmp-card' : ''}" data-os-id="${os.id}" draggable="true" onclick="verificarExecucaoOS(${os.id})">
+            <div class="chamado-header">
+                <div class="chamado-id">OS #${os.id}</div>
+                <div class="badges">
+                    ${pmpBadge}
+                    ${frequenciaBadge}
+                </div>
+            </div>
             <div class="chamado-descricao">${os.descricao}</div>
             <div class="chamado-info">
                 <div class="info-line">
@@ -163,9 +182,22 @@ function createOSCard(os) {
                     <i class="fas fa-building"></i>
                     ${os.filial_tag} - ${os.setor_tag} - ${os.equipamento_tag}
                 </div>
+                ${isPMP ? `
+                <div class="info-line pmp-info">
+                    <i class="fas fa-calendar-alt"></i>
+                    Próxima: ${formatDate(os.data_proxima_geracao)} | Seq: #${os.numero_sequencia || 1}
+                </div>
+                ` : ''}
             </div>
         </div>
     `;
+}
+
+// Função auxiliar para formatar data
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR');
 }
 
 // Renderizar usuários e calendário
