@@ -427,7 +427,6 @@ def atualizar_pmp_limpo(pmp_id):
             valor_antigo = pmp.data_inicio_plano
             if data['data_inicio_plano']:
                 try:
-                    from datetime import datetime
                     pmp.data_inicio_plano = datetime.strptime(data['data_inicio_plano'], '%Y-%m-%d').date()
                     campos_atualizados.append(f"data_inicio_plano: {valor_antigo} → {pmp.data_inicio_plano}")
                     current_app.logger.info(f"🔄 Atualizando data_inicio_plano: {pmp.data_inicio_plano}")
@@ -445,7 +444,6 @@ def atualizar_pmp_limpo(pmp_id):
             valor_antigo = pmp.data_fim_plano
             if data['data_fim_plano']:
                 try:
-                    from datetime import datetime
                     data_fim = datetime.strptime(data['data_fim_plano'], '%Y-%m-%d').date()
                     
                     # Validar se data fim é posterior à data início
