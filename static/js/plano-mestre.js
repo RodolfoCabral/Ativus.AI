@@ -942,29 +942,51 @@ async function salvarAlteracoesPMP() {
         // Coletar dados do formulário pelos IDs dos campos
         const formData = {};
         
-        // Campos de configuração (principais)
+        // Campos de configuração (principais) - SEMPRE coletados
         const numPessoas = document.getElementById('pmp-num-pessoas');
         if (numPessoas) {
-            formData.num_pessoas = parseInt(numPessoas.value) || 1;
-            console.log('📝 num_pessoas coletado:', formData.num_pessoas);
+            const novoValor = parseInt(numPessoas.value) || 1;
+            if (novoValor !== (pmpSelecionada.num_pessoas || 2)) {
+                formData.num_pessoas = novoValor;
+                console.log('📝 num_pessoas coletado:', formData.num_pessoas);
+            }
         }
         
         const diasAntecipacao = document.getElementById('pmp-dias-antecipacao');
         if (diasAntecipacao) {
-            formData.dias_antecipacao = parseInt(diasAntecipacao.value) || 0;
-            console.log('📝 dias_antecipacao coletado:', formData.dias_antecipacao);
+            const novoValor = parseInt(diasAntecipacao.value) || 0;
+            if (novoValor !== (pmpSelecionada.dias_antecipacao || 2)) {
+                formData.dias_antecipacao = novoValor;
+                console.log('📝 dias_antecipacao coletado:', formData.dias_antecipacao);
+            }
         }
         
         const tempoPessoa = document.getElementById('pmp-tempo-pessoa');
         if (tempoPessoa) {
-            formData.tempo_pessoa = parseFloat(tempoPessoa.value) || 1.0;
-            console.log('📝 tempo_pessoa coletado:', formData.tempo_pessoa);
+            const novoValor = parseFloat(tempoPessoa.value) || 1.0;
+            if (Math.abs(novoValor - (pmpSelecionada.tempo_pessoa || 5.0)) > 0.01) {
+                formData.tempo_pessoa = novoValor;
+                console.log('📝 tempo_pessoa coletado:', formData.tempo_pessoa);
+            }
         }
         
         const formaImpressao = document.getElementById('pmp-forma-impressao');
         if (formaImpressao) {
-            formData.forma_impressao = formaImpressao.value || 'comum';
-            console.log('📝 forma_impressao coletado:', formData.forma_impressao);
+            const novoValor = formaImpressao.value || 'comum';
+            if (novoValor !== (pmpSelecionada.forma_impressao || 'digital')) {
+                formData.forma_impressao = novoValor;
+                console.log('📝 forma_impressao coletado:', formData.forma_impressao);
+            }
+        }
+        
+        // Hora Homem (calculado automaticamente)
+        const horaHomem = document.getElementById('pmp-hora-homem');
+        if (horaHomem) {
+            const novoValor = parseFloat(horaHomem.textContent) || 0;
+            if (Math.abs(novoValor - (pmpSelecionada.hora_homem || 0)) > 0.01) {
+                formData.hora_homem = novoValor;
+                console.log('📝 hora_homem coletado:', formData.hora_homem);
+            }
         }
         
         // Outros campos opcionais
@@ -998,17 +1020,17 @@ async function salvarAlteracoesPMP() {
             console.log('📝 condicao coletado:', formData.condicao);
         }
         
-        // Novos campos - Controle
+        // Novos campos - Controle (OPCIONAIS - não obrigatórios para salvamento)
         const dataInicio = document.getElementById('pmp-data-inicio');
         if (dataInicio && dataInicio.value !== formatarDataParaInput(pmpSelecionada.data_inicio_plano)) {
-            formData.data_inicio_plano = dataInicio.value;
+            formData.data_inicio_plano = dataInicio.value || null;
             console.log('📝 data_inicio_plano coletado:', formData.data_inicio_plano);
         }
         
         const dataFim = document.getElementById('pmp-data-fim');
         if (dataFim && dataFim.value !== formatarDataParaInput(pmpSelecionada.data_fim_plano)) {
-            // Validar se data fim é posterior à data início
-            if (dataInicio.value && dataFim.value && dataFim.value <= dataInicio.value) {
+            // Validar se data fim é posterior à data início (apenas se ambas estiverem preenchidas)
+            if (dataInicio && dataInicio.value && dataFim.value && dataFim.value <= dataInicio.value) {
                 alert('A data de fim deve ser posterior à data de início');
                 return;
             }
@@ -1036,9 +1058,10 @@ async function salvarAlteracoesPMP() {
         
         console.log('📦 Dados coletados para envio:', formData);
         
-        // Verificar se há dados para enviar
+        // Verificar se há dados para enviar - REMOVIDA VALIDAÇÃO RESTRITIVA
         if (Object.keys(formData).length === 0) {
-            alert('Nenhuma alteração detectada');
+            console.log('⚠️ Nenhuma alteração detectada nos campos');
+            alert('Nenhuma alteração foi detectada. Verifique se você modificou algum campo.');
             return;
         }
         
