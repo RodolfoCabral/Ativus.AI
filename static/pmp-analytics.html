@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics PMP - Ativus</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pmp-analytics.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-chart-line"></i> Analytics PMP</h2>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="plano-mestre.html"><i class="fas fa-cogs"></i> PMPs</a></li>
+                <li><a href="programacao.html"><i class="fas fa-calendar"></i> Programação</a></li>
+                <li class="active"><a href="pmp-analytics.html"><i class="fas fa-chart-line"></i> Analytics</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1><i class="fas fa-chart-bar"></i> Dashboard de Analytics PMP</h1>
+                <div class="header-actions">
+                    <button id="refresh-btn" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Atualizar
+                    </button>
+                    <button id="export-btn" class="btn btn-secondary">
+                        <i class="fas fa-download"></i> Exportar
+                    </button>
+                </div>
+            </header>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Carregando dados de analytics...</p>
+            </div>
+
+            <!-- Alertas -->
+            <section id="alertas-section" class="analytics-section" style="display: none;">
+                <h2><i class="fas fa-exclamation-triangle"></i> Alertas do Sistema</h2>
+                <div id="alertas-container" class="alertas-grid">
+                    <!-- Alertas serão inseridos aqui -->
+                </div>
+            </section>
+
+            <!-- Métricas Gerais -->
+            <section id="metricas-section" class="analytics-section" style="display: none;">
+                <h2><i class="fas fa-tachometer-alt"></i> Métricas Gerais</h2>
+                <div class="metricas-grid">
+                    <div class="metrica-card">
+                        <div class="metrica-icon">
+                            <i class="fas fa-list-alt"></i>
+                        </div>
+                        <div class="metrica-content">
+                            <h3 id="total-pmps">0</h3>
+                            <p>Total de PMPs</p>
+                        </div>
+                    </div>
+                    <div class="metrica-card">
+                        <div class="metrica-icon active">
+                            <i class="fas fa-play-circle"></i>
+                        </div>
+                        <div class="metrica-content">
+                            <h3 id="pmps-ativas">0</h3>
+                            <p>PMPs Ativas</p>
+                        </div>
+                    </div>
+                    <div class="metrica-card">
+                        <div class="metrica-icon success">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div class="metrica-content">
+                            <h3 id="total-os">0</h3>
+                            <p>OS Geradas</p>
+                        </div>
+                    </div>
+                    <div class="metrica-card">
+                        <div class="metrica-icon warning">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="metrica-content">
+                            <h3 id="os-mes">0</h3>
+                            <p>OS Este Mês</p>
+                        </div>
+                    </div>
+                    <div class="metrica-card">
+                        <div class="metrica-icon info">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="metrica-content">
+                            <h3 id="taxa-ativacao">0%</h3>
+                            <p>Taxa de Ativação</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gráficos -->
+            <section id="graficos-section" class="analytics-section" style="display: none;">
+                <div class="graficos-grid">
+                    <!-- Gráfico de Status -->
+                    <div class="grafico-card">
+                        <h3><i class="fas fa-chart-pie"></i> OS por Status</h3>
+                        <canvas id="chart-status"></canvas>
+                    </div>
+
+                    <!-- Gráfico de Frequências -->
+                    <div class="grafico-card">
+                        <h3><i class="fas fa-chart-bar"></i> Frequências Populares</h3>
+                        <canvas id="chart-frequencias"></canvas>
+                    </div>
+
+                    <!-- Gráfico de Tendência -->
+                    <div class="grafico-card full-width">
+                        <h3><i class="fas fa-chart-line"></i> Tendência de Geração (7 dias)</h3>
+                        <canvas id="chart-tendencia"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Performance por Frequência -->
+            <section id="performance-section" class="analytics-section" style="display: none;">
+                <h2><i class="fas fa-stopwatch"></i> Performance por Frequência</h2>
+                <div class="performance-table-container">
+                    <table id="performance-table" class="performance-table">
+                        <thead>
+                            <tr>
+                                <th>Frequência</th>
+                                <th>Total OS</th>
+                                <th>Tempo Médio (horas)</th>
+                                <th>Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dados serão inseridos aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Relatório Mensal -->
+            <section id="relatorio-section" class="analytics-section" style="display: none;">
+                <h2><i class="fas fa-calendar-check"></i> Relatório Mensal</h2>
+                <div class="relatorio-controls">
+                    <select id="mes-select">
+                        <option value="1">Janeiro</option>
+                        <option value="2">Fevereiro</option>
+                        <option value="3">Março</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Maio</option>
+                        <option value="6">Junho</option>
+                        <option value="7">Julho</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Setembro</option>
+                        <option value="10">Outubro</option>
+                        <option value="11">Novembro</option>
+                        <option value="12">Dezembro</option>
+                    </select>
+                    <select id="ano-select">
+                        <!-- Anos serão preenchidos via JS -->
+                    </select>
+                    <button id="gerar-relatorio-btn" class="btn btn-primary">
+                        <i class="fas fa-file-alt"></i> Gerar Relatório
+                    </button>
+                </div>
+                <div id="relatorio-content" class="relatorio-content">
+                    <!-- Conteúdo do relatório será inserido aqui -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/pmp-analytics.js"></script>
+</body>
+</html>
+
