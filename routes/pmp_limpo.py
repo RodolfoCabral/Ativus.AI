@@ -5,7 +5,7 @@ from assets_models import Equipamento
 from models.plano_mestre import PlanoMestre, AtividadePlanoMestre
 from models import db
 import logging
-from datetime import datetime
+from datetime import datetime, date
 
 pmp_limpo_bp = Blueprint('pmp_limpo_bp', __name__)
 
