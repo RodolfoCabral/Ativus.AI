@@ -895,6 +895,122 @@
                 margin: 10px;
             }
         }
+        
+        /* Estilos do Menu Dropdown do Usuário */
+        .user-menu-dropdown {
+            position: relative;
+            display: inline-block;
+            margin-left: 15px;
+        }
+        
+        .user-menu-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .user-menu-btn:hover {
+            background: rgba(153, 86, 168, 0.1);
+            color: #9956a8;
+        }
+        
+        .user-menu-btn .fa-chevron-down {
+            font-size: 12px;
+            transition: transform 0.3s ease;
+        }
+        
+        .user-menu-dropdown.active .user-menu-btn .fa-chevron-down {
+            transform: rotate(180deg);
+        }
+        
+        .user-menu-content {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            min-width: 200px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            border: 1px solid #e1e5e9;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .user-menu-dropdown.active .user-menu-content {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .user-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #333;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+        
+        .user-menu-item:hover {
+            background: #f8f9fa;
+            color: #9956a8;
+        }
+        
+        .user-menu-item i {
+            width: 16px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .user-menu-divider {
+            height: 1px;
+            background: #e1e5e9;
+            margin: 8px 0;
+        }
+        
+        .user-menu-logout {
+            color: #dc3545;
+        }
+        
+        .user-menu-logout:hover {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+        
+        /* Animação de entrada */
+        @keyframes dropdownFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .user-menu-dropdown.active .user-menu-content {
+            animation: dropdownFadeIn 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -998,9 +1114,37 @@
                         <span id="user-name">Carregando...</span>
                         <span id="user-company">Carregando...</span>
                     </div>
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                        <i class="fas fa-chevron-down"></i>
+                    
+                    <!-- Menu Dropdown do Usuário -->
+                    <div class="user-menu-dropdown">
+                        <button class="user-menu-btn" onclick="toggleUserMenu()">
+                            <i class="fas fa-user-circle"></i>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        
+                        <div class="user-menu-content" id="userMenuContent">
+                            <a href="#" onclick="abrirMinhaConta()" class="user-menu-item">
+                                <i class="fas fa-user"></i>
+                                <span>Minha Conta</span>
+                            </a>
+                            
+                            <a href="#" onclick="redefinirSenha()" class="user-menu-item">
+                                <i class="fas fa-key"></i>
+                                <span>Redefinir Senha</span>
+                            </a>
+                            
+                            <a href="#" onclick="abrirSuporte()" class="user-menu-item">
+                                <i class="fas fa-life-ring"></i>
+                                <span>Suporte</span>
+                            </a>
+                            
+                            <div class="user-menu-divider"></div>
+                            
+                            <a href="#" onclick="sairSistema()" class="user-menu-item user-menu-logout">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Sair</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -1233,6 +1377,68 @@
 
     <script src="/static/js/user_info.js"></script>
     <script src="/static/js/plano-mestre.js"></script>
+    
+    <script>
+        // Funções do Menu Dropdown do Usuário
+        function toggleUserMenu() {
+            const dropdown = document.querySelector('.user-menu-dropdown');
+            dropdown.classList.toggle('active');
+        }
+        
+        // Fechar menu ao clicar fora
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.user-menu-dropdown');
+            const isClickInside = dropdown.contains(event.target);
+            
+            if (!isClickInside && dropdown.classList.contains('active')) {
+                dropdown.classList.remove('active');
+            }
+        });
+        
+        // Funções dos itens do menu
+        function abrirMinhaConta() {
+            alert('🔧 Funcionalidade "Minha Conta" em desenvolvimento!\n\nEm breve você poderá:\n• Editar dados pessoais\n• Alterar foto do perfil\n• Configurar preferências\n• Gerenciar notificações');
+        }
+        
+        function redefinirSenha() {
+            const confirmar = confirm('🔐 Redefinir Senha\n\nDeseja receber um link para redefinir sua senha no email cadastrado?');
+            
+            if (confirmar) {
+                // Aqui você pode implementar a lógica real de redefinição
+                alert('📧 Link enviado!\n\nVerifique seu email para redefinir a senha.\n\n💡 Não esqueça de verificar a pasta de spam.');
+            }
+        }
+        
+        function abrirSuporte() {
+            const opcoes = [
+                '1. 💬 Chat Online',
+                '2. 📧 Email: suporte@ativus.com.br',
+                '3. 📞 Telefone: (11) 9999-9999',
+                '4. 🎫 Abrir Ticket'
+            ].join('\n');
+            
+            alert('🆘 Central de Suporte\n\nEscolha uma das opções:\n\n' + opcoes + '\n\n💡 Para emergências, use o telefone.');
+        }
+        
+        function sairSistema() {
+            const confirmar = confirm('🚪 Sair do Sistema\n\nTem certeza que deseja sair?\n\nTodos os dados não salvos serão perdidos.');
+            
+            if (confirmar) {
+                // Implementar logout real
+                window.location.href = '/logout';
+            }
+        }
+        
+        // Fechar menu com ESC
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const dropdown = document.querySelector('.user-menu-dropdown');
+                if (dropdown.classList.contains('active')) {
+                    dropdown.classList.remove('active');
+                }
+            }
+        });
+    </script>
 </body>
 </html>
 
