@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app, session
+from flask_login import current_user
 from models.pmp_limpo import PMP, AtividadePMP, HistoricoExecucaoPMP
 from assets_models import Equipamento
 from models.plano_mestre import PlanoMestre, AtividadePlanoMestre
@@ -494,8 +495,8 @@ def atualizar_pmp_limpo(pmp_id):
                                         filial_id=filial.id if filial else 166,
                                         setor_id=setor.id if setor else 166,
                                         equipamento_id=equipamento.id,
-                                        empresa='Sistema',
-                                        usuario_criacao='Sistema PMP',
+                                        empresa=current_user.company if hasattr(current_user, 'company') and current_user.company else session.get('company', 'Sistema'),
+                                        usuario_criacao=current_user.username if hasattr(current_user, 'username') and current_user.username else session.get('username', 'Sistema PMP'),
                                         usuario_responsavel=None,
                                         data_criacao=datetime.now(),
                                         data_programada=nova_data_inicio,
@@ -517,6 +518,8 @@ def atualizar_pmp_limpo(pmp_id):
                                     current_app.logger.info(f"   prioridade: {nova_os.prioridade}")
                                     current_app.logger.info(f"   equipamento_id: {nova_os.equipamento_id}")
                                     current_app.logger.info(f"   pmp_id: {nova_os.pmp_id}")
+                                    current_app.logger.info(f"   empresa: {nova_os.empresa}")
+                                    current_app.logger.info(f"   usuario_criacao: {nova_os.usuario_criacao}")
                                     
                                     # Salvar OS com tratamento de erro robusto
                                     try:
