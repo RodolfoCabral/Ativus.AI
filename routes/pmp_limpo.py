@@ -425,11 +425,126 @@ def atualizar_pmp_limpo(pmp_id):
         # Novos campos - Controle
         if 'data_inicio_plano' in data:
             valor_antigo = pmp.data_inicio_plano
+            data_inicio_anterior = pmp.data_inicio_plano  # Guardar valor anterior
+            
             if data['data_inicio_plano']:
                 try:
-                    pmp.data_inicio_plano = datetime.strptime(data['data_inicio_plano'], '%Y-%m-%d').date()
+                    nova_data_inicio = datetime.strptime(data['data_inicio_plano'], '%Y-%m-%d').date()
+                    pmp.data_inicio_plano = nova_data_inicio
                     campos_atualizados.append(f"data_inicio_plano: {valor_antigo} → {pmp.data_inicio_plano}")
                     current_app.logger.info(f"🔄 Atualizando data_inicio_plano: {pmp.data_inicio_plano}")
+                    
+                    # Forçar flush para garantir que a data seja salva
+                    db.session.add(pmp)
+                    db.session.flush()
+                    current_app.logger.info(f"✅ Flush intermediário realizado para garantir salvamento da data")
+                    
+                    # 🚀 GERAÇÃO AUTOMÁTICA DE OS QUANDO DATA DE INÍCIO É DEFINIDA
+                    if not data_inicio_anterior and nova_data_inicio <= date.today():
+                        current_app.logger.info(f"🎯 Data de início definida e é anterior/igual a hoje - gerando OS automaticamente")
+                        
+                        try:
+                            # Importar função de geração de OS
+                            from datetime import timedelta
+                            
+                            # Buscar dados do equipamento
+                            from assets_models import Equipamento, Setor, Filial, OrdemServico
+                            equipamento = Equipamento.query.get(pmp.equipamento_id)
+                            
+                            if equipamento:
+                                setor = Setor.query.get(equipamento.setor_id) if equipamento.setor_id else None
+                                filial = Filial.query.get(setor.filial_id) if setor and setor.filial_id else None
+                                
+                                # Calcular próxima data baseada na frequência
+                                frequencia = pmp.frequencia or 'mensal'
+                                if frequencia == 'diario':
+                                    proxima_data = nova_data_inicio + timedelta(days=1)
+                                elif frequencia == 'semanal':
+                                    proxima_data = nova_data_inicio + timedelta(weeks=1)
+                                elif frequencia == 'mensal':
+                                    proxima_data = nova_data_inicio + timedelta(days=30)
+                                elif frequencia == 'trimestral':
+                                    proxima_data = nova_data_inicio + timedelta(days=90)
+                                elif frequencia == 'semestral':
+                                    proxima_data = nova_data_inicio + timedelta(days=180)
+                                elif frequencia == 'anual':
+                                    proxima_data = nova_data_inicio + timedelta(days=365)
+                                else:
+                                    proxima_data = nova_data_inicio + timedelta(days=30)
+                                
+                                # Verificar se já existe OS para esta PMP
+                                os_existente = OrdemServico.query.filter_by(pmp_id=pmp.id).first()
+                                
+                                if os_existente:
+                                    current_app.logger.info(f"⚠️ Já existe OS #{os_existente.id} para esta PMP, não será gerada nova OS")
+                                    campos_atualizados.append(f"OS existente #{os_existente.id} para esta PMP")
+                                else:
+                                    # Criar OS automaticamente
+                                    nova_os = OrdemServico(
+                                        chamado_id=None,
+                                        descricao=f"PMP: {pmp.descricao or 'Manutenção Preventiva'} - {equipamento.tag} - Sequência #1",
+                                        tipo_manutencao='preventiva',
+                                        oficina='Oficina Manutenção',
+                                        condicao_ativo='Operacional',
+                                        qtd_pessoas=int(pmp.num_pessoas or 1),
+                                        horas=float(pmp.tempo_pessoa or 1.0),
+                                        hh=float(pmp.num_pessoas or 1) * float(pmp.tempo_pessoa or 1.0),
+                                        prioridade='preventiva',
+                                        status='aberta',
+                                        filial_id=filial.id if filial else 166,
+                                        setor_id=setor.id if setor else 166,
+                                        equipamento_id=equipamento.id,
+                                        empresa='Sistema',
+                                        usuario_criacao='Sistema PMP',
+                                        usuario_responsavel=None,
+                                        data_criacao=datetime.now(),
+                                        data_programada=nova_data_inicio,
+                                        data_inicio=None,
+                                        data_conclusao=None,
+                                        data_atualizacao=None,
+                                        pmp_id=pmp.id,
+                                        data_proxima_geracao=proxima_data,
+                                        frequencia_origem=frequencia,
+                                        numero_sequencia=1
+                                    )
+                                    
+                                    # Log detalhado dos campos da OS
+                                    current_app.logger.info(f"📝 Detalhes da OS a ser criada:")
+                                    current_app.logger.info(f"   descricao: {nova_os.descricao}")
+                                    current_app.logger.info(f"   tipo_manutencao: {nova_os.tipo_manutencao}")
+                                    current_app.logger.info(f"   oficina: {nova_os.oficina}")
+                                    current_app.logger.info(f"   status: {nova_os.status}")
+                                    current_app.logger.info(f"   prioridade: {nova_os.prioridade}")
+                                    current_app.logger.info(f"   equipamento_id: {nova_os.equipamento_id}")
+                                    current_app.logger.info(f"   pmp_id: {nova_os.pmp_id}")
+                                    
+                                    # Salvar OS com tratamento de erro robusto
+                                    try:
+                                        db.session.add(nova_os)
+                                        db.session.flush()  # Para obter o ID
+                                        
+                                        current_app.logger.info(f"✅ OS #{nova_os.id} gerada automaticamente para PMP {pmp.id}")
+                                        current_app.logger.info(f"   📝 Descrição: {nova_os.descricao}")
+                                        current_app.logger.info(f"   📅 Data programada: {nova_os.data_programada}")
+                                        current_app.logger.info(f"   📅 Próxima geração: {nova_os.data_proxima_geracao}")
+                                        
+                                        campos_atualizados.append(f"OS #{nova_os.id} gerada automaticamente")
+                                        
+                                    except Exception as os_save_error:
+                                        current_app.logger.error(f"❌ Erro ao salvar OS: {os_save_error}", exc_info=True)
+                                        # Não falhar a atualização da PMP por causa do erro na OS
+                                        campos_atualizados.append(f"Erro ao salvar OS: {str(os_save_error)}")
+                            else:
+                                current_app.logger.warning(f"⚠️ Equipamento {pmp.equipamento_id} não encontrado para gerar OS")
+                                
+                        except Exception as os_error:
+                            current_app.logger.error(f"❌ Erro ao gerar OS automaticamente: {os_error}", exc_info=True)
+                            # Não falhar a atualização da PMP por causa do erro na OS
+                            campos_atualizados.append(f"Erro ao gerar OS: {str(os_error)}")
+                    
+                    elif data_inicio_anterior and nova_data_inicio != data_inicio_anterior:
+                        current_app.logger.info(f"🔄 Data de início alterada de {data_inicio_anterior} para {nova_data_inicio}")
+                        
                 except ValueError as e:
                     current_app.logger.error(f"❌ Erro ao converter data_inicio_plano: {e}")
                     return jsonify({
@@ -502,34 +617,38 @@ def atualizar_pmp_limpo(pmp_id):
             current_app.logger.info("✅ Commit realizado com sucesso!")
             
             # Verificar se as alterações foram realmente salvas
+            db.session.expire_all()  # Limpar cache da sessão
             pmp_verificacao = PMP.query.get(pmp_id)
             current_app.logger.info(f"🔍 Verificação pós-commit:")
+            current_app.logger.info(f"   data_inicio_plano: {pmp_verificacao.data_inicio_plano}")
             current_app.logger.info(f"   num_pessoas: {pmp_verificacao.num_pessoas}")
             current_app.logger.info(f"   dias_antecipacao: {pmp_verificacao.dias_antecipacao}")
             current_app.logger.info(f"   tempo_pessoa: {pmp_verificacao.tempo_pessoa}")
             current_app.logger.info(f"   forma_impressao: {pmp_verificacao.forma_impressao}")
             
-        except Exception as commit_error:
-            current_app.logger.error(f"❌ Erro no commit: {commit_error}", exc_info=True)
+            # Verificar se OS foi gerada (se aplicável)
+            if 'OS #' in ''.join(campos_atualizados):
+                current_app.logger.info("✅ OS gerada com sucesso!")
+                
+                # Verificar se a OS está na tabela
+                from assets_models import OrdemServico
+                os_count = OrdemServico.query.filter_by(pmp_id=pmp_id).count()
+                current_app.logger.info(f"📊 Total de OS para esta PMP: {os_count}")
+            
+            return jsonify({
+                'success': True,
+                'message': 'PMP atualizada com sucesso',
+                'pmp': pmp.to_dict(),
+                'campos_atualizados': campos_atualizados
+            })
+            
+        except Exception as e:
             db.session.rollback()
+            current_app.logger.error(f"❌ Erro ao salvar PMP: {e}", exc_info=True)
             return jsonify({
                 'success': False,
-                'message': f'Erro ao salvar no banco: {str(commit_error)}'
+                'message': f'Erro ao salvar PMP: {str(e)}'
             }), 500
-        
-        current_app.logger.info(f"🎉 PMP {pmp_id} atualizada com sucesso!")
-        current_app.logger.info(f"📝 Campos alterados: {campos_atualizados}")
-        
-        # 6. Retornar PMP atualizada
-        pmp_dict = pmp.to_dict()
-        pmp_dict['atividades_count'] = AtividadePMP.query.filter_by(pmp_id=pmp.id).count()
-        
-        return jsonify({
-            'success': True,
-            'message': 'PMP atualizada com sucesso',
-            'pmp': pmp_dict,
-            'campos_atualizados': campos_atualizados
-        }), 200
         
     except Exception as e:
         db.session.rollback()
