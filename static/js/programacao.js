@@ -317,11 +317,64 @@ function createDiaContainer(dia, dayIndex, userId) {
 // Criar OS agendada
 function createOSAgendada(os) {
     return `
-        <div class="chamado-agendado" data-os-id="${os.id}" onclick="verificarExecucaoOS(${os.id})">
+        <div class="chamado-agendado" data-os-id="${os.id}" onclick="verificarExecucaoOS(${os.id})" oncontextmenu="event.preventDefault(); handleOSContextMenu(event, ${os.id})">
             <div class="chamado-id">OS #${os.id}</div>
             <div class="chamado-descricao-mini">${os.descricao.substring(0, 30)}...</div>
         </div>
     `;
+}
+
+// Handler para menu de contexto de OS (chamado diretamente do HTML)
+function handleOSContextMenu(event, osId) {
+    // Criar menu de contexto
+    const contextMenu = document.createElement('div');
+    contextMenu.className = 'context-menu';
+    contextMenu.innerHTML = `
+        <div class="context-menu-item" onclick="desprogramarOS(${osId}); document.body.removeChild(this.parentNode);">
+            <i class="fas fa-times-circle"></i> Desprogramar OS
+        </div>
+    `;
+    
+    // Posicionar menu
+    contextMenu.style.position = 'absolute';
+    contextMenu.style.left = `${event.pageX}px`;
+    contextMenu.style.top = `${event.pageY}px`;
+    contextMenu.style.zIndex = '9999';
+    contextMenu.style.background = 'white';
+    contextMenu.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+    contextMenu.style.borderRadius = '4px';
+    contextMenu.style.padding = '5px 0';
+    
+    // Estilizar item do menu
+    const menuItems = contextMenu.querySelectorAll('.context-menu-item');
+    menuItems.forEach(item => {
+        item.style.padding = '8px 15px';
+        item.style.cursor = 'pointer';
+        item.style.fontSize = '14px';
+        item.style.display = 'flex';
+        item.style.alignItems = 'center';
+        item.style.gap = '8px';
+        
+        // Hover
+        item.addEventListener('mouseenter', () => {
+            item.style.background = '#f0e6f5';
+        });
+        
+        item.addEventListener('mouseleave', () => {
+            item.style.background = 'transparent';
+        });
+    });
+    
+    // Adicionar ao body
+    document.body.appendChild(contextMenu);
+    
+    // Remover menu ao clicar fora
+    document.addEventListener('click', function removeMenu() {
+        if (document.body.contains(contextMenu)) {
+            document.body.removeChild(contextMenu);
+        }
+        document.removeEventListener('click', removeMenu);
+    });
 }
 
 // Verificar se usuário pode executar OS - VERSÃO SIMPLIFICADA
@@ -360,7 +413,25 @@ function getOSAgendadas(date, userId) {
 
 // Obter usuário por ID
 function getUserById(userId) {
-    return usuarios.find(u => u.id === userId);
+    // Converter para número se for string
+    const id = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+    
+    // Verificar se é um número válido
+    if (isNaN(id)) {
+        console.error(`❌ ID de usuário inválido: ${userId}`);
+        return null;
+    }
+    
+    // Procurar usuário pelo ID
+    const usuario = usuarios.find(u => u.id === id);
+    
+    // Log para debug
+    if (!usuario) {
+        console.warn(`⚠️ Usuário não encontrado para ID: ${id}`);
+        console.log('📋 Usuários disponíveis:', usuarios.map(u => ({ id: u.id, name: u.name })));
+    }
+    
+    return usuario;
 }
 
 // Obter classe de workload
@@ -522,7 +593,7 @@ function addDragListeners(element) {
     element.addEventListener('dragend', handleDragEnd);
 }
 
-// Adicionar listeners de drop zones
+// Adicionar event listeners para drop zones
 function addDropZoneListeners() {
     const dropZones = document.querySelectorAll('.dia-container');
     
@@ -532,6 +603,165 @@ function addDropZoneListeners() {
         zone.addEventListener('dragenter', handleDragEnter);
         zone.addEventListener('dragleave', handleDragLeave);
     });
+    
+    // Adicionar listeners para OS já agendadas
+    document.querySelectorAll('.chamado-agendado').forEach(os => {
+        os.addEventListener('contextmenu', handleContextMenu);
+    });
+}
+
+// Handler para menu de contexto (clique direito)
+function handleContextMenu(e) {
+    e.preventDefault();
+    
+    const osId = this.getAttribute('data-os-id');
+    if (!osId) return;
+    
+    // Criar menu de contexto
+    const contextMenu = document.createElement('div');
+    contextMenu.className = 'context-menu';
+    contextMenu.innerHTML = `
+        <div class="context-menu-item" data-action="desprogramar" data-os-id="${osId}">
+            <i class="fas fa-times-circle"></i> Desprogramar OS
+        </div>
+    `;
+    
+    // Posicionar menu
+    contextMenu.style.position = 'absolute';
+    contextMenu.style.left = `${e.pageX}px`;
+    contextMenu.style.top = `${e.pageY}px`;
+    contextMenu.style.zIndex = '9999';
+    contextMenu.style.background = 'white';
+    contextMenu.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+    contextMenu.style.borderRadius = '4px';
+    contextMenu.style.padding = '5px 0';
+    
+    // Estilizar item do menu
+    const menuItems = contextMenu.querySelectorAll('.context-menu-item');
+    menuItems.forEach(item => {
+        item.style.padding = '8px 15px';
+        item.style.cursor = 'pointer';
+        item.style.fontSize = '14px';
+        item.style.display = 'flex';
+        item.style.alignItems = 'center';
+        item.style.gap = '8px';
+        
+        // Hover
+        item.addEventListener('mouseenter', () => {
+            item.style.background = '#f0e6f5';
+        });
+        
+        item.addEventListener('mouseleave', () => {
+            item.style.background = 'transparent';
+        });
+        
+        // Click
+        item.addEventListener('click', () => {
+            const action = item.getAttribute('data-action');
+            const osId = item.getAttribute('data-os-id');
+            
+            if (action === 'desprogramar') {
+                desprogramarOS(osId);
+            }
+            
+            // Remover menu
+            document.body.removeChild(contextMenu);
+        });
+    });
+    
+    // Adicionar ao body
+    document.body.appendChild(contextMenu);
+    
+    // Remover menu ao clicar fora
+    document.addEventListener('click', function removeMenu() {
+        if (document.body.contains(contextMenu)) {
+            document.body.removeChild(contextMenu);
+        }
+        document.removeEventListener('click', removeMenu);
+    });
+}
+
+// Desprogramar OS
+async function desprogramarOS(osId) {
+    try {
+        console.log(`🔄 Desprogramando OS #${osId}`);
+        
+        // Preparar dados para API
+        const data = {
+            id: parseInt(osId),
+            data_programada: null,
+            usuario_responsavel: null,
+            status: 'aberta'
+        };
+        
+        // Enviar para API
+        const response = await fetch(`/api/ordens-servico/${osId}/desprogramar`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            console.log('✅ OS desprogramada com sucesso');
+            
+            // Atualizar OS na lista local
+            const osIndex = ordensServico.findIndex(os => os.id == osId);
+            if (osIndex !== -1) {
+                ordensServico[osIndex].data_programada = null;
+                ordensServico[osIndex].usuario_responsavel = null;
+                ordensServico[osIndex].status = 'aberta';
+            }
+            
+            // Renderizar novamente
+            renderPriorityLines();
+            renderUsuarios();
+            
+            // Notificação
+            showNotification(`OS #${osId} desprogramada com sucesso`, 'success');
+        } else {
+            console.error('❌ Erro ao desprogramar OS');
+            
+            // Tentar alternativa
+            await desprogramarOSAlternativa(osId);
+        }
+    } catch (error) {
+        console.error('Erro ao desprogramar OS:', error);
+        
+        // Tentar alternativa
+        await desprogramarOSAlternativa(osId);
+    }
+}
+
+// Método alternativo para desprogramar OS
+async function desprogramarOSAlternativa(osId) {
+    try {
+        console.log(`🔄 Tentando desprogramar OS #${osId} (método alternativo)`);
+        
+        // Atualizar OS na lista local
+        const osIndex = ordensServico.findIndex(os => os.id == osId);
+        if (osIndex !== -1) {
+            ordensServico[osIndex].data_programada = null;
+            ordensServico[osIndex].usuario_responsavel = null;
+            ordensServico[osIndex].status = 'aberta';
+            
+            console.log('✅ OS desprogramada localmente');
+            
+            // Renderizar novamente
+            renderPriorityLines();
+            renderUsuarios();
+            
+            // Notificação
+            showNotification(`OS #${osId} desprogramada com sucesso`, 'success');
+        } else {
+            console.error('❌ OS não encontrada na lista local');
+            showNotification('Erro ao desprogramar OS. Tente recarregar a página.', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao desprogramar OS (método alternativo):', error);
+        showNotification('Erro ao desprogramar OS. Tente recarregar a página.', 'error');
+    }
 }
 
 // Handlers de drag and drop
@@ -593,12 +823,65 @@ function handleDrop(e) {
 // Programar OS para uma data e usuário
 async function programarOS(osId, date, userId) {
     try {
-        const usuario = getUserById(parseInt(userId));
-        if (!usuario) {
-            showNotification('Usuário não encontrado', 'error');
+        console.log(`🔄 Tentando programar OS #${osId} para ${date} com usuário ID ${userId}`);
+        
+        // Verificar se temos o ID da OS
+        if (!osId) {
+            console.error('❌ ID da OS não fornecido');
+            showNotification('Erro: ID da OS não fornecido', 'error');
             return;
         }
         
+        // Verificar se temos a data
+        if (!date) {
+            console.error('❌ Data não fornecida');
+            showNotification('Erro: Data não fornecida', 'error');
+            return;
+        }
+        
+        // Verificar se temos o ID do usuário
+        if (!userId) {
+            console.error('❌ ID do usuário não fornecido');
+            showNotification('Erro: ID do usuário não fornecido', 'error');
+            return;
+        }
+        
+        // Obter usuário pelo ID
+        const usuario = getUserById(userId);
+        
+        // Se não encontrou o usuário, recarregar a lista e tentar novamente
+        if (!usuario) {
+            console.warn('⚠️ Usuário não encontrado, recarregando lista...');
+            
+            // Recarregar lista de usuários
+            await loadUsuarios();
+            
+            // Tentar novamente
+            const usuarioRetry = getUserById(userId);
+            
+            if (!usuarioRetry) {
+                console.error(`❌ Usuário com ID ${userId} não encontrado mesmo após recarregar`);
+                showNotification('Erro: Usuário não encontrado. Tente recarregar a página.', 'error');
+                return;
+            } else {
+                console.log('✅ Usuário encontrado após recarregar:', usuarioRetry.name);
+                
+                // Continuar com o usuário encontrado
+                programarOSComUsuario(osId, date, usuarioRetry);
+            }
+        } else {
+            // Continuar com o usuário encontrado
+            programarOSComUsuario(osId, date, usuario);
+        }
+    } catch (error) {
+        console.error('Erro ao programar OS:', error);
+        showNotification('Erro ao programar OS. Tente novamente.', 'error');
+    }
+}
+
+// Função auxiliar para programar OS com usuário já validado
+async function programarOSComUsuario(osId, date, usuario) {
+    try {
         console.log(`🔄 Programando OS #${osId} para ${date} com usuário ${usuario.name}`);
         
         // Preparar dados para API
