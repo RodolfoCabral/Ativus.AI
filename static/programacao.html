@@ -40,6 +40,13 @@
             padding: 10px 20px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .week-navigation.week-changed {
+            background: #f0e6f5;
+            box-shadow: 0 0 15px rgba(153, 86, 168, 0.4);
+            transform: scale(1.02);
         }
         
         .week-nav-btn {
@@ -66,6 +73,13 @@
             color: #333;
             min-width: 200px;
             text-align: center;
+        }
+        
+        .week-dates {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+            font-weight: normal;
         }
         
         /* Seção de Chamados por Prioridade */
@@ -513,8 +527,8 @@
                         <button class="week-nav-btn" onclick="previousWeek()">
                             <i class="fas fa-chevron-left"></i>
                         </button>
-                        <div class="week-info" id="week-info">
-                            Semana: 29 | Ano: 2025
+                        <div class="week-info" id="current-week">
+                            Carregando semana...
                         </div>
                         <button class="week-nav-btn" onclick="nextWeek()">
                             <i class="fas fa-chevron-right"></i>

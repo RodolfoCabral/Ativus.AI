@@ -1,4 +1,3 @@
-// Variáveis globais
 let ordensServico = [];
 let usuarios = [];
 let currentWeek = getCurrentWeek();
@@ -444,10 +443,30 @@ function updateWeekDisplay() {
     const firstDay = weekDays[0];
     const lastDay = weekDays[6];
     
+    // Formatar datas para exibição
+    const firstDayFormatted = `${String(firstDay.day).padStart(2, '0')}/${String(firstDay.month).padStart(2, '0')}`;
+    const lastDayFormatted = `${String(lastDay.day).padStart(2, '0')}/${String(lastDay.month).padStart(2, '0')}`;
+    
+    // Obter nomes dos meses
+    const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    
+    const firstDayDate = new Date(currentYear, firstDay.month - 1, firstDay.day);
+    const lastDayDate = new Date(currentYear, lastDay.month - 1, lastDay.day);
+    
+    const firstMonthName = meses[firstDayDate.getMonth()];
+    const lastMonthName = meses[lastDayDate.getMonth()];
+    
+    // Criar texto detalhado
+    let displayText = `Semana ${currentWeek} | Ano ${currentYear}`;
+    displayText += `<div class="week-dates">${firstDayFormatted} ${firstMonthName} - ${lastDayFormatted} ${lastMonthName}</div>`;
+    
     const weekDisplay = document.getElementById('current-week');
     if (weekDisplay) {
-        weekDisplay.textContent = `Semana ${currentWeek} - ${firstDay.day}/${firstDay.month} a ${lastDay.day}/${lastDay.month}/${currentYear}`;
+        weekDisplay.innerHTML = displayText;
     }
+    
+    console.log(`📅 Semana atualizada: ${currentWeek}/${currentYear} (${firstDayFormatted} a ${lastDayFormatted})`);
 }
 
 // Navegação de semanas
@@ -458,8 +477,20 @@ function previousWeek() {
         currentWeek = 52;
         currentYear--;
     }
+    
+    // Atualizar display e renderizar
     updateWeekDisplay();
     renderUsuarios();
+    
+    // Feedback visual
+    const weekNav = document.querySelector('.week-navigation');
+    weekNav.classList.add('week-changed');
+    setTimeout(() => {
+        weekNav.classList.remove('week-changed');
+    }, 500);
+    
+    // Notificação
+    showNotification(`Semana ${currentWeek} de ${currentYear}`, 'info');
 }
 
 function nextWeek() {
@@ -469,8 +500,20 @@ function nextWeek() {
         currentWeek = 1;
         currentYear++;
     }
+    
+    // Atualizar display e renderizar
     updateWeekDisplay();
     renderUsuarios();
+    
+    // Feedback visual
+    const weekNav = document.querySelector('.week-navigation');
+    weekNav.classList.add('week-changed');
+    setTimeout(() => {
+        weekNav.classList.remove('week-changed');
+    }, 500);
+    
+    // Notificação
+    showNotification(`Semana ${currentWeek} de ${currentYear}`, 'info');
 }
 
 // Adicionar listeners de drag
@@ -498,12 +541,18 @@ function handleDragStart(e) {
     draggedElement = this;
     this.style.opacity = '0.5';
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', this.outerHTML);
+    e.dataTransfer.setData('text/plain', this.getAttribute('data-os-id'));
+    this.classList.add('dragging');
 }
 
 function handleDragEnd(e) {
-    this.style.opacity = '';
-    draggedElement = null;
+    this.style.opacity = '1';
+    this.classList.remove('dragging');
+    
+    // Remover classes de hover de todas as drop zones
+    document.querySelectorAll('.dia-container').forEach(zone => {
+        zone.classList.remove('drag-over');
+    });
 }
 
 function handleDragOver(e) {
@@ -523,25 +572,26 @@ function handleDragLeave(e) {
 }
 
 function handleDrop(e) {
-    if (e.stopPropagation) {
-        e.stopPropagation();
-    }
+    e.stopPropagation();
+    e.preventDefault();
     
+    // Remover classe de hover
     this.classList.remove('drag-over');
     
-    if (draggedElement !== this) {
-        const osId = draggedElement.dataset.osId;
-        const userId = this.dataset.userId;
-        const date = this.dataset.date;
-        
-        programarOS(osId, userId, date);
-    }
+    if (!draggedElement) return;
+    
+    const osId = e.dataTransfer.getData('text/plain');
+    const date = this.getAttribute('data-date');
+    const userId = this.getAttribute('data-user-id');
+    
+    // Programar OS para esta data e usuário
+    programarOS(osId, date, userId);
     
     return false;
 }
 
-// Programar OS
-async function programarOS(osId, userId, date) {
+// Programar OS para uma data e usuário
+async function programarOS(osId, date, userId) {
     try {
         const usuario = getUserById(parseInt(userId));
         if (!usuario) {
@@ -549,181 +599,201 @@ async function programarOS(osId, userId, date) {
             return;
         }
         
+        console.log(`🔄 Programando OS #${osId} para ${date} com usuário ${usuario.name}`);
+        
+        // Preparar dados para API
+        const data = {
+            id: parseInt(osId),
+            data_programada: date,
+            usuario_responsavel: usuario.name,
+            status: 'programada'
+        };
+        
+        // Enviar para API
         const response = await fetch(`/api/ordens-servico/${osId}/programar`, {
-            method: 'POST',
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                usuario_responsavel: usuario.name,
-                data_programada: date
-            })
+            body: JSON.stringify(data)
         });
         
         if (response.ok) {
-            showNotification(`OS #${osId} programada para ${usuario.name} em ${formatDate(date)}`, 'success');
+            console.log('✅ OS programada com sucesso');
             
-            // Recarregar dados
-            await loadOrdensServico();
+            // Atualizar OS na lista local
+            const osIndex = ordensServico.findIndex(os => os.id == osId);
+            if (osIndex !== -1) {
+                ordensServico[osIndex].data_programada = date;
+                ordensServico[osIndex].usuario_responsavel = usuario.name;
+                ordensServico[osIndex].status = 'programada';
+            }
+            
+            // Renderizar novamente
             renderPriorityLines();
             renderUsuarios();
+            
+            // Notificação
+            showNotification(`OS #${osId} programada para ${formatDate(date)}`, 'success');
         } else {
-            throw new Error('Erro ao programar OS');
+            console.error('❌ Erro ao programar OS');
+            showNotification('Erro ao programar OS. Tente novamente.', 'error');
         }
     } catch (error) {
         console.error('Erro ao programar OS:', error);
-        showNotification('Erro ao programar OS', 'error');
+        showNotification('Erro ao programar OS. Tente novamente.', 'error');
     }
 }
 
-// Formatação
+// Formatadores
 function formatTipoManutencao(tipo) {
     const tipos = {
         'corretiva': 'Corretiva',
-        'melhoria': 'Melhoria',
-        'setup': 'Setup',
-        'pmoc': 'PMOC',
-        'inspecao': 'Inspeção',
-        'assistencia_tecnica': 'Assistência Técnica'
+        'preventiva': 'Preventiva',
+        'preditiva': 'Preditiva',
+        'melhoria': 'Melhoria'
     };
     return tipos[tipo] || tipo;
 }
 
 function formatOficina(oficina) {
-    const oficinas = {
-        'mecanica': 'Mecânica',
-        'eletrica': 'Elétrica',
-        'automacao': 'Automação',
-        'eletromecanico': 'Eletromecânico',
-        'operacional': 'Operacional'
-    };
-    return oficinas[oficina] || oficina;
+    return oficina || 'Não definida';
 }
 
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
-}
-
-// Função de notificação
+// Função para mostrar notificações
 function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
+    // Verificar se já existe um container de notificações
+    let notificationContainer = document.getElementById('notification-container');
     
-    notification.innerHTML = `
-        <div class="notification-content">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-            <span>${message}</span>
-        </div>
-    `;
-    
-    // Adicionar estilos se não existirem
-    if (!document.getElementById('notification-styles')) {
-        const styles = document.createElement('style');
-        styles.id = 'notification-styles';
-        styles.textContent = `
-            .notification {
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 16px 20px;
-                border-radius: 8px;
-                color: white;
-                font-weight: 500;
-                z-index: 10000;
-                animation: slideIn 0.3s ease;
-            }
-            .notification-success { background: #28a745; }
-            .notification-error { background: #dc3545; }
-            .notification-info { background: #17a2b8; }
-            .notification-content {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-        `;
-        document.head.appendChild(styles);
+    if (!notificationContainer) {
+        // Criar container se não existir
+        notificationContainer = document.createElement('div');
+        notificationContainer.id = 'notification-container';
+        notificationContainer.style.position = 'fixed';
+        notificationContainer.style.top = '20px';
+        notificationContainer.style.right = '20px';
+        notificationContainer.style.zIndex = '9999';
+        document.body.appendChild(notificationContainer);
     }
     
-    document.body.appendChild(notification);
+    // Criar notificação
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <div class="notification-icon">
+            <i class="fas ${getIconForType(type)}"></i>
+        </div>
+        <div class="notification-content">
+            ${message}
+        </div>
+        <button class="notification-close">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
     
+    // Estilizar notificação
+    notification.style.display = 'flex';
+    notification.style.alignItems = 'center';
+    notification.style.padding = '12px 16px';
+    notification.style.marginBottom = '10px';
+    notification.style.borderRadius = '8px';
+    notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+    notification.style.backgroundColor = getColorForType(type);
+    notification.style.color = '#fff';
+    notification.style.fontSize = '14px';
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateX(50px)';
+    notification.style.transition = 'all 0.3s ease';
+    
+    // Adicionar ao container
+    notificationContainer.appendChild(notification);
+    
+    // Animar entrada
     setTimeout(() => {
-        notification.style.animation = 'slideIn 0.3s ease reverse';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // Configurar botão de fechar
+    const closeButton = notification.querySelector('.notification-close');
+    closeButton.style.background = 'none';
+    closeButton.style.border = 'none';
+    closeButton.style.color = '#fff';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.marginLeft = '10px';
+    
+    closeButton.addEventListener('click', () => {
+        closeNotification(notification);
+    });
+    
+    // Auto-fechar após 5 segundos
+    setTimeout(() => {
+        closeNotification(notification);
     }, 5000);
 }
 
-
-
-// CORREÇÃO: Função de notificação melhorada
-function showNotification(message, type = 'info') {
-    // Remover notificação existente
-    const existing = document.querySelector('.notification');
-    if (existing) {
-        existing.remove();
-    }
+// Função auxiliar para fechar notificação
+function closeNotification(notification) {
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateX(50px)';
     
-    // Criar nova notificação
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <div class="notification-content">
-            <span>${message}</span>
-            <button onclick="this.parentElement.parentElement.remove()">×</button>
-        </div>
-    `;
-    
-    // Adicionar estilos se não existirem
-    if (!document.getElementById('notification-styles')) {
-        const styles = document.createElement('style');
-        styles.id = 'notification-styles';
-        styles.textContent = `
-            .notification {
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px;
-                border-radius: 5px;
-                color: white;
-                z-index: 10000;
-                max-width: 400px;
-            }
-            .notification-error { background: #f44336; }
-            .notification-success { background: #4caf50; }
-            .notification-info { background: #2196f3; }
-            .notification-content {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            .notification button {
-                background: none;
-                border: none;
-                color: white;
-                font-size: 18px;
-                cursor: pointer;
-                margin-left: 10px;
-            }
-        `;
-        document.head.appendChild(styles);
-    }
-    
-    // Adicionar ao DOM
-    document.body.appendChild(notification);
-    
-    // Remover automaticamente após 5 segundos
     setTimeout(() => {
-        if (notification.parentElement) {
-            notification.remove();
+        notification.remove();
+    }, 300);
+}
+
+// Funções auxiliares para notificações
+function getIconForType(type) {
+    switch (type) {
+        case 'success': return 'fa-check-circle';
+        case 'error': return 'fa-exclamation-circle';
+        case 'warning': return 'fa-exclamation-triangle';
+        case 'info':
+        default: return 'fa-info-circle';
+    }
+}
+
+function getColorForType(type) {
+    switch (type) {
+        case 'success': return '#28a745';
+        case 'error': return '#dc3545';
+        case 'warning': return '#ffc107';
+        case 'info':
+        default: return '#9956a8';
+    }
+}
+
+// Adicionar estilos para notificações
+function addNotificationStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .notification {
+            animation: fadeInRight 0.3s ease;
         }
-    }, 5000);
+        
+        .notification-icon {
+            margin-right: 12px;
+            font-size: 18px;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    `;
+    document.head.appendChild(style);
 }
+
+// Adicionar estilos para notificações quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', addNotificationStyles);
 
