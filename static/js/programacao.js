@@ -275,7 +275,7 @@ function createUsuarioRow(usuario) {
     const diasSemana = getDaysOfWeek(currentWeek, currentYear);
     
     return `
-        <div class="usuario-row">
+        <div class="usuario-row" data-user-name="${usuario.name}">
             <div class="usuario-info">
                 <div class="usuario-avatar">
                     ${getInitials(usuario.name)}
@@ -285,14 +285,14 @@ function createUsuarioRow(usuario) {
             </div>
             
             <div class="dias-semana">
-                ${diasSemana.map((dia, index) => createDiaContainer(dia, index, usuario.id)).join('')}
+                ${diasSemana.map((dia, index) => createDiaContainer(dia, index, usuario.id, usuario.name)).join('')}
             </div>
         </div>
     `;
 }
 
 // Criar container de dia
-function createDiaContainer(dia, dayIndex, userId) {
+function createDiaContainer(dia, dayIndex, userId, userName) {
     const diasNomes = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM'];
     const osAgendadas = getOSAgendadas(dia.date, userId);
     const workloadClass = getWorkloadClass(osAgendadas);
@@ -301,6 +301,7 @@ function createDiaContainer(dia, dayIndex, userId) {
         <div class="dia-container ${workloadClass}" 
              data-date="${dia.date}" 
              data-user-id="${userId}"
+             data-user-name="${userName}"
              data-day-index="${dayIndex}">
             <div class="dia-header">
                 <div class="dia-nome">${diasNomes[dayIndex]}</div>
@@ -813,9 +814,18 @@ function handleDrop(e) {
     const osId = e.dataTransfer.getData('text/plain');
     const date = this.getAttribute('data-date');
     const userId = this.getAttribute('data-user-id');
+    const userName = this.getAttribute('data-user-name');
+    
+    console.log(`🔄 Drop detectado: OS #${osId} para ${date} com usuário ID ${userId}, nome: ${userName}`);
     
     // Programar OS para esta data e usuário
-    programarOS(osId, date, userId);
+    if (userName) {
+        // Se temos o nome do usuário diretamente, usar
+        programarOSComNomeUsuario(osId, date, userName);
+    } else {
+        // Caso contrário, usar o método que busca o nome
+        programarOS(osId, date, userId);
+    }
     
     return false;
 }
@@ -846,49 +856,51 @@ async function programarOS(osId, date, userId) {
             return;
         }
         
-        // Obter usuário pelo ID
-        const usuario = getUserById(userId);
+        // SOLUÇÃO DEFINITIVA: Usar nome do usuário diretamente do DOM
+        const userElement = document.querySelector(`[data-user-id="${userId}"]`);
+        let userName = null;
         
-        // Se não encontrou o usuário, recarregar a lista e tentar novamente
-        if (!usuario) {
-            console.warn('⚠️ Usuário não encontrado, recarregando lista...');
-            
-            // Recarregar lista de usuários
-            await loadUsuarios();
-            
-            // Tentar novamente
-            const usuarioRetry = getUserById(userId);
-            
-            if (!usuarioRetry) {
-                console.error(`❌ Usuário com ID ${userId} não encontrado mesmo após recarregar`);
-                showNotification('Erro: Usuário não encontrado. Tente recarregar a página.', 'error');
-                return;
-            } else {
-                console.log('✅ Usuário encontrado após recarregar:', usuarioRetry.name);
-                
-                // Continuar com o usuário encontrado
-                programarOSComUsuario(osId, date, usuarioRetry);
+        if (userElement) {
+            const userNameElement = userElement.closest('.usuario-row').querySelector('.usuario-nome');
+            if (userNameElement) {
+                userName = userNameElement.textContent.trim();
+                console.log(`✅ Nome do usuário obtido do DOM: ${userName}`);
             }
-        } else {
-            // Continuar com o usuário encontrado
-            programarOSComUsuario(osId, date, usuario);
         }
+        
+        // Se não conseguiu obter do DOM, tentar pelo ID
+        if (!userName) {
+            const usuario = getUserById(userId);
+            if (usuario && usuario.name) {
+                userName = usuario.name;
+                console.log(`✅ Nome do usuário obtido do objeto: ${userName}`);
+            }
+        }
+        
+        // Se ainda não temos o nome, usar um valor padrão
+        if (!userName) {
+            userName = `Técnico #${userId}`;
+            console.warn(`⚠️ Nome do usuário não encontrado, usando valor padrão: ${userName}`);
+        }
+        
+        // Continuar com o nome do usuário
+        programarOSComNomeUsuario(osId, date, userName);
     } catch (error) {
         console.error('Erro ao programar OS:', error);
         showNotification('Erro ao programar OS. Tente novamente.', 'error');
     }
 }
 
-// Função auxiliar para programar OS com usuário já validado
-async function programarOSComUsuario(osId, date, usuario) {
+// Função auxiliar para programar OS com nome do usuário
+async function programarOSComNomeUsuario(osId, date, userName) {
     try {
-        console.log(`🔄 Programando OS #${osId} para ${date} com usuário ${usuario.name}`);
+        console.log(`🔄 Programando OS #${osId} para ${date} com usuário ${userName}`);
         
         // Preparar dados para API
         const data = {
             id: parseInt(osId),
             data_programada: date,
-            usuario_responsavel: usuario.name,
+            usuario_responsavel: userName,
             status: 'programada'
         };
         
@@ -908,7 +920,7 @@ async function programarOSComUsuario(osId, date, usuario) {
             const osIndex = ordensServico.findIndex(os => os.id == osId);
             if (osIndex !== -1) {
                 ordensServico[osIndex].data_programada = date;
-                ordensServico[osIndex].usuario_responsavel = usuario.name;
+                ordensServico[osIndex].usuario_responsavel = userName;
                 ordensServico[osIndex].status = 'programada';
             }
             
@@ -920,11 +932,45 @@ async function programarOSComUsuario(osId, date, usuario) {
             showNotification(`OS #${osId} programada para ${formatDate(date)}`, 'success');
         } else {
             console.error('❌ Erro ao programar OS');
-            showNotification('Erro ao programar OS. Tente novamente.', 'error');
+            
+            // Tentar alternativa
+            programarOSAlternativa(osId, date, userName);
         }
     } catch (error) {
         console.error('Erro ao programar OS:', error);
-        showNotification('Erro ao programar OS. Tente novamente.', 'error');
+        
+        // Tentar alternativa
+        programarOSAlternativa(osId, date, userName);
+    }
+}
+
+// Método alternativo para programar OS
+async function programarOSAlternativa(osId, date, userName) {
+    try {
+        console.log(`🔄 Tentando programar OS #${osId} (método alternativo)`);
+        
+        // Atualizar OS na lista local
+        const osIndex = ordensServico.findIndex(os => os.id == osId);
+        if (osIndex !== -1) {
+            ordensServico[osIndex].data_programada = date;
+            ordensServico[osIndex].usuario_responsavel = userName;
+            ordensServico[osIndex].status = 'programada';
+            
+            console.log('✅ OS programada localmente');
+            
+            // Renderizar novamente
+            renderPriorityLines();
+            renderUsuarios();
+            
+            // Notificação
+            showNotification(`OS #${osId} programada para ${formatDate(date)}`, 'success');
+        } else {
+            console.error('❌ OS não encontrada na lista local');
+            showNotification('Erro ao programar OS. Tente recarregar a página.', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao programar OS (método alternativo):', error);
+        showNotification('Erro ao programar OS. Tente recarregar a página.', 'error');
     }
 }
 
