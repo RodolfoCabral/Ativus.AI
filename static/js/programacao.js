@@ -251,8 +251,25 @@ function createOSCard(os) {
 // Função auxiliar para formatar data
 function formatDate(dateString) {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
+    
+    try {
+        // Verificar se a data é válida
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            console.error(`❌ Data inválida: ${dateString}`);
+            return 'Data inválida';
+        }
+        
+        // Formatar data no padrão brasileiro
+        const dia = String(date.getDate()).padStart(2, '0');
+        const mes = String(date.getMonth() + 1).padStart(2, '0');
+        const ano = date.getFullYear();
+        
+        return `${dia}/${mes}/${ano}`;
+    } catch (error) {
+        console.error(`❌ Erro ao formatar data: ${dateString}`, error);
+        return 'Erro na data';
+    }
 }
 
 // Renderizar usuários e calendário
@@ -812,19 +829,46 @@ function handleDrop(e) {
     if (!draggedElement) return;
     
     const osId = e.dataTransfer.getData('text/plain');
-    const date = this.getAttribute('data-date');
+    const dateStr = this.getAttribute('data-date');
     const userId = this.getAttribute('data-user-id');
     const userName = this.getAttribute('data-user-name');
     
-    console.log(`🔄 Drop detectado: OS #${osId} para ${date} com usuário ID ${userId}, nome: ${userName}`);
+    // Garantir que a data está no formato correto (YYYY-MM-DD)
+    let formattedDate = dateStr;
+    
+    // Verificar se a data está no formato correto
+    if (dateStr && !dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        console.warn(`⚠️ Formato de data incorreto: ${dateStr}, tentando converter...`);
+        
+        try {
+            const dateParts = dateStr.split('/');
+            if (dateParts.length === 3) {
+                // Converter de DD/MM/YYYY para YYYY-MM-DD
+                formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+            } else {
+                // Tentar criar um objeto Date e formatar
+                const date = new Date(dateStr);
+                if (!isNaN(date.getTime())) {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    formattedDate = `${year}-${month}-${day}`;
+                }
+            }
+        } catch (error) {
+            console.error(`❌ Erro ao converter data: ${dateStr}`, error);
+        }
+    }
+    
+    console.log(`🔄 Drop detectado: OS #${osId} para ${formattedDate} com usuário ID ${userId}, nome: ${userName}`);
     
     // Programar OS para esta data e usuário
     if (userName) {
         // Se temos o nome do usuário diretamente, usar
-        programarOSComNomeUsuario(osId, date, userName);
+        programarOSComNomeUsuario(osId, formattedDate, userName);
     } else {
         // Caso contrário, usar o método que busca o nome
-        programarOS(osId, date, userId);
+        programarOS(osId, formattedDate, userId);
     }
     
     return false;

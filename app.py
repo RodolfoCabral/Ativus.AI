@@ -96,6 +96,18 @@ def create_app():
         print(f"Erro ao registrar blueprint de ordens de serviço: {e}")
         print("Sistema funcionará sem funcionalidades de OS.")
     
+    # Importar e registrar blueprint de desprogramação de OS
+    try:
+        from routes.ordens_servico_desprogramar import ordens_servico_desprogramar_bp
+        app.register_blueprint(ordens_servico_desprogramar_bp)
+        print("Blueprint de desprogramação de OS registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar ordens_servico_desprogramar_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de desprogramação de OS.")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de desprogramação de OS: {e}")
+        print("Sistema funcionará sem funcionalidades de desprogramação de OS.")
+    
     # Importar e registrar blueprint de execução de OS
     try:
         from routes.execucao_os import execucao_bp
