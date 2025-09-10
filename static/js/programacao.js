@@ -503,38 +503,24 @@ function getWeekNumber(date) {
 
 // Obter dias da semana
 function getDaysOfWeek(weekNumber, year) {
-    console.log(`🔍 Calculando dias para semana ${weekNumber} do ano ${year}`);
+    const jan1 = new Date(year, 0, 1);
+    const days = (weekNumber - 1) * 7;
+    const monday = new Date(jan1.getTime() + days * 24 * 60 * 60 * 1000);
     
-    // Usar método mais confiável para calcular a primeira segunda-feira da semana
-    const firstDayOfYear = new Date(year, 0, 1);
-    const dayOffset = firstDayOfYear.getDay() || 7; // Converter 0 (domingo) para 7
+    // Ajustar para segunda-feira
+    const dayOfWeek = monday.getDay();
+    const diff = monday.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    monday.setDate(diff);
     
-    // Calcular a primeira segunda-feira do ano
-    const firstMonday = new Date(year, 0, 1 + (8 - dayOffset) % 7);
-    console.log(`📅 Primeira segunda-feira do ano: ${firstMonday.toISOString().split('T')[0]}`);
-    
-    // Calcular a segunda-feira da semana desejada
-    const targetMonday = new Date(firstMonday);
-    targetMonday.setDate(firstMonday.getDate() + (weekNumber - 1) * 7);
-    console.log(`📅 Segunda-feira da semana ${weekNumber}: ${targetMonday.toISOString().split('T')[0]}`);
-    
-    // Gerar os dias da semana
     const weekDays = [];
     for (let i = 0; i < 7; i++) {
-        const day = new Date(targetMonday);
-        day.setDate(targetMonday.getDate() + i);
-        
-        // Formatar a data como YYYY-MM-DD
-        const isoDate = day.toISOString().split('T')[0];
-        
+        const day = new Date(monday);
+        day.setDate(monday.getDate() + i);
         weekDays.push({
-            date: isoDate,
+            date: day.toISOString().split('T')[0],
             day: day.getDate(),
-            month: day.getMonth() + 1,
-            year: day.getFullYear()
+            month: day.getMonth() + 1
         });
-        
-        console.log(`📅 Dia ${i+1} da semana: ${isoDate} (${day.getDate()}/${day.getMonth() + 1}/${day.getFullYear()})`);
     }
     
     return weekDays;
@@ -847,49 +833,34 @@ function handleDrop(e) {
     const userId = this.getAttribute('data-user-id');
     const userName = this.getAttribute('data-user-name');
     
-    console.log(`🔄 Drop detectado: OS #${osId} para data ${dateStr} com usuário ID ${userId}, nome: ${userName}`);
-    
-    // Verificar se a data está no formato correto
-    if (!dateStr) {
-        console.error('❌ Data não fornecida no elemento drop');
-        showNotification('Erro: Data não fornecida', 'error');
-        return;
-    }
-    
     // Garantir que a data está no formato correto (YYYY-MM-DD)
     let formattedDate = dateStr;
     
-    // Verificar se a data está no formato ISO (YYYY-MM-DD)
-    const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!isoDateRegex.test(dateStr)) {
+    // Verificar se a data está no formato correto
+    if (dateStr && !dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
         console.warn(`⚠️ Formato de data incorreto: ${dateStr}, tentando converter...`);
         
         try {
-            // Tentar converter para objeto Date
-            const date = new Date(dateStr);
-            
-            // Verificar se a data é válida
-            if (!isNaN(date.getTime())) {
-                // Formatar como YYYY-MM-DD
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                formattedDate = `${year}-${month}-${day}`;
-                
-                console.log(`✅ Data convertida com sucesso: ${dateStr} → ${formattedDate}`);
+            const dateParts = dateStr.split('/');
+            if (dateParts.length === 3) {
+                // Converter de DD/MM/YYYY para YYYY-MM-DD
+                formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
             } else {
-                console.error(`❌ Data inválida: ${dateStr}`);
-                showNotification('Erro: Data inválida', 'error');
-                return;
+                // Tentar criar um objeto Date e formatar
+                const date = new Date(dateStr);
+                if (!isNaN(date.getTime())) {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    formattedDate = `${year}-${month}-${day}`;
+                }
             }
         } catch (error) {
             console.error(`❌ Erro ao converter data: ${dateStr}`, error);
-            showNotification('Erro: Formato de data inválido', 'error');
-            return;
         }
     }
     
-    console.log(`🔄 Programando OS #${osId} para ${formattedDate} com usuário ID ${userId}, nome: ${userName}`);
+    console.log(`🔄 Drop detectado: OS #${osId} para ${formattedDate} com usuário ID ${userId}, nome: ${userName}`);
     
     // Programar OS para esta data e usuário
     if (userName) {
@@ -969,29 +940,6 @@ async function programarOSComNomeUsuario(osId, date, userName) {
     try {
         console.log(`🔄 Programando OS #${osId} para ${date} com usuário ${userName}`);
         
-        // Verificar se a data está no formato correto (YYYY-MM-DD)
-        if (!date) {
-            console.error('❌ Data não fornecida');
-            showNotification('Erro: Data não fornecida', 'error');
-            return;
-        }
-        
-        // Verificar formato da data
-        const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!isoDateRegex.test(date)) {
-            console.error(`❌ Formato de data inválido: ${date}`);
-            showNotification('Erro: Formato de data inválido', 'error');
-            return;
-        }
-        
-        // Verificar se a data é válida
-        const dateObj = new Date(date);
-        if (isNaN(dateObj.getTime())) {
-            console.error(`❌ Data inválida: ${date}`);
-            showNotification('Erro: Data inválida', 'error');
-            return;
-        }
-        
         // Preparar dados para API
         const data = {
             id: parseInt(osId),
@@ -999,8 +947,6 @@ async function programarOSComNomeUsuario(osId, date, userName) {
             usuario_responsavel: userName,
             status: 'programada'
         };
-        
-        console.log('📤 Enviando dados para API:', data);
         
         // Enviar para API
         const response = await fetch(`/api/ordens-servico/${osId}/programar`, {
@@ -1012,8 +958,7 @@ async function programarOSComNomeUsuario(osId, date, userName) {
         });
         
         if (response.ok) {
-            const responseData = await response.json();
-            console.log('✅ OS programada com sucesso:', responseData);
+            console.log('✅ OS programada com sucesso');
             
             // Atualizar OS na lista local
             const osIndex = ordensServico.findIndex(os => os.id == osId);
@@ -1022,38 +967,6 @@ async function programarOSComNomeUsuario(osId, date, userName) {
                 ordensServico[osIndex].usuario_responsavel = userName;
                 ordensServico[osIndex].status = 'programada';
             }
-            
-            // Renderizar novamente
-            renderUsuarios();
-            renderPriorityLines();
-            
-            // Mostrar notificação de sucesso com data formatada
-            const dataFormatada = formatDate(date);
-            showNotification(`OS #${osId} programada para ${dataFormatada} com ${userName}`, 'success');
-        } else {
-            // Tentar obter mensagem de erro
-            let errorMessage = 'Erro ao programar OS';
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.error || errorMessage;
-            } catch (e) {
-                console.error('Erro ao processar resposta de erro:', e);
-            }
-            
-            console.error(`❌ Erro ao programar OS: ${errorMessage}`);
-            showNotification(`Erro: ${errorMessage}`, 'error');
-            
-            // Método alternativo: programar localmente
-            programarOSAlternativa(osId, date, userName);
-        }
-    } catch (error) {
-        console.error('❌ Erro ao programar OS:', error);
-        showNotification('Erro ao programar OS. Tentando método alternativo...', 'warning');
-        
-        // Método alternativo: programar localmente
-        programarOSAlternativa(osId, date, userName);
-    }
-}
             
             // Renderizar novamente
             renderPriorityLines();
