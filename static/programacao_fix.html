@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programação - SaaS Ativus</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <style>
+        /* Estilos específicos para a página de programação */
+        .container {
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .week-selector {
+            display: flex;
+            align-items: center;
+            background-color: #f5f5f5;
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .week-selector button {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #6c5ce7;
+            cursor: pointer;
+            padding: 5px 10px;
+            transition: background-color 0.3s;
+            border-radius: 50%;
+        }
+        
+        .week-selector button:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .week-info {
+            margin: 0 15px;
+            text-align: center;
+        }
+        
+        .week-info .week-number {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #333;
+        }
+        
+        .week-info .week-dates {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 3px;
+        }
+        
+        .week-highlight {
+            animation: highlight 1.5s ease-out;
+        }
+        
+        @keyframes highlight {
+            0% { background-color: rgba(108, 92, 231, 0.2); }
+            100% { background-color: transparent; }
+        }
+        
+        .programacao-grid {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .usuarios-container {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+        
+        .usuarios-container h3 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .usuario-row {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .usuario-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #6c5ce7;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .usuario-info {
+            flex: 1;
+        }
+        
+        .usuario-nome {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        
+        .usuario-cargo {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        .semana-container {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+        
+        .semana-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .dia-header {
+            text-align: center;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        
+        .dia-header .dia-nome {
+            font-size: 0.9rem;
+            color: #333;
+        }
+        
+        .dia-header .dia-data {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 3px;
+        }
+        
+        .semana-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+        
+        .usuario-semana {
+            margin-bottom: 20px;
+        }
+        
+        .usuario-semana-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        
+        .usuario-semana-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #6c5ce7;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 0.8rem;
+        }
+        
+        .usuario-semana-nome {
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .dia-container {
+            min-height: 100px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 10px;
+            border: 1px dashed #ddd;
+        }
+        
+        .dia-container.drag-over {
+            background-color: #e0e0ff;
+            border: 1px dashed #6c5ce7;
+        }
+        
+        .chamado-agendado {
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: pointer;
+            font-size: 0.85rem;
+            border-left: 3px solid #6c5ce7;
+        }
+        
+        .chamado-agendado:hover {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .chamado-agendado .chamado-titulo {
+            font-weight: bold;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .chamado-agendado .chamado-info {
+            display: flex;
+            align-items: center;
+            font-size: 0.75rem;
+            color: #666;
+        }
+        
+        .chamado-agendado .chamado-info i {
+            margin-right: 5px;
+        }
+        
+        .priority-lines {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .priority-line {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .priority-line:last-child {
+            margin-bottom: 0;
+        }
+        
+        .priority-line-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .priority-line-title {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .priority-line-badge {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .priority-line-badge.alta {
+            background-color: #e74c3c;
+        }
+        
+        .priority-line-badge.media {
+            background-color: #f39c12;
+        }
+        
+        .priority-line-badge.baixa {
+            background-color: #27ae60;
+        }
+        
+        .priority-line-badge.seguranca {
+            background-color: #c0392b;
+        }
+        
+        .priority-line-badge.preventiva {
+            background-color: #8e44ad;
+        }
+        
+        .chamados-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .chamado-card {
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 12px;
+            width: 250px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: grab;
+            border-left: 3px solid transparent;
+        }
+        
+        .chamado-card:hover {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .chamado-card.alta {
+            border-left-color: #e74c3c;
+        }
+        
+        .chamado-card.media {
+            border-left-color: #f39c12;
+        }
+        
+        .chamado-card.baixa {
+            border-left-color: #27ae60;
+        }
+        
+        .chamado-card.seguranca {
+            border-left-color: #c0392b;
+        }
+        
+        .chamado-card.preventiva {
+            border-left-color: #8e44ad;
+        }
+        
+        .chamado-card .chamado-id {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .chamado-card .chamado-titulo {
+            font-weight: bold;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .chamado-card .chamado-info {
+            display: flex;
+            align-items: center;
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .chamado-card .chamado-info i {
+            margin-right: 5px;
+            width: 14px;
+            text-align: center;
+        }
+        
+        .chamado-card .chamado-info-separator {
+            margin: 0 5px;
+            color: #ddd;
+        }
+        
+        .chamado-card.dragging {
+            opacity: 0.5;
+        }
+        
+        .priority-line.priority-drag-over {
+            background-color: #f0f0ff;
+            border: 1px dashed #6c5ce7;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .notification.success {
+            background-color: #27ae60;
+        }
+        
+        .notification.error {
+            background-color: #e74c3c;
+        }
+        
+        .notification.info {
+            background-color: #3498db;
+        }
+        
+        .notification.warning {
+            background-color: #f39c12;
+        }
+        
+        /* Estilos para PMP */
+        .pmp-badge {
+            background-color: #9c27b0;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-right: 4px;
+        }
+        
+        .frequencia-badge {
+            background-color: #4caf50;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        .pmp-card {
+            border-left: 3px solid #9c27b0 !important;
+            background: linear-gradient(to right, rgba(156, 39, 176, 0.05), transparent) !important;
+        }
+        
+        .pmp-card:hover {
+            box-shadow: 0 3px 10px rgba(156, 39, 176, 0.2) !important;
+        }
+        
+        .pmp-info {
+            color: #9c27b0;
+            font-weight: 500;
+        }
+        
+        .btn-desprogramar {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        
+        .btn-desprogramar:hover {
+            opacity: 1;
+        }
+        
+        .chamado-agendado {
+            position: relative;
+        }
+        
+        .context-menu {
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            padding: 5px 0;
+            z-index: 9999;
+        }
+        
+        .context-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .context-menu-item:hover {
+            background-color: #f0e6f5;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">
+            <img src="/static/img/logo.png" alt="Logo">
+        </div>
+        <ul class="menu">
+            <li><a href="/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="/chamados"><i class="fas fa-ticket-alt"></i> Chamados</a></li>
+            <li><a href="/equipamentos"><i class="fas fa-cogs"></i> Equipamentos</a></li>
+            <li><a href="/plano-mestre"><i class="fas fa-clipboard-list"></i> Plano Mestre</a></li>
+            <li class="active"><a href="/programacao"><i class="fas fa-calendar-alt"></i> Programação</a></li>
+            <li><a href="/relatorios"><i class="fas fa-chart-bar"></i> Relatórios</a></li>
+            <li><a href="/configuracoes"><i class="fas fa-cog"></i> Configurações</a></li>
+        </ul>
+    </div>
+    
+    <div class="main-content">
+        <div class="topbar">
+            <div class="toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <div class="search">
+                <input type="text" placeholder="Pesquisar...">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="user">
+                <img src="/static/img/user.png" alt="User">
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="header">
+                <h1><i class="fas fa-calendar-alt"></i> Programação</h1>
+                <p>Organize e agende ordens de serviço por usuário e data</p>
+            </div>
+            
+            <div class="header">
+                <div class="week-selector">
+                    <button id="prev-week"><i class="fas fa-chevron-left"></i></button>
+                    <div class="week-info">
+                        <div class="week-number">Semana <span id="week-number">29</span> | Ano <span id="year-number">2025</span></div>
+                        <div class="week-dates"><span id="week-start-date">01/01</span> - <span id="week-end-date">07/01</span></div>
+                    </div>
+                    <button id="next-week"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                
+                <div class="actions">
+                    <button id="btn-verificar-pendencias" class="btn btn-secondary"><i class="fas fa-sync"></i> Verificar Pendências</button>
+                    <button id="btn-gerar-os-pendentes" class="btn btn-primary"><i class="fas fa-plus"></i> Gerar OS Pendentes</button>
+                </div>
+            </div>
+            
+            <div class="programacao-grid">
+                <div class="usuarios-container">
+                    <h3>Técnicos</h3>
+                    <div id="usuarios-list">
+                        <!-- Usuários serão carregados dinamicamente -->
+                        <div class="loading">Carregando usuários...</div>
+                    </div>
+                </div>
+                
+                <div class="semana-container">
+                    <div class="semana-header" id="semana-header">
+                        <!-- Cabeçalhos dos dias serão carregados dinamicamente -->
+                    </div>
+                    
+                    <div id="semana-grid">
+                        <!-- Grade da semana será carregada dinamicamente -->
+                        <div class="loading">Carregando programação...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="priority-lines">
+                <h3>Chamados em Aberto</h3>
+                
+                <!-- As linhas de prioridade serão carregadas dinamicamente -->
+                <div id="priority-lines-container">
+                    <div class="loading">Carregando chamados...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/programacao.js"></script>
+    <script src="/static/js/pmp-integration.js"></script>
+    
+    <!-- Script de correção para o problema de programação/desprogramação -->
+    <script src="/static/js/fix_programacao.js"></script>
+    
+    <!-- Script para diagnóstico -->
+    <script>
+        // Ativar logs detalhados
+        localStorage.setItem('debug_programacao', 'true');
+        
+        // Interceptar requisições XHR para logging
+        (function() {
+            const originalXHROpen = XMLHttpRequest.prototype.open;
+            const originalXHRSend = XMLHttpRequest.prototype.send;
+            
+            XMLHttpRequest.prototype.open = function(method, url) {
+                this._method = method;
+                this._url = url;
+                return originalXHROpen.apply(this, arguments);
+            };
+            
+            XMLHttpRequest.prototype.send = function(data) {
+                if (localStorage.getItem('debug_programacao') === 'true') {
+                    console.log(`📤 XHR ${this._method} ${this._url}`, data ? JSON.parse(data) : null);
+                }
+                return originalXHRSend.apply(this, arguments);
+            };
+        })();
+    </script>
+</body>
+</html>
+
