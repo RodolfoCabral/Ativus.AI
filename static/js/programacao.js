@@ -830,8 +830,11 @@ function handleDrop(e) {
     
     const osId = e.dataTransfer.getData('text/plain');
     const dateStr = this.getAttribute('data-date');
-    const userId = this.getAttribute('data-user-id');
-    const userName = this.getAttribute('data-user-name');
+    //const userId = this.getAttribute('data-user-id');
+    //const userName = this.getAttribute('data-user-name');
+    const userId = parseInt(targetElement.getAttribute("data-user-id"), 10);
+    const usuarioObj = getUserById(userId);
+    const userName = usuarioObj ? usuarioObj.name : `Técnico #${userId}`;
     
     // Garantir que a data está no formato correto (YYYY-MM-DD)
     let formattedDate = dateStr;
@@ -859,8 +862,11 @@ function handleDrop(e) {
             console.error(`❌ Erro ao converter data: ${dateStr}`, error);
         }
     }
+    // Dentro do drop handler
     
+
     console.log(`🔄 Drop detectado: OS #${osId} para ${formattedDate} com usuário ID ${userId}, nome: ${userName}`);
+    // console.log(`🔄 Drop detectado: OS #${osId} para ${formattedDate} com usuário ID ${userId}, nome: ${userName}`);
     
     // Programar OS para esta data e usuário
     if (userName) {
