@@ -9,6 +9,7 @@ from sendgrid.helpers.mail import Mail
 from dotenv import load_dotenv
 import ssl
 import logging
+from routes.atividades_os import atividades_os_bp
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -201,6 +202,19 @@ def create_app():
     except Exception as e:
         print(f"Erro ao registrar blueprint de analytics PMP: {e}")
         print("Sistema funcionará sem funcionalidades de analytics.")
+
+
+    # Importar e registrar a blueprint de atividades da os
+    try:
+        from routes.atividades_os import atividades_os_bp
+        app.register_blueprint(atividades_os_bp)
+        print("Blueprint de atividades da os registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar atividades_os_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de atividades da OS.")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de atividades_os_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de atividades da OS.")
     
     # Rotas para arquivos estáticos
     @app.route('/')
