@@ -347,6 +347,29 @@ def create_app():
     def categorias_ativos():
         return send_from_directory('static', 'categorias-ativos.html')
     
+    # Exemplo de rota no Flask
+    @app.route('/api/os/<int:os_id>/atividades', methods=['GET'])
+    def listar_atividades(os_id):
+        """
+        Retorna as atividades vinculadas a uma OS específica.
+        """
+        atividades = atividades_os_bp.query.filter_by(os_id=os_id).all()
+        
+        return jsonify({
+            "atividades": [
+                {
+                    "id": a.id,
+                    "ordem": a.ordem,
+                    "descricao": a.descricao,
+                    "status": a.status,
+                    "observacao": a.observacao
+                }
+                for a in atividades
+            ]
+        })
+
+
+
     # APIs simplificadas para ativos com filtros sequenciais
     @app.route('/api/filiais', methods=['GET'])
     @login_required
