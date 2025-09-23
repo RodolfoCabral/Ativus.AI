@@ -143,30 +143,99 @@ function salvarAvaliacao(atividadeId, status, observacao) {
 
 // Se estivermos na página de executar-os (presença da div #atividade-descricao), carregar e renderizar as atividades diretamente na página
 function carregarAtividadesNaPagina() {
+    console.log('🔄 INICIANDO carregarAtividadesNaPagina()');
+    
+    // ETAPA 1: Verificar se existe o elemento de destino
     const descDiv = document.getElementById('atividade-descricao');
-    if (!descDiv) return;
-    // obter os id da URL
+    console.log('📍 ETAPA 1 - Elemento atividade-descricao:', descDiv);
+    console.log('📍 ETAPA 1 - Elemento existe?', !!descDiv);
+    
+    if (!descDiv) {
+        console.log('❌ ETAPA 1 - Elemento #atividade-descricao não encontrado. Saindo da função.');
+        return;
+    }
+    
+    // ETAPA 2: Obter parâmetros da URL
+    console.log('📍 ETAPA 2 - Obtendo parâmetros da URL');
     const urlParams = new URLSearchParams(window.location.search);
-    const osId = urlParams.get('id') || urlParams.get('os_id');
-    if (!osId) return;
+    console.log('📍 ETAPA 2 - URL completa:', window.location.href);
+    console.log('📍 ETAPA 2 - Query string:', window.location.search);
+    console.log('📍 ETAPA 2 - URLSearchParams:', urlParams.toString());
+    
+    const osIdFromId = urlParams.get('id');
+    const osIdFromOsId = urlParams.get('os_id');
+    const osId = osIdFromId || osIdFromOsId;
+    
+    console.log('📍 ETAPA 2 - Parâmetro "id":', osIdFromId);
+    console.log('📍 ETAPA 2 - Parâmetro "os_id":', osIdFromOsId);
+    console.log('📍 ETAPA 2 - OS ID final escolhido:', osId);
+    
+    if (!osId) {
+        console.log('❌ ETAPA 2 - Nenhum ID de OS encontrado na URL. Saindo da função.');
+        return;
+    }
+    
+    // ETAPA 3: Mostrar loading
+    console.log('📍 ETAPA 3 - Definindo estado de carregamento');
     descDiv.innerHTML = '<div class="text-muted">Carregando atividades...</div>';
-    fetch(`/api/os/${osId}/atividades`, { credentials: 'include' })
+    console.log('📍 ETAPA 3 - HTML de loading definido');
+    
+    // ETAPA 4: Fazer requisição para API
+    console.log('📍 ETAPA 4 - Iniciando requisição para API');
+    const apiUrl = `/api/os/${osId}/atividades`;
+    console.log('📍 ETAPA 4 - URL da API:', apiUrl);
+    console.log('📍 ETAPA 4 - Fazendo fetch com credentials: include');
+    
+    fetch(apiUrl, { credentials: 'include' })
         .then(r => {
-            if (!r.ok) throw new Error('Falha ao carregar atividades');
+            console.log('📍 ETAPA 5 - Resposta recebida da API');
+            console.log('📍 ETAPA 5 - Status da resposta:', r.status);
+            console.log('📍 ETAPA 5 - Status text:', r.statusText);
+            console.log('📍 ETAPA 5 - Headers da resposta:', Object.fromEntries(r.headers.entries()));
+            console.log('📍 ETAPA 5 - Response OK?', r.ok);
+            
+            if (!r.ok) {
+                console.log('❌ ETAPA 5 - Resposta não OK, lançando erro');
+                throw new Error(`Falha ao carregar atividades - Status: ${r.status} ${r.statusText}`);
+            }
+            
+            console.log('✅ ETAPA 5 - Resposta OK, convertendo para JSON');
             return r.json();
         })
         .then(data => {
+            console.log('📍 ETAPA 6 - Dados JSON recebidos');
+            console.log('📍 ETAPA 6 - Dados completos:', data);
+            console.log('📍 ETAPA 6 - Tipo de data:', typeof data);
+            console.log('📍 ETAPA 6 - data.atividades existe?', 'atividades' in data);
+            console.log('📍 ETAPA 6 - data.atividades:', data.atividades);
+            console.log('📍 ETAPA 6 - data.atividades é array?', Array.isArray(data.atividades));
+            
             if (!Array.isArray(data.atividades)) {
+                console.log('❌ ETAPA 6 - data.atividades não é um array');
                 descDiv.innerHTML = '<div class="text-danger">Nenhuma atividade encontrada.</div>';
                 return;
             }
+            
+            console.log('📍 ETAPA 6 - Quantidade de atividades:', data.atividades.length);
+            
             if (data.atividades.length === 0) {
+                console.log('📍 ETAPA 6 - Nenhuma atividade encontrada');
                 descDiv.innerHTML = '<div class="text-muted">Nenhuma atividade vinculada a esta OS.</div>';
                 return;
             }
-            // construir HTML
+            
+            // ETAPA 7: Construir HTML das atividades
+            console.log('📍 ETAPA 7 - Construindo HTML das atividades');
             let html = '<div class="atividades-list">';
+            
             data.atividades.forEach((atividade, idx) => {
+                console.log(`📍 ETAPA 7 - Processando atividade ${idx + 1}:`, atividade);
+                console.log(`📍 ETAPA 7 - Atividade ${idx + 1} - ID:`, atividade.id);
+                console.log(`📍 ETAPA 7 - Atividade ${idx + 1} - Descrição:`, atividade.descricao);
+                console.log(`📍 ETAPA 7 - Atividade ${idx + 1} - Status:`, atividade.status);
+                console.log(`📍 ETAPA 7 - Atividade ${idx + 1} - Ordem:`, atividade.ordem);
+                console.log(`📍 ETAPA 7 - Atividade ${idx + 1} - Observação:`, atividade.observacao);
+                
                 const status = atividade.status || '';
                 html += `
                     <div class="atividade-item mb-2 p-2 border rounded" data-atividade-id="${atividade.id}">
@@ -181,50 +250,94 @@ function carregarAtividadesNaPagina() {
                 `;
             });
             html += '</div>';
+            
+            console.log('📍 ETAPA 7 - HTML construído, tamanho:', html.length);
+            console.log('📍 ETAPA 7 - Definindo HTML no elemento');
             descDiv.innerHTML = html;
+            console.log('✅ ETAPA 7 - HTML definido com sucesso');
 
-            // adicionar listeners para salvar
-            descDiv.querySelectorAll('.atividade-item').forEach(item => {
+            // ETAPA 8: Adicionar event listeners
+            console.log('📍 ETAPA 8 - Adicionando event listeners');
+            const atividadeItems = descDiv.querySelectorAll('.atividade-item');
+            console.log('📍 ETAPA 8 - Quantidade de itens de atividade encontrados:', atividadeItems.length);
+            
+            atividadeItems.forEach((item, itemIdx) => {
                 const atividadeId = item.dataset.atividadeId;
+                console.log(`📍 ETAPA 8 - Configurando listeners para atividade ${itemIdx + 1}, ID: ${atividadeId}`);
+                
                 const radios = item.querySelectorAll(`input[type="radio"][name="status_${atividadeId}"]`);
                 const textarea = item.querySelector('.observacao-text');
-                radios.forEach(r => r.addEventListener('change', () => {
-                    const status = r.value;
-                    const obs = textarea.value;
-                    fetch(`/api/os/atividades/${atividadeId}/avaliar`, {
-                        method: 'PUT',
-                        credentials: 'include',
-                        headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({status: status, observacao: obs})
-                    }).then(res => {
-                        if (!res.ok) throw new Error('Erro ao salvar');
-                        console.log('Salvo', atividadeId, status);
-                    }).catch(err => console.error(err));
-                }));
-                textarea.addEventListener('blur', () => {
-                    const checked = item.querySelector(`input[type="radio"][name="status_${atividadeId}"]:checked`);
-                    const status = checked ? checked.value : null;
-                    const obs = textarea.value;
-                    fetch(`/api/os/atividades/${atividadeId}/avaliar`, {
-                        method: 'PUT',
-                        credentials: 'include',
-                        headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({status: status, observacao: obs})
-                    }).then(res => {
-                        if (!res.ok) throw new Error('Erro ao salvar obs');
-                        console.log('Obs salva', atividadeId);
-                    }).catch(err => console.error(err));
+                
+                console.log(`📍 ETAPA 8 - Atividade ${atividadeId} - Radios encontrados:`, radios.length);
+                console.log(`📍 ETAPA 8 - Atividade ${atividadeId} - Textarea encontrada:`, !!textarea);
+                
+                radios.forEach((r, radioIdx) => {
+                    console.log(`📍 ETAPA 8 - Adicionando listener para radio ${radioIdx + 1} da atividade ${atividadeId}`);
+                    r.addEventListener('change', () => {
+                        const status = r.value;
+                        const obs = textarea.value;
+                        console.log(`🔄 EVENTO RADIO - Atividade ${atividadeId}, Status: ${status}, Obs: ${obs}`);
+                        
+                        fetch(`/api/os/atividades/${atividadeId}/avaliar`, {
+                            method: 'PUT',
+                            credentials: 'include',
+                            headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({status: status, observacao: obs})
+                        }).then(res => {
+                            console.log(`✅ RESPOSTA RADIO - Atividade ${atividadeId}, Status resposta: ${res.status}`);
+                            if (!res.ok) throw new Error('Erro ao salvar');
+                            console.log('✅ SUCESSO RADIO - Salvo', atividadeId, status);
+                        }).catch(err => {
+                            console.error('❌ ERRO RADIO - ', err);
+                        });
+                    });
                 });
+                
+                if (textarea) {
+                    console.log(`📍 ETAPA 8 - Adicionando listener blur para textarea da atividade ${atividadeId}`);
+                    textarea.addEventListener('blur', () => {
+                        const checked = item.querySelector(`input[type="radio"][name="status_${atividadeId}"]:checked`);
+                        const status = checked ? checked.value : null;
+                        const obs = textarea.value;
+                        console.log(`🔄 EVENTO TEXTAREA - Atividade ${atividadeId}, Status: ${status}, Obs: ${obs}`);
+                        
+                        fetch(`/api/os/atividades/${atividadeId}/avaliar`, {
+                            method: 'PUT',
+                            credentials: 'include',
+                            headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({status: status, observacao: obs})
+                        }).then(res => {
+                            console.log(`✅ RESPOSTA TEXTAREA - Atividade ${atividadeId}, Status resposta: ${res.status}`);
+                            if (!res.ok) throw new Error('Erro ao salvar obs');
+                            console.log('✅ SUCESSO TEXTAREA - Obs salva', atividadeId);
+                        }).catch(err => {
+                            console.error('❌ ERRO TEXTAREA - ', err);
+                        });
+                    });
+                }
             });
+            
+            console.log('✅ ETAPA 8 - Todos os event listeners configurados');
+            console.log('🎉 SUCESSO TOTAL - Atividades carregadas e configuradas com sucesso!');
         })
         .catch(err => {
-            console.error(err);
+            console.error('❌ ERRO GERAL - Erro capturado:', err);
+            console.error('❌ ERRO GERAL - Tipo do erro:', typeof err);
+            console.error('❌ ERRO GERAL - Mensagem:', err.message);
+            console.error('❌ ERRO GERAL - Stack:', err.stack);
             descDiv.innerHTML = '<div class="text-danger">Erro ao carregar atividades.</div>';
         });
 }
 
 // Tentar carregar in-page ao carregar o DOM
 document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(carregarAtividadesNaPagina, 800);
+    console.log('🚀 DOM CARREGADO - Iniciando processo de carregamento de atividades');
+    console.log('🚀 DOM CARREGADO - URL atual:', window.location.href);
+    console.log('🚀 DOM CARREGADO - Aguardando 800ms antes de executar carregarAtividadesNaPagina');
+    
+    setTimeout(() => {
+        console.log('⏰ TIMEOUT EXECUTADO - Chamando carregarAtividadesNaPagina após 800ms');
+        carregarAtividadesNaPagina();
+    }, 800);
 });
 
