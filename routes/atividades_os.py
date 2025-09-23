@@ -14,21 +14,24 @@ atividades_os_bp = Blueprint('atividades_os', __name__)
 def listar_atividades_os(os_id):
     """Lista todas as atividades de uma OS específica"""
     try:
-        # Verificar se o usuário tem empresa definida
-        if not hasattr(current_user, 'empresa') or not current_user.empresa:
-            return jsonify({'error': 'Usuário sem empresa definida'}), 400
-        
-        # Verificar se a OS existe e pertence à empresa do usuário
-        os = OrdemServico.query.filter_by(
-            id=os_id, 
-            empresa=current_user.empresa
-        ).first()
+        # Buscar a OS primeiro (sem filtro de empresa para debug)
+        os = OrdemServico.query.filter_by(id=os_id).first()
         
         if not os:
+            logger.error(f"OS {os_id} não encontrada no banco de dados")
             return jsonify({'error': 'OS não encontrada'}), 404
+        
+        logger.info(f"OS {os_id} encontrada: {os.descricao}")
+        
+        # Verificar se o usuário tem acesso (se tiver empresa definida)
+        if hasattr(current_user, 'empresa') and current_user.empresa:
+            if os.empresa != current_user.empresa:
+                logger.warning(f"Usuário da empresa {current_user.empresa} tentando acessar OS da empresa {os.empresa}")
+                return jsonify({'error': 'Acesso negado à OS'}), 403
         
         # Buscar atividades
         atividades = AtividadeOS.query.filter_by(os_id=os_id).order_by(AtividadeOS.ordem).all()
+        logger.info(f"Encontradas {len(atividades)} atividades para OS {os_id}")
         
         # Converter para dicionário
         atividades_dict = [atividade.to_dict() for atividade in atividades]
@@ -41,9 +44,6 @@ def listar_atividades_os(os_id):
             'atividades': atividades_dict
         })
     
-    except AttributeError as e:
-        logger.error(f"Erro de atributo ao listar atividades da OS {os_id}: {str(e)}")
-        return jsonify({'error': 'Erro de configuração do usuário'}), 500
     except Exception as e:
         logger.error(f"Erro ao listar atividades da OS {os_id}: {str(e)}")
         return jsonify({'error': str(e)}), 500

@@ -142,24 +142,19 @@ def obter_execucao_por_os(os_id):
 def listar_materiais_estoque():
     """Listar materiais de estoque da empresa"""
     try:
-        # Verificar se o usuário tem empresa definida
-        if not hasattr(current_user, 'empresa') or not current_user.empresa:
-            return jsonify({'error': 'Usuário sem empresa definida'}), 400
+        # Buscar materiais ativos (com filtro de empresa se disponível)
+        query = MaterialEstoque.query.filter_by(ativo=True)
         
-        # Buscar materiais ativos da empresa
-        materiais = MaterialEstoque.query.filter_by(
-            empresa=current_user.empresa,
-            ativo=True
-        ).order_by(MaterialEstoque.nome).all()
+        if hasattr(current_user, 'empresa') and current_user.empresa:
+            query = query.filter_by(empresa=current_user.empresa)
+        
+        materiais = query.order_by(MaterialEstoque.nome).all()
         
         return jsonify({
             'success': True,
             'materiais': [material.to_dict() for material in materiais]
         })
         
-    except AttributeError as e:
-        print(f"Erro de atributo ao listar materiais: {str(e)}")
-        return jsonify({'error': 'Erro de configuração do usuário'}), 500
     except Exception as e:
         print(f"Erro ao listar materiais de estoque: {str(e)}")
         return jsonify({'error': 'Erro interno do servidor'}), 500
