@@ -348,20 +348,79 @@
                 <h2>Ativus.AI</h2>
             </div>
             
-            <ul class="sidebar-menu">
-                <li>
-                    <a href="/dashboard">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="/programacao">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>Programação</span>
-                    </a>
-                </li>
-            </ul>
+            <nav class="sidebar-nav">
+                <ul class="menu">
+                    <li class="menu-item">
+                        <a href="/cadastro-ativos" class="menu-link">
+                            <i class="fas fa-boxes"></i>
+                            <span>Cadastro de Ativos</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/plano-manutencao" class="menu-link">
+                            <i class="fas fa-tools"></i>
+                            <span>Plano de Manutenção</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/abrir-chamado" class="menu-link">
+                            <i class="fas fa-headset"></i>
+                            <span>Abrir Chamado</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/programacao" class="menu-link">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Programação</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/materiais" class="menu-link">
+                            <i class="fas fa-boxes"></i>
+                            <span>Materiais</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/dashboard" class="menu-link">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/relatorios" class="menu-link">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Relatórios</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/monitoramento" class="menu-link">
+                            <i class="fas fa-desktop"></i>
+                            <span>Monitoramento</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/parametros" class="menu-link">
+                            <i class="fas fa-cog"></i>
+                            <span>Parâmetros</span>
+                        </a>
+                    </li>
+                    
+                    <li class="menu-item">
+                        <a href="/scanner-qr" class="menu-link">
+                            <i class="fas fa-qrcode"></i>
+                            <span>Scanner QR</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
         </nav>
         
         <!-- Conteúdo Principal -->
@@ -377,13 +436,18 @@
                     <div class="user-info">
                         <span id="user-name">Carregando...</span>
                         <span id="user-company">Carregando...</span>
-                    </div>
-                    <div id="userDropdownBtn" class="user-avatar">
-                        <i class="fas fa-user"></i>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div id="userDropdownContent" class="dropdown-content">
-                        <a href="#" id="logoutButton"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        <div class="user-dropdown">
+                            <button class="user-dropdown-btn">
+                                <i class="fas fa-user-circle"></i>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="user-dropdown-content">
+                                <a href="#"><i class="fas fa-user"></i> Minha Conta</a>
+                                <a href="#"><i class="fas fa-key"></i> Redefinir Senha</a>
+                                <a href="#"><i class="fas fa-question-circle"></i> Suporte</a>
+                                <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
