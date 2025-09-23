@@ -63,6 +63,13 @@ body {
   transition: border-color 0.3s;
 }
 
+.user-management h2 {
+    color: var(--primary-color);
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
 .form-control:focus {
   border-color: var(--primary-color);
   outline: none;
