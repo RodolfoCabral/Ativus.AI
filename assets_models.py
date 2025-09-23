@@ -1,5 +1,6 @@
-from datetime import datetime
+from sqlalchemy import func
 from models import db
+from datetime import datetime
 
 class Filial(db.Model):
     __tablename__ = 'filiais'

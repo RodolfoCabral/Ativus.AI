@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from models import db
 from models.atividade_os import AtividadeOS
-from models.assets_models import OrdemServico
+from assets_models import OrdemServico
 import logging
 
 logger = logging.getLogger(__name__)
@@ -14,6 +14,10 @@ atividades_os_bp = Blueprint('atividades_os', __name__)
 def listar_atividades_os(os_id):
     """Lista todas as atividades de uma OS específica"""
     try:
+        # Verificar se o usuário tem empresa definida
+        if not hasattr(current_user, 'empresa') or not current_user.empresa:
+            return jsonify({'error': 'Usuário sem empresa definida'}), 400
+        
         # Verificar se a OS existe e pertence à empresa do usuário
         os = OrdemServico.query.filter_by(
             id=os_id, 
@@ -37,6 +41,9 @@ def listar_atividades_os(os_id):
             'atividades': atividades_dict
         })
     
+    except AttributeError as e:
+        logger.error(f"Erro de atributo ao listar atividades da OS {os_id}: {str(e)}")
+        return jsonify({'error': 'Erro de configuração do usuário'}), 500
     except Exception as e:
         logger.error(f"Erro ao listar atividades da OS {os_id}: {str(e)}")
         return jsonify({'error': str(e)}), 500
