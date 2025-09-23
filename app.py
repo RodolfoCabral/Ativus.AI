@@ -9,7 +9,6 @@ from sendgrid.helpers.mail import Mail
 from dotenv import load_dotenv
 import ssl
 import logging
-from routes.atividades_os import atividades_os_bp
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
