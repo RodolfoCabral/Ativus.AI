@@ -34,7 +34,7 @@ function abrirModalAtividades(osId) {
     listaAtividades.innerHTML = `<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Carregando...</span></div></div>`;
 
     // Buscar os detalhes da OS e suas atividades
-    fetch(`/api/os/${osId}/atividades`)
+    fetch(`/api/os/${osId}/atividades`, { credentials: 'include' })
         .then(response => {
             if (!response.ok) {
                 throw new Error("Falha ao carregar atividades");
@@ -138,4 +138,93 @@ function salvarAvaliacao(atividadeId, status, observacao) {
         console.error(error.message);
     });
 }
+
+
+
+// Se estivermos na página de executar-os (presença da div #atividade-descricao), carregar e renderizar as atividades diretamente na página
+function carregarAtividadesNaPagina() {
+    const descDiv = document.getElementById('atividade-descricao');
+    if (!descDiv) return;
+    // obter os id da URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const osId = urlParams.get('id') || urlParams.get('os_id');
+    if (!osId) return;
+    descDiv.innerHTML = '<div class="text-muted">Carregando atividades...</div>';
+    fetch(`/api/os/${osId}/atividades`, { credentials: 'include' })
+        .then(r => {
+            if (!r.ok) throw new Error('Falha ao carregar atividades');
+            return r.json();
+        })
+        .then(data => {
+            if (!Array.isArray(data.atividades)) {
+                descDiv.innerHTML = '<div class="text-danger">Nenhuma atividade encontrada.</div>';
+                return;
+            }
+            if (data.atividades.length === 0) {
+                descDiv.innerHTML = '<div class="text-muted">Nenhuma atividade vinculada a esta OS.</div>';
+                return;
+            }
+            // construir HTML
+            let html = '<div class="atividades-list">';
+            data.atividades.forEach((atividade, idx) => {
+                const status = atividade.status || '';
+                html += `
+                    <div class="atividade-item mb-2 p-2 border rounded" data-atividade-id="${atividade.id}">
+                        <div><strong>${atividade.ordem || (idx+1)}.</strong> ${atividade.descricao}</div>
+                        <div class="mt-2 d-flex gap-2 align-items-center">
+                            <label class="btn btn-sm btn-outline-success ${status==='conforme' ? 'active' : ''}"><input type="radio" name="status_${atividade.id}" value="conforme" ${status==='conforme'?'checked':''}> C</label>
+                            <label class="btn btn-sm btn-outline-danger ${status==='nao_conforme' ? 'active' : ''}"><input type="radio" name="status_${atividade.id}" value="nao_conforme" ${status==='nao_conforme'?'checked':''}> NC</label>
+                            <label class="btn btn-sm btn-outline-secondary ${status==='nao_aplicavel' ? 'active' : ''}"><input type="radio" name="status_${atividade.id}" value="nao_aplicavel" ${status==='nao_aplicavel'?'checked':''}> NA</label>
+                            <textarea class="form-control form-control-sm ms-2 observacao-text" placeholder="Observação" rows="1">${atividade.observacao || ''}</textarea>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            descDiv.innerHTML = html;
+
+            // adicionar listeners para salvar
+            descDiv.querySelectorAll('.atividade-item').forEach(item => {
+                const atividadeId = item.dataset.atividadeId;
+                const radios = item.querySelectorAll(`input[type="radio"][name="status_${atividadeId}"]`);
+                const textarea = item.querySelector('.observacao-text');
+                radios.forEach(r => r.addEventListener('change', () => {
+                    const status = r.value;
+                    const obs = textarea.value;
+                    fetch(`/api/os/atividades/${atividadeId}/avaliar`, {
+                        method: 'PUT',
+                        credentials: 'include',
+                        headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({status: status, observacao: obs})
+                    }).then(res => {
+                        if (!res.ok) throw new Error('Erro ao salvar');
+                        console.log('Salvo', atividadeId, status);
+                    }).catch(err => console.error(err));
+                }));
+                textarea.addEventListener('blur', () => {
+                    const checked = item.querySelector(`input[type="radio"][name="status_${atividadeId}"]:checked`);
+                    const status = checked ? checked.value : null;
+                    const obs = textarea.value;
+                    fetch(`/api/os/atividades/${atividadeId}/avaliar`, {
+                        method: 'PUT',
+                        credentials: 'include',
+                        headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({status: status, observacao: obs})
+                    }).then(res => {
+                        if (!res.ok) throw new Error('Erro ao salvar obs');
+                        console.log('Obs salva', atividadeId);
+                    }).catch(err => console.error(err));
+                });
+            });
+        })
+        .catch(err => {
+            console.error(err);
+            descDiv.innerHTML = '<div class="text-danger">Erro ao carregar atividades.</div>';
+        });
+}
+
+// Tentar carregar in-page ao carregar o DOM
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(carregarAtividadesNaPagina, 800);
+});
 
