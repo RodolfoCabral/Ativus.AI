@@ -63,7 +63,7 @@ body {
   transition: border-color 0.3s;
 }
 
-.user-management h2 {
+.h2 {
     color: var(--primary-color);
     margin-top: 0;
     margin-bottom: 20px;
