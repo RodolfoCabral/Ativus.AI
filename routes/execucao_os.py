@@ -1,4 +1,5 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify
+from flask_login import login_required, current_user
 from assets_models import ExecucaoOS, MaterialUtilizado, MaterialEstoque, OrdemServico, Chamado
 from models import db
 from datetime import datetime
@@ -6,31 +7,11 @@ import os
 
 execucao_bp = Blueprint('execucao', __name__)
 
-def verificar_autenticacao():
-    """Verifica se o usuário está autenticado"""
-    if 'user_id' not in session:
-        return False, {'error': 'Usuário não autenticado'}, 401
-    return True, None, None
-
-def obter_dados_usuario():
-    """Obtém dados do usuário da sessão"""
-    return {
-        'user_id': session.get('user_id'),
-        'username': session.get('username'),
-        'empresa': session.get('empresa'),
-        'user_type': session.get('user_type')
-    }
-
 @execucao_bp.route('/api/execucoes-os', methods=['POST'])
+@login_required
 def criar_execucao():
     """Criar nova execução de OS"""
     try:
-        # Verificar autenticação
-        auth_ok, error_response, status_code = verificar_autenticacao()
-        if not auth_ok:
-            return jsonify(error_response), status_code
-        
-        user_data = obter_dados_usuario()
         data = request.get_json()
         
         # Validar dados obrigatórios
@@ -40,7 +21,7 @@ def criar_execucao():
         # Verificar se a OS existe e pertence à empresa do usuário
         os = OrdemServico.query.filter_by(
             id=data['os_id'],
-            empresa=user_data['empresa']
+            empresa=current_user.empresa
         ).first()
         
         if not os:
@@ -58,8 +39,8 @@ def criar_execucao():
             data_fim=datetime.fromisoformat(data['data_fim'].replace('Z', '+00:00')) if data.get('data_fim') else None,
             lista_execucao_status=data.get('lista_execucao_status', 'C'),
             observacoes=data.get('observacoes'),
-            executor=user_data['username'],
-            empresa=user_data['empresa']
+            executor=current_user.username,
+            empresa=current_user.empresa
         )
         
         db.session.add(execucao)
@@ -82,21 +63,16 @@ def criar_execucao():
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @execucao_bp.route('/api/execucoes-os/<int:execucao_id>', methods=['PUT'])
+@login_required
 def atualizar_execucao(execucao_id):
     """Atualizar execução existente"""
     try:
-        # Verificar autenticação
-        auth_ok, error_response, status_code = verificar_autenticacao()
-        if not auth_ok:
-            return jsonify(error_response), status_code
-        
-        user_data = obter_dados_usuario()
         data = request.get_json()
         
         # Buscar execução
         execucao = ExecucaoOS.query.filter_by(
             id=execucao_id,
-            empresa=user_data['empresa']
+            empresa=current_user.empresa
         ).first()
         
         if not execucao:
@@ -136,20 +112,14 @@ def atualizar_execucao(execucao_id):
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @execucao_bp.route('/api/execucoes-os/por-os/<int:os_id>', methods=['GET'])
+@login_required
 def obter_execucao_por_os(os_id):
     """Obter execução por ID da OS"""
     try:
-        # Verificar autenticação
-        auth_ok, error_response, status_code = verificar_autenticacao()
-        if not auth_ok:
-            return jsonify(error_response), status_code
-        
-        user_data = obter_dados_usuario()
-        
         # Buscar execução
         execucao = ExecucaoOS.query.join(OrdemServico).filter(
             ExecucaoOS.os_id == os_id,
-            OrdemServico.empresa == user_data['empresa']
+            OrdemServico.empresa == current_user.empresa
         ).first()
         
         if execucao:
@@ -168,19 +138,13 @@ def obter_execucao_por_os(os_id):
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @execucao_bp.route('/api/materiais-estoque', methods=['GET'])
+@login_required
 def listar_materiais_estoque():
     """Listar materiais de estoque da empresa"""
     try:
-        # Verificar autenticação
-        auth_ok, error_response, status_code = verificar_autenticacao()
-        if not auth_ok:
-            return jsonify(error_response), status_code
-        
-        user_data = obter_dados_usuario()
-        
         # Buscar materiais ativos da empresa
         materiais = MaterialEstoque.query.filter_by(
-            empresa=user_data['empresa'],
+            empresa=current_user.empresa,
             ativo=True
         ).order_by(MaterialEstoque.nome).all()
         
@@ -194,15 +158,10 @@ def listar_materiais_estoque():
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @execucao_bp.route('/api/materiais-utilizados', methods=['POST'])
+@login_required
 def criar_material_utilizado():
     """Criar registro de material utilizado"""
     try:
-        # Verificar autenticação
-        auth_ok, error_response, status_code = verificar_autenticacao()
-        if not auth_ok:
-            return jsonify(error_response), status_code
-        
-        user_data = obter_dados_usuario()
         data = request.get_json()
         
         # Validar dados obrigatórios
@@ -212,7 +171,7 @@ def criar_material_utilizado():
         # Verificar se a execução existe e pertence à empresa
         execucao = ExecucaoOS.query.join(OrdemServico).filter(
             ExecucaoOS.id == data['execucao_id'],
-            OrdemServico.empresa == user_data['empresa']
+            OrdemServico.empresa == current_user.empresa
         ).first()
         
         if not execucao:
@@ -223,8 +182,8 @@ def criar_material_utilizado():
             execucao_id=data['execucao_id'],
             tipo_material=data.get('tipo_material', 'estoque'),
             quantidade=float(data['quantidade']),
-            empresa=user_data['empresa'],
-            usuario_criacao=user_data['username']
+            empresa=current_user.empresa,
+            usuario_criacao=current_user.username
         )
         
         if data.get('tipo_material') == 'estoque':
@@ -255,21 +214,16 @@ def criar_material_utilizado():
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @execucao_bp.route('/api/materiais-utilizados/<int:material_id>', methods=['PUT'])
+@login_required
 def atualizar_material_utilizado(material_id):
     """Atualizar material utilizado"""
     try:
-        # Verificar autenticação
-        auth_ok, error_response, status_code = verificar_autenticacao()
-        if not auth_ok:
-            return jsonify(error_response), status_code
-        
-        user_data = obter_dados_usuario()
         data = request.get_json()
         
         # Buscar material
         material = MaterialUtilizado.query.filter_by(
             id=material_id,
-            empresa=user_data['empresa']
+            empresa=current_user.empresa
         ).first()
         
         if not material:
@@ -312,20 +266,14 @@ def atualizar_material_utilizado(material_id):
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @execucao_bp.route('/api/materiais-utilizados/por-execucao/<int:execucao_id>', methods=['GET'])
+@login_required
 def listar_materiais_por_execucao(execucao_id):
     """Listar materiais utilizados por execução"""
     try:
-        # Verificar autenticação
-        auth_ok, error_response, status_code = verificar_autenticacao()
-        if not auth_ok:
-            return jsonify(error_response), status_code
-        
-        user_data = obter_dados_usuario()
-        
         # Buscar materiais
         materiais = MaterialUtilizado.query.join(ExecucaoOS).join(OrdemServico).filter(
             MaterialUtilizado.execucao_id == execucao_id,
-            OrdemServico.empresa == user_data['empresa']
+            OrdemServico.empresa == current_user.empresa
         ).all()
         
         return jsonify({
@@ -338,20 +286,14 @@ def listar_materiais_por_execucao(execucao_id):
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @execucao_bp.route('/api/ordens-servico/<int:os_id>/encerrar', methods=['POST'])
+@login_required
 def encerrar_os(os_id):
     """Encerrar ordem de serviço"""
     try:
-        # Verificar autenticação
-        auth_ok, error_response, status_code = verificar_autenticacao()
-        if not auth_ok:
-            return jsonify(error_response), status_code
-        
-        user_data = obter_dados_usuario()
-        
         # Buscar OS
         os = OrdemServico.query.filter_by(
             id=os_id,
-            empresa=user_data['empresa']
+            empresa=current_user.empresa
         ).first()
         
         if not os:

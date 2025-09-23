@@ -31,9 +31,8 @@ body {
 }
 
 .logo {
-    width: 20px;
-    height: 20px;
-    margin-right: 10px;
+  width: 150px;
+  margin-bottom: 1.5rem;
 }
 
 .login-title {
@@ -61,13 +60,6 @@ body {
   border-radius: 5px;
   font-size: 1rem;
   transition: border-color 0.3s;
-}
-
-.h2 {
-    color: var(--primary-color);
-    margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 20px;
 }
 
 .form-control:focus {
