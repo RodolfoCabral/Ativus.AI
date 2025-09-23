@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from flask_login import login_required, current_user
 from models import db
 from models.atividade_os import AtividadeOS
 from models.assets_models import OrdemServico
@@ -9,11 +10,16 @@ logger = logging.getLogger(__name__)
 atividades_os_bp = Blueprint('atividades_os', __name__)
 
 @atividades_os_bp.route('/api/os/<int:os_id>/atividades', methods=['GET'])
+@login_required
 def listar_atividades_os(os_id):
     """Lista todas as atividades de uma OS específica"""
     try:
-        # Verificar se a OS existe
-        os = OrdemServico.query.get(os_id)
+        # Verificar se a OS existe e pertence à empresa do usuário
+        os = OrdemServico.query.filter_by(
+            id=os_id, 
+            empresa=current_user.empresa
+        ).first()
+        
         if not os:
             return jsonify({'error': 'OS não encontrada'}), 404
         
@@ -36,11 +42,16 @@ def listar_atividades_os(os_id):
         return jsonify({'error': str(e)}), 500
 
 @atividades_os_bp.route('/api/os/atividades/<int:atividade_id>/avaliar', methods=['PUT'])
+@login_required
 def avaliar_atividade_os(atividade_id):
     """Atualiza o status de conformidade e observação de uma atividade"""
     try:
-        # Verificar se a atividade existe
-        atividade = AtividadeOS.query.get(atividade_id)
+        # Verificar se a atividade existe e pertence à empresa do usuário
+        atividade = db.session.query(AtividadeOS).join(OrdemServico).filter(
+            AtividadeOS.id == atividade_id,
+            OrdemServico.empresa == current_user.empresa
+        ).first()
+        
         if not atividade:
             return jsonify({'error': 'Atividade não encontrada'}), 404
         
