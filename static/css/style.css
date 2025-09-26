@@ -149,7 +149,3 @@ body {
   }
 }
 
-.btn input[type="radio"] {
-  display: inline-block !important;
-  margin-right: 4px;
-}

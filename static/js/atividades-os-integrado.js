@@ -240,13 +240,22 @@ function carregarAtividadesNaPagina() {
                 html += `
                     <div class="atividade-item mb-2 p-2 border rounded" data-atividade-id="${atividade.id}">
                         <div><strong>${atividade.ordem || (idx+1)}.</strong> ${atividade.descricao}</div>
-                        <div class="mt-2 d-flex gap-2 align-items-center">
-                            <label class="btn btn-sm btn-outline-success ${status==='conforme' ? 'active' : ''}"><input type="radio" name="status_${atividade.id}" value="conforme" ${status==='conforme'?'checked':''}> C</label>
-                            <label class="btn btn-sm btn-outline-danger ${status==='nao_conforme' ? 'active' : ''}"><input type="radio" name="status_${atividade.id}" value="nao_conforme" ${status==='nao_conforme'?'checked':''}> NC</label>
-                            <label class="btn btn-sm btn-outline-secondary ${status==='nao_aplicavel' ? 'active' : ''}"><input type="radio" name="status_${atividade.id}" value="nao_aplicavel" ${status==='nao_aplicavel'?'checked':''}> NA</label>
+                        <div class="mt-2 d-flex gap-2 align-items-center flex-wrap">
+                            <label class="btn btn-sm btn-outline-success ${status==='conforme' ? 'active' : ''}">
+                                <input type="radio" class="d-inline-block me-1" name="status_${atividade.id}" value="conforme" ${status==='conforme'?'checked':''}> C
+                            </label>
+                            <label class="btn btn-sm btn-outline-danger ${status==='nao_conforme' ? 'active' : ''}">
+                                <input type="radio" class="d-inline-block me-1" name="status_${atividade.id}" value="nao_conforme" ${status==='nao_conforme'?'checked':''}> NC
+                            </label>
+                            <label class="btn btn-sm btn-outline-secondary ${status==='nao_aplicavel' ? 'active' : ''}">
+                                <input type="radio" class="d-inline-block me-1" name="status_${atividade.id}" value="nao_aplicavel" ${status==='nao_aplicavel'?'checked':''}> NA
+                            </label>
                             <textarea class="form-control form-control-sm ms-2 observacao-text" placeholder="Observação" rows="1">${atividade.observacao || ''}</textarea>
                         </div>
                     </div>
+
+                    
+
                 `;
             });
             html += '</div>';
