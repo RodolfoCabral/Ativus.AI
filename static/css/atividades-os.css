@@ -38,7 +38,18 @@
     background-color: #198754;
     border-color: #198754;
     color: white;
+
 }
+
+.atividade-item .btn {
+    /* CONTROLES DE TAMANHO - AJUSTE AQUI */
+    min-width: 60px;        /* Largura mínima */
+    height: 32px;           /* Altura fixa */
+    padding: 4px 8px;      /* Espaçamento interno */
+    font-size: 12px;        /* Tamanho da fonte */
+    line-height: 1.2;       /* Altura da linha */
+}
+
 
 .atividade-item .btn-outline-success {
     color: #198754;
