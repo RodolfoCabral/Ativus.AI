@@ -1,0 +1,146 @@
+/* Estilos para a lista de atividades da OS */
+.atividades-list {
+    max-width: 100%;
+}
+
+.atividade-item {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.atividade-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-color: #adb5bd;
+}
+
+/* Botões de status lado a lado */
+.atividade-item .d-flex.gap-2 {
+    display: flex !important;
+    gap: 0.5rem !important;
+    flex-wrap: nowrap;
+}
+
+.atividade-item .btn {
+    border-radius: 6px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Botão Conforme (Verde) */
+.atividade-item .btn-success {
+    background-color: #198754;
+    border-color: #198754;
+    color: white;
+}
+
+.atividade-item .btn-outline-success {
+    color: #198754;
+    border-color: #198754;
+    background-color: white;
+}
+
+.atividade-item .btn-outline-success:hover {
+    background-color: #198754;
+    border-color: #198754;
+    color: white;
+}
+
+/* Botão Não Conforme (Vermelho) */
+.atividade-item .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.atividade-item .btn-outline-danger {
+    color: #dc3545;
+    border-color: #dc3545;
+    background-color: white;
+}
+
+.atividade-item .btn-outline-danger:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+/* Botão Não Aplicável (Cinza) */
+.atividade-item .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.atividade-item .btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+    background-color: white;
+}
+
+.atividade-item .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+/* Textarea de observação */
+.atividade-item .observacao-text {
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    resize: vertical;
+    min-height: 60px;
+}
+
+.atividade-item .observacao-text:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Responsividade para telas menores */
+@media (max-width: 768px) {
+    .atividade-item .row {
+        flex-direction: column;
+    }
+    
+    .atividade-item .col-md-6 {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .atividade-item .d-flex.gap-2 {
+        justify-content: space-between;
+    }
+    
+    .atividade-item .btn {
+        flex: 1;
+        min-width: 50px;
+    }
+}
+
+/* Animação de clique */
+.atividade-item .btn:active {
+    transform: scale(0.98);
+}
+
+/* Estilo para atividades já avaliadas */
+.atividade-item.avaliada {
+    border-left: 4px solid #28a745;
+    background-color: #f8fff9;
+}
+
+.atividade-item.nao-conforme {
+    border-left: 4px solid #dc3545;
+    background-color: #fff8f8;
+}
+
+.atividade-item.nao-aplicavel {
+    border-left: 4px solid #6c757d;
+    background-color: #f8f9fa;
+}

@@ -238,24 +238,31 @@ function carregarAtividadesNaPagina() {
                 
                 const status = atividade.status || '';
                 html += `
-                    <div class="atividade-item mb-2 p-2 border rounded" data-atividade-id="${atividade.id}">
-                        <div><strong>${atividade.ordem || (idx+1)}.</strong> ${atividade.descricao}</div>
-                        <div class="mt-2 d-flex gap-2 align-items-center flex-wrap">
-                            <label class="btn btn-sm btn-outline-success ${status==='conforme' ? 'active' : ''}">
-                                <input type="radio" class="d-inline-block me-1" name="status_${atividade.id}" value="conforme" ${status==='conforme'?'checked':''}> C
-                            </label>
-                            <label class="btn btn-sm btn-outline-danger ${status==='nao_conforme' ? 'active' : ''}">
-                                <input type="radio" class="d-inline-block me-1" name="status_${atividade.id}" value="nao_conforme" ${status==='nao_conforme'?'checked':''}> NC
-                            </label>
-                            <label class="btn btn-sm btn-outline-secondary ${status==='nao_aplicavel' ? 'active' : ''}">
-                                <input type="radio" class="d-inline-block me-1" name="status_${atividade.id}" value="nao_aplicavel" ${status==='nao_aplicavel'?'checked':''}> NA
-                            </label>
-                            <textarea class="form-control form-control-sm ms-2 observacao-text" placeholder="Observação" rows="1">${atividade.observacao || ''}</textarea>
+                    <div class="atividade-item mb-3 p-3 border rounded" data-atividade-id="${atividade.id}">
+                        <div class="mb-2"><strong>${atividade.ordem || (idx+1)}.</strong> ${atividade.descricao}</div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex gap-2 mb-2">
+                                    <label class="btn btn-sm ${status==='conforme' ? 'btn-success' : 'btn-outline-success'} flex-fill" style="min-width: 60px;">
+                                        <input type="radio" name="status_${atividade.id}" value="conforme" ${status==='conforme'?'checked':''} style="display: none;"> 
+                                        ✓ C
+                                    </label>
+                                    <label class="btn btn-sm ${status==='nao_conforme' ? 'btn-danger' : 'btn-outline-danger'} flex-fill" style="min-width: 60px;">
+                                        <input type="radio" name="status_${atividade.id}" value="nao_conforme" ${status==='nao_conforme'?'checked':''} style="display: none;"> 
+                                        ✗ NC
+                                    </label>
+                                    <label class="btn btn-sm ${status==='nao_aplicavel' ? 'btn-secondary' : 'btn-outline-secondary'} flex-fill" style="min-width: 60px;">
+                                        <input type="radio" name="status_${atividade.id}" value="nao_aplicavel" ${status==='nao_aplicavel'?'checked':''} style="display: none;"> 
+                                        ○ NA
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <textarea class="form-control form-control-sm observacao-text" placeholder="Observação..." rows="2">${atividade.observacao || ''}</textarea>
+                            </div>
                         </div>
                     </div>
-
-                    
-
                 `;
             });
             html += '</div>';
@@ -274,32 +281,70 @@ function carregarAtividadesNaPagina() {
                 const atividadeId = item.dataset.atividadeId;
                 console.log(`📍 ETAPA 8 - Configurando listeners para atividade ${itemIdx + 1}, ID: ${atividadeId}`);
                 
-                const radios = item.querySelectorAll(`input[type="radio"][name="status_${atividadeId}"]`);
+                const labels = item.querySelectorAll('label.btn');
                 const textarea = item.querySelector('.observacao-text');
                 
-                console.log(`📍 ETAPA 8 - Atividade ${atividadeId} - Radios encontrados:`, radios.length);
+                console.log(`📍 ETAPA 8 - Atividade ${atividadeId} - Labels encontrados:`, labels.length);
                 console.log(`📍 ETAPA 8 - Atividade ${atividadeId} - Textarea encontrada:`, !!textarea);
                 
-                radios.forEach((r, radioIdx) => {
-                    console.log(`📍 ETAPA 8 - Adicionando listener para radio ${radioIdx + 1} da atividade ${atividadeId}`);
-                    r.addEventListener('change', () => {
-                        const status = r.value;
-                        const obs = textarea.value;
-                        console.log(`🔄 EVENTO RADIO - Atividade ${atividadeId}, Status: ${status}, Obs: ${obs}`);
+                // Adicionar listeners para os labels (botões customizados)
+                labels.forEach((label, labelIdx) => {
+                    const radio = label.querySelector('input[type="radio"]');
+                    if (radio) {
+                        console.log(`📍 ETAPA 8 - Adicionando listener para label ${labelIdx + 1} da atividade ${atividadeId}`);
                         
-                        fetch(`/api/os/atividades/${atividadeId}/avaliar`, {
-                            method: 'PUT',
-                            credentials: 'include',
-                            headers: {'Content-Type':'application/json'},
-                            body: JSON.stringify({status: status, observacao: obs})
-                        }).then(res => {
-                            console.log(`✅ RESPOSTA RADIO - Atividade ${atividadeId}, Status resposta: ${res.status}`);
-                            if (!res.ok) throw new Error('Erro ao salvar');
-                            console.log('✅ SUCESSO RADIO - Salvo', atividadeId, status);
-                        }).catch(err => {
-                            console.error('❌ ERRO RADIO - ', err);
+                        label.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            
+                            // Desmarcar outros botões da mesma atividade
+                            labels.forEach(l => {
+                                l.classList.remove('btn-success', 'btn-danger', 'btn-secondary');
+                                l.classList.add('btn-outline-success', 'btn-outline-danger', 'btn-outline-secondary');
+                                const r = l.querySelector('input[type="radio"]');
+                                if (r) r.checked = false;
+                            });
+                            
+                            // Marcar o botão clicado
+                            radio.checked = true;
+                            const status = radio.value;
+                            
+                            // Aplicar estilo ativo
+                            if (status === 'conforme') {
+                                label.classList.remove('btn-outline-success');
+                                label.classList.add('btn-success');
+                            } else if (status === 'nao_conforme') {
+                                label.classList.remove('btn-outline-danger');
+                                label.classList.add('btn-danger');
+                            } else if (status === 'nao_aplicavel') {
+                                label.classList.remove('btn-outline-secondary');
+                                label.classList.add('btn-secondary');
+                            }
+                            
+                            const obs = textarea ? textarea.value : '';
+                            console.log(`🔄 EVENTO LABEL - Atividade ${atividadeId}, Status: ${status}, Obs: ${obs}`);
+                            
+                            // Salvar via API
+                            fetch(`/api/os/atividades/${atividadeId}/avaliar`, {
+                                method: 'PUT',
+                                credentials: 'include',
+                                headers: {'Content-Type':'application/json'},
+                                body: JSON.stringify({status: status, observacao: obs})
+                            }).then(res => {
+                                console.log(`✅ RESPOSTA LABEL - Atividade ${atividadeId}, Status resposta: ${res.status}`);
+                                if (!res.ok) throw new Error('Erro ao salvar');
+                                console.log('✅ SUCESSO LABEL - Salvo', atividadeId, status);
+                                
+                                // Adicionar classe visual de feedback
+                                item.classList.remove('avaliada', 'nao-conforme', 'nao-aplicavel');
+                                if (status === 'conforme') item.classList.add('avaliada');
+                                else if (status === 'nao_conforme') item.classList.add('nao-conforme');
+                                else if (status === 'nao_aplicavel') item.classList.add('nao-aplicavel');
+                                
+                            }).catch(err => {
+                                console.error('❌ ERRO LABEL - ', err);
+                            });
                         });
-                    });
+                    }
                 });
                 
                 if (textarea) {
