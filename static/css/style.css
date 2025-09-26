@@ -148,3 +148,8 @@ body {
     gap: 0.5rem;
   }
 }
+
+.btn input[type="radio"] {
+  display: inline-block !important;
+  margin-right: 4px;
+}
