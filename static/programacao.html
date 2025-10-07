@@ -164,11 +164,16 @@
             min-width: 200px;
             background: white;
             border-radius: 8px;
-            padding: 12px;
+            /* ALINHAMENTO COM PRIORITY-LINES - AJUSTE AQUI */
+            height: 50px;               /* Mesma altura das priority-lines */
+            padding: 8px 12px;          /* Padding reduzido para caber na altura */
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             cursor: grab;
             transition: all 0.3s ease;
             border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;    /* Centralizar conteúdo verticalmente */
         }
         
         .chamado-card:hover {
@@ -183,29 +188,32 @@
         }
         
         .chamado-id {
-            font-size: 11px;
+            font-size: 10px;            /* Era 11px - Reduzido para caber */
             font-weight: 600;
             color: #9956a8;
-            margin-bottom: 5px;
+            margin-bottom: 2px;         /* Era 5px - Reduzido para economizar espaço */
         }
         
         .chamado-descricao {
-            font-size: 13px;
+            font-size: 11px;            /* Era 13px - Reduzido para caber */
             color: #333;
-            margin-bottom: 8px;
-            line-height: 1.4;
+            margin-bottom: 2px;         /* Era 8px - Reduzido para economizar espaço */
+            line-height: 1.2;           /* Era 1.4 - Reduzido para economizar espaço */
             display: -webkit-box;
-            -webkit-line-clamp: 2;
+            -webkit-line-clamp: 1;      /* Era 2 - Reduzido para 1 linha apenas */
             -webkit-box-orient: vertical;
             overflow: hidden;
+            white-space: nowrap;        /* Força uma linha */
+            text-overflow: ellipsis;    /* Adiciona ... no final */
         }
         
         .chamado-info {
-            font-size: 11px;
+            font-size: 9px;             /* Era 11px - Reduzido para caber */
             color: #666;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: auto;           /* Empurra para o final do card */
         }
         
         /* Seção de Programação por Usuário */
@@ -420,6 +428,7 @@
             
             .chamado-card {
                 min-width: 150px;
+                height: 50px;           /* Manter altura consistente no mobile */
             }
         }
         
@@ -709,4 +718,28 @@
            .priority-label { min-width: 100px; }
            - Controla a largura dos textos "PRIORIDADE ALTA", etc.
            - Exemplos: 80px (compacto), 140px (espaçoso)
+        
+        ========================================
+        CONTROLES DE ALINHAMENTO DOS CARDS
+        ========================================
+        
+        Para manter os cards alinhados com as linhas de prioridade:
+        
+        1. ALTURA DOS CARDS:
+           .chamado-card { height: 50px; }
+           - DEVE ser igual ao min-height das priority-lines
+           - Se mudar priority-line para 60px, mude card para 60px também
+        
+        2. PADDING DOS CARDS:
+           .chamado-card { padding: 8px 12px; }
+           - Ajustar conforme a altura disponível
+           - Altura 40px = padding 6px 12px
+           - Altura 60px = padding 12px 15px
+        
+        3. TAMANHO DA FONTE NOS CARDS:
+           .chamado-id { font-size: 10px; }
+           .chamado-descricao { font-size: 11px; }
+           .chamado-info { font-size: 9px; }
+           - Reduzir se cards ficarem muito apertados
+           - Aumentar se houver espaço sobrando
         */
