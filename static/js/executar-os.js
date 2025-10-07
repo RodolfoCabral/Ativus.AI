@@ -479,6 +479,19 @@ async function encerrarOS() {
         
         if (response.ok) {
             showNotification('Ordem de Serviço encerrada com sucesso!', 'success');
+            
+            // Notificar outras abas sobre a mudança de status
+            if (window.notificarMudancaStatusOS) {
+                window.notificarMudancaStatusOS(ordemServico.id, 'concluida');
+            }
+            
+            // Também usar localStorage para sincronização
+            localStorage.setItem('os_status_updated', JSON.stringify({
+                osId: ordemServico.id,
+                novoStatus: 'concluida',
+                timestamp: Date.now()
+            }));
+            
             setTimeout(() => {
                 voltarProgramacao();
             }, 2000);

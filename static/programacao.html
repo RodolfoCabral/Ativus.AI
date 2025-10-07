@@ -318,6 +318,51 @@
             font-size: 11px;
             box-shadow: 0 1px 4px rgba(0,0,0,0.1);
             border-left: 3px solid #9956a8;
+            transition: all 0.3s ease;
+        }
+        
+        /* Estilos para diferentes status de OS */
+        .chamado-agendado.os-concluida {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        
+        .chamado-agendado.os-em-execucao {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        
+        .chamado-agendado.os-pendente {
+            background: white;
+            border-left-color: #9956a8;
+            color: #333;
+        }
+        
+        /* Header mini para OS agendadas */
+        .chamado-header-mini {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        
+        .status-icon {
+            font-size: 10px;
+            opacity: 0.7;
+        }
+        
+        .os-concluida .status-icon {
+            color: #28a745;
+        }
+        
+        .os-em-execucao .status-icon {
+            color: #ffc107;
+        }
+        
+        .os-pendente .status-icon {
+            color: #9956a8;
         }
         
         .chamado-agendado .chamado-id {

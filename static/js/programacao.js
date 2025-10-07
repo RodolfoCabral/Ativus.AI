@@ -45,8 +45,8 @@ async function loadOrdensServico() {
         let data;
         
         try {
-            // Tentar API original
-            response = await fetch('/api/ordens-servico?status=abertas');
+            // Tentar API original - incluir OS abertas E concluídas
+            response = await fetch('/api/ordens-servico?status=abertas,concluida');
             if (response.ok) {
                 data = await response.json();
                 console.log('✅ API original funcionou');
@@ -56,8 +56,8 @@ async function loadOrdensServico() {
         } catch (error) {
             console.warn('⚠️ API original falhou, tentando alternativa...');
             
-            // Usar API alternativa
-            response = await fetch('/api/ordens-servico-programacao?status=abertas');
+            // Usar API alternativa - incluir OS abertas E concluídas
+            response = await fetch('/api/ordens-servico-programacao?status=abertas,concluida');
             if (response.ok) {
                 data = await response.json();
                 console.log('✅ API alternativa funcionou');
@@ -83,13 +83,13 @@ async function loadOrdensServico() {
             })));
         }
         
-        // Carregar também OS programadas
+        // Carregar também OS programadas e concluídas
         try {
             let responseProgramadas;
             try {
-                responseProgramadas = await fetch('/api/ordens-servico?status=programada');
+                responseProgramadas = await fetch('/api/ordens-servico?status=programada,concluida');
             } catch {
-                responseProgramadas = await fetch('/api/ordens-servico-programacao?status=programada');
+                responseProgramadas = await fetch('/api/ordens-servico-programacao?status=programada,concluida');
             }
             
             if (responseProgramadas.ok) {
@@ -334,9 +334,27 @@ function createDiaContainer(dia, dayIndex, userId, userName) {
 
 // Criar OS agendada
 function createOSAgendada(os) {
+    // Determinar classe CSS baseada no status
+    let statusClass = '';
+    let statusIcon = '';
+    
+    if (os.status === 'concluida') {
+        statusClass = 'os-concluida';
+        statusIcon = '<i class="fas fa-check-circle status-icon"></i>';
+    } else if (os.status === 'em_execucao') {
+        statusClass = 'os-em-execucao';
+        statusIcon = '<i class="fas fa-play-circle status-icon"></i>';
+    } else {
+        statusClass = 'os-pendente';
+        statusIcon = '<i class="fas fa-clock status-icon"></i>';
+    }
+    
     return `
-        <div class="chamado-agendado" data-os-id="${os.id}" onclick="verificarExecucaoOS(${os.id})" oncontextmenu="event.preventDefault(); handleOSContextMenu(event, ${os.id})">
-            <div class="chamado-id">OS #${os.id}</div>
+        <div class="chamado-agendado ${statusClass}" data-os-id="${os.id}" onclick="verificarExecucaoOS(${os.id})" oncontextmenu="event.preventDefault(); handleOSContextMenu(event, ${os.id})">
+            <div class="chamado-header-mini">
+                <div class="chamado-id">OS #${os.id}</div>
+                ${statusIcon}
+            </div>
             <div class="chamado-descricao-mini">${os.descricao.substring(0, 30)}...</div>
         </div>
     `;
@@ -1170,3 +1188,76 @@ function addNotificationStyles() {
 // Adicionar estilos para notificações quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', addNotificationStyles);
 
+
+
+// Função para atualizar status de OS na programação
+function atualizarStatusOSNaProgramacao(osId, novoStatus) {
+    console.log(`🔄 Atualizando status da OS ${osId} para ${novoStatus}`);
+    
+    // Encontrar e atualizar a OS no array
+    const osIndex = ordensServico.findIndex(os => os.id === osId);
+    if (osIndex !== -1) {
+        ordensServico[osIndex].status = novoStatus;
+        console.log(`✅ Status da OS ${osId} atualizado no array`);
+    }
+    
+    // Atualizar visualmente todos os elementos da OS na página
+    const osElements = document.querySelectorAll(`[data-os-id="${osId}"]`);
+    osElements.forEach(element => {
+        // Remover classes de status antigas
+        element.classList.remove('os-pendente', 'os-em-execucao', 'os-concluida');
+        
+        // Adicionar nova classe de status
+        if (novoStatus === 'concluida') {
+            element.classList.add('os-concluida');
+            
+            // Atualizar ícone se existir
+            const statusIcon = element.querySelector('.status-icon');
+            if (statusIcon) {
+                statusIcon.className = 'fas fa-check-circle status-icon';
+            }
+            
+            console.log(`✅ OS ${osId} marcada como concluída visualmente`);
+        } else if (novoStatus === 'em_execucao') {
+            element.classList.add('os-em-execucao');
+            
+            const statusIcon = element.querySelector('.status-icon');
+            if (statusIcon) {
+                statusIcon.className = 'fas fa-play-circle status-icon';
+            }
+        } else {
+            element.classList.add('os-pendente');
+            
+            const statusIcon = element.querySelector('.status-icon');
+            if (statusIcon) {
+                statusIcon.className = 'fas fa-clock status-icon';
+            }
+        }
+    });
+}
+
+// Função para escutar mudanças de status de OS (pode ser chamada de outras páginas)
+window.atualizarStatusOSNaProgramacao = atualizarStatusOSNaProgramacao;
+
+// Escutar eventos de storage para sincronizar entre abas
+window.addEventListener('storage', function(e) {
+    if (e.key === 'os_status_updated') {
+        const data = JSON.parse(e.newValue);
+        atualizarStatusOSNaProgramacao(data.osId, data.novoStatus);
+        
+        // Limpar o evento
+        localStorage.removeItem('os_status_updated');
+    }
+});
+
+// Função para notificar outras abas sobre mudança de status
+function notificarMudancaStatusOS(osId, novoStatus) {
+    localStorage.setItem('os_status_updated', JSON.stringify({
+        osId: osId,
+        novoStatus: novoStatus,
+        timestamp: Date.now()
+    }));
+}
+
+// Exportar função para uso em outras páginas
+window.notificarMudancaStatusOS = notificarMudancaStatusOS;

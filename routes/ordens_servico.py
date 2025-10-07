@@ -193,7 +193,20 @@ def listar_ordens_servico():
         query = OrdemServico.query.filter_by(empresa=user_info['company'])
 
         if status != 'todos':
-            if status == 'abertas':
+            # Suportar múltiplos status separados por vírgula
+            if ',' in status:
+                status_list = [s.strip() for s in status.split(',')]
+                # Expandir status especiais
+                expanded_status = []
+                for s in status_list:
+                    if s == 'abertas':
+                        expanded_status.extend(['aberta', 'programada'])
+                    elif s == 'concluidas':
+                        expanded_status.extend(['concluida', 'cancelada'])
+                    else:
+                        expanded_status.append(s)
+                query = query.filter(OrdemServico.status.in_(expanded_status))
+            elif status == 'abertas':
                 query = query.filter(OrdemServico.status.in_(['aberta', 'programada']))
             elif status == 'em_andamento':
                 query = query.filter_by(status='em_andamento')
