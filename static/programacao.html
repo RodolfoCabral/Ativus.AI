@@ -104,18 +104,22 @@
         .priority-lines {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 8px;
+            /* CONTROLE DE TAMANHO - AJUSTE AQUI */
+            max-height: 300px;          /* Altura máxima da seção */
+            overflow-y: auto;           /* Scroll se necessário */
         }
         
         .priority-line {
             display: flex;
             align-items: center;
-            gap: 15px;
-            min-height: 80px;
-            padding: 15px;
+            gap: 10px;
+            /* CONTROLE DE ALTURA DAS LINHAS - AJUSTE AQUI */
+            min-height: 50px;           /* Era 80px - Reduzido para 50px */
+            padding: 10px 15px;         /* Era 15px - Reduzido para 10px vertical */
             background: #f8f9fa;
-            border-radius: 12px;
-            border-left: 4px solid;
+            border-radius: 8px;         /* Era 12px - Reduzido para 8px */
+            border-left: 3px solid;     /* Era 4px - Reduzido para 3px */
         }
         
         .priority-line.baixa { border-left-color: #28a745; }
@@ -125,12 +129,13 @@
         .priority-line.preventiva { border-left-color: #6f42c1; }
         
         .priority-label {
-            min-width: 120px;
+            /* CONTROLE DE LARGURA DO LABEL - AJUSTE AQUI */
+            min-width: 100px;           /* Era 120px - Reduzido para 100px */
             font-weight: 600;
             color: #333;
             text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 0.5px;
+            font-size: 11px;            /* Era 12px - Reduzido para 11px */
+            letter-spacing: 0.3px;      /* Era 0.5px - Reduzido para 0.3px */
         }
         
         .chamados-slider {
@@ -668,3 +673,40 @@
 </body>
 </html>
 
+
+        /* 
+        ========================================
+        CONTROLES DE TAMANHO DA SEÇÃO PRIORITY-LINES
+        ========================================
+        
+        Para ajustar o tamanho da seção "Chamados em Aberto":
+        
+        1. ALTURA TOTAL DA SEÇÃO:
+           .priority-lines { max-height: 300px; }
+           - Valores menores = seção mais compacta
+           - Valores maiores = seção mais espaçosa
+           - Exemplos: 200px (muito compacto), 400px (espaçoso)
+        
+        2. ALTURA DE CADA LINHA:
+           .priority-line { min-height: 50px; }
+           - Valores menores = linhas mais baixas
+           - Valores maiores = linhas mais altas
+           - Exemplos: 40px (compacto), 70px (espaçoso)
+        
+        3. ESPAÇAMENTO INTERNO:
+           .priority-line { padding: 10px 15px; }
+           - Primeiro valor = espaçamento vertical
+           - Segundo valor = espaçamento horizontal
+           - Exemplos: 5px 15px (compacto), 15px 20px (espaçoso)
+        
+        4. ESPAÇAMENTO ENTRE LINHAS:
+           .priority-lines { gap: 8px; }
+           - Valores menores = linhas mais próximas
+           - Valores maiores = linhas mais separadas
+           - Exemplos: 5px (próximas), 15px (separadas)
+        
+        5. LARGURA DOS LABELS:
+           .priority-label { min-width: 100px; }
+           - Controla a largura dos textos "PRIORIDADE ALTA", etc.
+           - Exemplos: 80px (compacto), 140px (espaçoso)
+        */
