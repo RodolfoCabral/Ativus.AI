@@ -600,6 +600,78 @@ def create_app():
         
         return response
     
+    @app.route('/api/pmp/gerar-os-bbn01-faltantes', methods=['POST'])
+    def gerar_os_bbn01_faltantes():
+        """Gera OS faltantes específicas da PMP-02-BBN01"""
+        try:
+            from datetime import datetime, date, timedelta
+            from assets_models import OrdemServico
+            
+            # Datas que deveriam ter OS (baseado na análise)
+            datas_faltantes = [
+                date(2025, 9, 5),   # 05/09/2025 - Data inicial
+                date(2025, 9, 12),  # 12/09/2025 - +1 semana
+                date(2025, 9, 19),  # 19/09/2025 - +2 semanas
+                date(2025, 9, 26),  # 26/09/2025 - +3 semanas
+                date(2025, 10, 3),  # 03/10/2025 - +4 semanas
+            ]
+            
+            os_geradas = []
+            hoje = date.today()
+            
+            # Buscar PMP-02-BBN01
+            pmp_query = db.session.execute(
+                "SELECT id FROM pmps WHERE codigo LIKE '%PMP-02%' OR atividade LIKE '%BBN01%' LIMIT 1"
+            ).fetchone()
+            
+            pmp_id = pmp_query[0] if pmp_query else None
+            
+            for i, data_faltante in enumerate(datas_faltantes, 1):
+                # Verificar se já existe OS para esta data
+                os_existente = OrdemServico.query.filter_by(
+                    data_programada=data_faltante
+                ).filter(
+                    OrdemServico.descricao.like('%BBN01%')
+                ).first()
+                
+                if not os_existente and data_faltante <= hoje:
+                    # Criar nova OS
+                    nova_os = OrdemServico(
+                        descricao=f"PMP: PREVENTIVA SEMANAL - MECANICA - BBN01 - Sequência #{i}",
+                        data_programada=data_faltante,
+                        status='aberta',
+                        prioridade='preventiva',
+                        tipo_manutencao='Preventiva',
+                        oficina='Mecânica',
+                        equipamento='BBN01',
+                        pmp_id=pmp_id,
+                        sequencia_pmp=i,
+                        criado_por=current_user.id if hasattr(current_user, 'id') else 1,
+                        criado_em=datetime.now()
+                    )
+                    
+                    db.session.add(nova_os)
+                    db.session.flush()
+                    
+                    os_geradas.append({
+                        'id': nova_os.id,
+                        'sequencia': i,
+                        'data': data_faltante.isoformat(),
+                        'descricao': nova_os.descricao
+                    })
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'{len(os_geradas)} OS geradas para PMP-02-BBN01',
+                'os_geradas': os_geradas
+            }), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': f'Erro ao gerar OS: {str(e)}'}), 500
+    
     return app
 
 def send_signup_email(data):
@@ -644,74 +716,3 @@ def send_signup_email(data):
         raise
 
 
-@app.route('/api/pmp/gerar-os-bbn01-faltantes', methods=['POST'])
-def gerar_os_bbn01_faltantes():
-    """Gera OS faltantes específicas da PMP-02-BBN01"""
-    try:
-        from datetime import datetime, date, timedelta
-        from assets_models import OrdemServico
-        
-        # Datas que deveriam ter OS (baseado na análise)
-        datas_faltantes = [
-            date(2025, 9, 5),   # 05/09/2025 - Data inicial
-            date(2025, 9, 12),  # 12/09/2025 - +1 semana
-            date(2025, 9, 19),  # 19/09/2025 - +2 semanas
-            date(2025, 9, 26),  # 26/09/2025 - +3 semanas
-            date(2025, 10, 3),  # 03/10/2025 - +4 semanas
-        ]
-        
-        os_geradas = []
-        hoje = date.today()
-        
-        # Buscar PMP-02-BBN01
-        pmp_query = db.session.execute(
-            "SELECT id FROM pmps WHERE codigo LIKE '%PMP-02%' OR atividade LIKE '%BBN01%' LIMIT 1"
-        ).fetchone()
-        
-        pmp_id = pmp_query[0] if pmp_query else None
-        
-        for i, data_faltante in enumerate(datas_faltantes, 1):
-            # Verificar se já existe OS para esta data
-            os_existente = OrdemServico.query.filter_by(
-                data_programada=data_faltante
-            ).filter(
-                OrdemServico.descricao.like('%BBN01%')
-            ).first()
-            
-            if not os_existente and data_faltante <= hoje:
-                # Criar nova OS
-                nova_os = OrdemServico(
-                    descricao=f"PMP: PREVENTIVA SEMANAL - MECANICA - BBN01 - Sequência #{i}",
-                    data_programada=data_faltante,
-                    status='aberta',
-                    prioridade='preventiva',
-                    tipo_manutencao='Preventiva',
-                    oficina='Mecânica',
-                    equipamento='BBN01',
-                    pmp_id=pmp_id,
-                    sequencia_pmp=i,
-                    criado_por=current_user.id if hasattr(current_user, 'id') else 1,
-                    criado_em=datetime.now()
-                )
-                
-                db.session.add(nova_os)
-                db.session.flush()
-                
-                os_geradas.append({
-                    'id': nova_os.id,
-                    'sequencia': i,
-                    'data': data_faltante.isoformat(),
-                    'descricao': nova_os.descricao
-                })
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': f'{len(os_geradas)} OS geradas para PMP-02-BBN01',
-            'os_geradas': os_geradas
-        }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': f'Erro ao gerar OS: {str(e)}'}), 500
