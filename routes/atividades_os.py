@@ -53,35 +53,56 @@ def listar_atividades_os(os_id):
 def avaliar_atividade_os(atividade_id):
     """Atualiza o status de conformidade e observação de uma atividade"""
     try:
-        # Verificar se a atividade existe e pertence à empresa do usuário
-        atividade = db.session.query(AtividadeOS).join(OrdemServico).filter(
-            AtividadeOS.id == atividade_id,
-            OrdemServico.empresa == current_user.empresa
-        ).first()
+        logger.info(f"Tentando avaliar atividade {atividade_id}")
+        
+        # Buscar a atividade diretamente (sem JOIN complexo)
+        atividade = AtividadeOS.query.filter_by(id=atividade_id).first()
         
         if not atividade:
+            logger.error(f"Atividade {atividade_id} não encontrada")
             return jsonify({'error': 'Atividade não encontrada'}), 404
         
+        logger.info(f"Atividade {atividade_id} encontrada, OS: {atividade.os_id}")
+        
+        # Verificar se a OS pertence ao usuário (se empresa estiver definida)
+        if hasattr(current_user, 'empresa') and current_user.empresa:
+            os = OrdemServico.query.filter_by(id=atividade.os_id).first()
+            if os and os.empresa != current_user.empresa:
+                logger.warning(f"Usuário da empresa {current_user.empresa} tentando avaliar atividade da empresa {os.empresa}")
+                return jsonify({'error': 'Acesso negado'}), 403
+        
         # Obter dados da requisição
-        dados = request.json
+        dados = request.json or {}
+        logger.info(f"Dados recebidos: {dados}")
         
         # Atualizar status se fornecido
         if 'status' in dados:
             status_validos = ['pendente', 'conforme', 'nao_conforme', 'nao_aplicavel']
             if dados['status'] not in status_validos:
+                logger.error(f"Status inválido: {dados['status']}")
                 return jsonify({'error': 'Status inválido'}), 400
+            
+            logger.info(f"Atualizando status de {atividade.status} para {dados['status']}")
             atividade.status = dados['status']
         
         # Atualizar observação se fornecida
         if 'observacao' in dados:
+            logger.info(f"Atualizando observação: {dados['observacao']}")
             atividade.observacao = dados['observacao']
         
         # Salvar no banco
         db.session.commit()
+        logger.info(f"Atividade {atividade_id} salva com sucesso")
         
-        return jsonify(atividade.to_dict())
+        return jsonify({
+            'success': True,
+            'atividade': atividade.to_dict()
+        })
     
     except Exception as e:
         db.session.rollback()
         logger.error(f"Erro ao avaliar atividade {atividade_id}: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Tipo do erro: {type(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': f'Erro interno: {str(e)}'}), 500
