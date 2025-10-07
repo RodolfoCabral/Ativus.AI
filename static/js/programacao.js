@@ -69,6 +69,17 @@ async function loadOrdensServico() {
         ordensServico = data.ordens_servico || [];
         console.log(`📊 Total de OS carregadas: ${ordensServico.length}`);
         
+        // Verificar duplicação inicial
+        const osIdsIniciais = ordensServico.map(os => os.id);
+        const duplicadasIniciais = osIdsIniciais.filter((id, index) => osIdsIniciais.indexOf(id) !== index);
+        if (duplicadasIniciais.length > 0) {
+            console.warn(`⚠️ DUPLICAÇÃO INICIAL DETECTADA:`, duplicadasIniciais);
+            ordensServico = ordensServico.filter((os, index, arr) => 
+                arr.findIndex(o => o.id === os.id) === index
+            );
+            console.log(`✅ ${duplicadasIniciais.length} OS duplicadas removidas do carregamento inicial`);
+        }
+        
         // Debug: mostrar OS de PMP
         const osPMP = ordensServico.filter(os => os.pmp_id && os.pmp_id !== null);
         console.log(`🔧 OS de PMP encontradas: ${osPMP.length}`);
@@ -83,7 +94,7 @@ async function loadOrdensServico() {
             })));
         }
         
-        // Carregar também OS programadas e concluídas
+        // Carregar também OS programadas e concluídas (evitando duplicação)
         try {
             let responseProgramadas;
             try {
@@ -96,9 +107,13 @@ async function loadOrdensServico() {
                 const dataProgramadas = await responseProgramadas.json();
                 const osProgramadas = dataProgramadas.ordens_servico || [];
                 
-                // Adicionar OS programadas à lista
-                ordensServico = [...ordensServico, ...osProgramadas];
-                console.log(`📊 OS programadas adicionadas: ${osProgramadas.length}`);
+                // Filtrar OS que já não estão na lista (evitar duplicação)
+                const osExistentesIds = new Set(ordensServico.map(os => os.id));
+                const osNovas = osProgramadas.filter(os => !osExistentesIds.has(os.id));
+                
+                // Adicionar apenas OS novas à lista
+                ordensServico = [...ordensServico, ...osNovas];
+                console.log(`📊 OS programadas adicionadas: ${osNovas.length} (${osProgramadas.length - osNovas.length} duplicadas removidas)`);
                 console.log(`📊 Total final: ${ordensServico.length}`);
             }
         } catch (error) {
@@ -434,17 +449,37 @@ function getOSAgendadas(date, userId) {
     const usuario = getUserById(userId);
     if (!usuario) return [];
     
-    return ordensServico.filter(os => {
+    // Usar Set para evitar duplicações
+    const osEncontradas = new Set();
+    const osAgendadas = [];
+    const duplicadasDetectadas = [];
+    
+    ordensServico.forEach(os => {
         // Verificar se a OS está programada para esta data
         const dataMatch = os.data_programada === date;
         
-        // Verificar se o usuário é responsável pela OS
+        // Verificar se o usuário é responsável pela OS (simplificado)
         const usuarioMatch = os.usuario_responsavel === usuario.name || 
-                           os.usuario_responsavel === usuario.id ||
-                           (os.status === 'programada' && os.usuario_responsavel === usuario.name);
+                           os.usuario_responsavel === usuario.id;
         
-        return dataMatch && usuarioMatch;
+        if (dataMatch && usuarioMatch) {
+            // Detectar duplicação
+            if (osEncontradas.has(os.id)) {
+                duplicadasDetectadas.push(os.id);
+                console.warn(`🔄 DUPLICAÇÃO DETECTADA: OS #${os.id} para ${usuario.name} em ${date}`);
+            } else {
+                osEncontradas.add(os.id);
+                osAgendadas.push(os);
+            }
+        }
     });
+    
+    // Log de debug se houver duplicações
+    if (duplicadasDetectadas.length > 0) {
+        console.error(`❌ ${duplicadasDetectadas.length} OS duplicadas removidas para ${usuario.name} em ${date}:`, duplicadasDetectadas);
+    }
+    
+    return osAgendadas;
 }
 
 // Obter usuário por ID
@@ -978,12 +1013,27 @@ async function programarOSComNomeUsuario(osId, date, userName) {
         if (response.ok) {
             console.log('✅ OS programada com sucesso');
             
-            // Atualizar OS na lista local
+            // Atualizar OS na lista local (evitando duplicação)
             const osIndex = ordensServico.findIndex(os => os.id == osId);
             if (osIndex !== -1) {
                 ordensServico[osIndex].data_programada = date;
                 ordensServico[osIndex].usuario_responsavel = userName;
                 ordensServico[osIndex].status = 'programada';
+                console.log(`✅ OS #${osId} atualizada na lista local`);
+            } else {
+                console.warn(`⚠️ OS #${osId} não encontrada na lista local para atualização`);
+            }
+            
+            // Verificar se não há duplicação na lista
+            const osIds = ordensServico.map(os => os.id);
+            const duplicadas = osIds.filter((id, index) => osIds.indexOf(id) !== index);
+            if (duplicadas.length > 0) {
+                console.error(`❌ DUPLICAÇÃO DETECTADA na lista após programação:`, duplicadas);
+                // Remover duplicadas
+                ordensServico = ordensServico.filter((os, index, arr) => 
+                    arr.findIndex(o => o.id === os.id) === index
+                );
+                console.log(`✅ ${duplicadas.length} OS duplicadas removidas da lista`);
             }
             
             // Renderizar novamente
