@@ -21,7 +21,7 @@ def criar_execucao():
         # Verificar se a OS existe e pertence à empresa do usuário
         os = OrdemServico.query.filter_by(
             id=data['os_id'],
-            empresa=current_user.empresa
+            empresa=current_user.company
         ).first()
         
         if not os:
@@ -40,7 +40,7 @@ def criar_execucao():
             lista_execucao_status=data.get('lista_execucao_status', 'C'),
             observacoes=data.get('observacoes'),
             executor=current_user.username,
-            empresa=current_user.empresa
+            empresa=current_user.company
         )
         
         db.session.add(execucao)
@@ -72,7 +72,7 @@ def atualizar_execucao(execucao_id):
         # Buscar execução
         execucao = ExecucaoOS.query.filter_by(
             id=execucao_id,
-            empresa=current_user.empresa
+            empresa=current_user.company
         ).first()
         
         if not execucao:
@@ -119,7 +119,7 @@ def obter_execucao_por_os(os_id):
         # Buscar execução
         execucao = ExecucaoOS.query.join(OrdemServico).filter(
             ExecucaoOS.os_id == os_id,
-            OrdemServico.empresa == current_user.empresa
+            OrdemServico.empresa == current_user.company
         ).first()
         
         if execucao:
@@ -145,8 +145,8 @@ def listar_materiais_estoque():
         # Buscar materiais ativos (com filtro de empresa se disponível)
         query = MaterialEstoque.query.filter_by(ativo=True)
         
-        if hasattr(current_user, 'empresa') and current_user.empresa:
-            query = query.filter_by(empresa=current_user.empresa)
+        if hasattr(current_user, 'company') and current_user.company:
+            query = query.filter_by(empresa=current_user.company)
         
         materiais = query.order_by(MaterialEstoque.nome).all()
         
@@ -173,7 +173,7 @@ def criar_material_utilizado():
         # Verificar se a execução existe e pertence à empresa
         execucao = ExecucaoOS.query.join(OrdemServico).filter(
             ExecucaoOS.id == data['execucao_id'],
-            OrdemServico.empresa == current_user.empresa
+            OrdemServico.empresa == current_user.company
         ).first()
         
         if not execucao:
@@ -184,7 +184,7 @@ def criar_material_utilizado():
             execucao_id=data['execucao_id'],
             tipo_material=data.get('tipo_material', 'estoque'),
             quantidade=float(data['quantidade']),
-            empresa=current_user.empresa,
+            empresa=current_user.company,
             usuario_criacao=current_user.username
         )
         
@@ -225,7 +225,7 @@ def atualizar_material_utilizado(material_id):
         # Buscar material
         material = MaterialUtilizado.query.filter_by(
             id=material_id,
-            empresa=current_user.empresa
+            empresa=current_user.company
         ).first()
         
         if not material:
@@ -275,7 +275,7 @@ def listar_materiais_por_execucao(execucao_id):
         # Buscar materiais
         materiais = MaterialUtilizado.query.join(ExecucaoOS).join(OrdemServico).filter(
             MaterialUtilizado.execucao_id == execucao_id,
-            OrdemServico.empresa == current_user.empresa
+            OrdemServico.empresa == current_user.company
         ).all()
         
         return jsonify({
@@ -295,7 +295,7 @@ def encerrar_os(os_id):
         # Buscar OS
         os = OrdemServico.query.filter_by(
             id=os_id,
-            empresa=current_user.empresa
+            empresa=current_user.company
         ).first()
         
         if not os:

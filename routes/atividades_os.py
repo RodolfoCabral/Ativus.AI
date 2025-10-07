@@ -24,9 +24,9 @@ def listar_atividades_os(os_id):
         logger.info(f"OS {os_id} encontrada: {os.descricao}")
         
         # Verificar se o usuário tem acesso (se tiver empresa definida)
-        if hasattr(current_user, 'empresa') and current_user.empresa:
-            if os.empresa != current_user.empresa:
-                logger.warning(f"Usuário da empresa {current_user.empresa} tentando acessar OS da empresa {os.empresa}")
+        if hasattr(current_user, 'company') and current_user.company:
+            if os.empresa != current_user.company:
+                logger.warning(f"Usuário da empresa {current_user.company} tentando acessar OS da empresa {os.empresa}")
                 return jsonify({'error': 'Acesso negado à OS'}), 403
         
         # Buscar atividades
@@ -65,10 +65,10 @@ def avaliar_atividade_os(atividade_id):
         logger.info(f"Atividade {atividade_id} encontrada, OS: {atividade.os_id}")
         
         # Verificar se a OS pertence ao usuário (se empresa estiver definida)
-        if hasattr(current_user, 'empresa') and current_user.empresa:
+        if hasattr(current_user, 'company') and current_user.company:
             os = OrdemServico.query.filter_by(id=atividade.os_id).first()
-            if os and os.empresa != current_user.empresa:
-                logger.warning(f"Usuário da empresa {current_user.empresa} tentando avaliar atividade da empresa {os.empresa}")
+            if os and os.empresa != current_user.company:
+                logger.warning(f"Usuário da empresa {current_user.company} tentando avaliar atividade da empresa {os.empresa}")
                 return jsonify({'error': 'Acesso negado'}), 403
         
         # Obter dados da requisição
