@@ -170,11 +170,11 @@ function renderPriorityLines() {
         }
         
         let osFiltered;
-        if (prioridade === 'preventiva') {
+        if ((os.prioridade === 'preventiva' || os.pmp_id || (os.descricao && os.descricao.toLowerCase().includes('pmp')))) {
             // CORREÇÃO: Lógica melhorada para preventivas
             osFiltered = ordensServico.filter(os => {
                 // Condição 1: Prioridade preventiva normal
-                const condicao1 = os.prioridade === 'preventiva' && 
+                const condicao1 = os.(os.prioridade === 'preventiva' || os.pmp_id || (os.descricao && os.descricao.toLowerCase().includes('pmp'))) && 
                                  os.status === 'aberta' &&
                                  (!os.usuario_responsavel || os.usuario_responsavel === null || os.usuario_responsavel === '');
                 
@@ -1311,3 +1311,53 @@ function notificarMudancaStatusOS(osId, novoStatus) {
 
 // Exportar função para uso em outras páginas
 window.notificarMudancaStatusOS = notificarMudancaStatusOS;
+
+// Verificação automática de OS pendentes de PMP
+async function verificarOSPendentesPMP() {
+    try {
+        console.log('🔍 Verificando OS pendentes de PMP...');
+        
+        const response = await fetch('/api/pmp/verificar-pendencias-hoje');
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.success && data.total_pendencias > 0) {
+                console.log(`⚠️ ${data.total_pendencias} OS pendentes encontradas`);
+                
+                // Gerar OS pendentes automaticamente
+                const gerarResponse = await fetch('/api/pmp/gerar-os-pendentes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ limite: 20 })
+                });
+                
+                if (gerarResponse.ok) {
+                    const gerarData = await gerarResponse.json();
+                    console.log(`✅ ${gerarData.os_geradas?.length || 0} OS geradas automaticamente`);
+                    
+                    // Recarregar a programação após gerar OS
+                    if (gerarData.os_geradas?.length > 0) {
+                        setTimeout(() => {
+                            loadOrdensServico();
+                        }, 2000);
+                    }
+                }
+            } else {
+                console.log('✅ Nenhuma OS pendente de PMP encontrada');
+            }
+        }
+    } catch (error) {
+        console.error('❌ Erro ao verificar OS pendentes:', error);
+    }
+}
+
+// Executar verificação ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    // Aguardar 3 segundos após carregar para não interferir com outras operações
+    setTimeout(verificarOSPendentesPMP, 3000);
+    
+    // Executar verificação a cada 30 minutos
+    setInterval(verificarOSPendentesPMP, 30 * 60 * 1000);
+});

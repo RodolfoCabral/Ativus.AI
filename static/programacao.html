@@ -106,7 +106,7 @@
             flex-direction: column;
             gap: 8px;
             /* CONTROLE DE TAMANHO - AJUSTE AQUI */
-            max-height: 350px;          /* Altura máxima da seção */
+            max-height: 300px;          /* Altura máxima da seção */
             overflow-y: auto;           /* Scroll se necessário */
         }
         
@@ -165,7 +165,7 @@
             background: white;
             border-radius: 8px;
             /* ALINHAMENTO COM PRIORITY-LINES - AJUSTE AQUI */
-            height: 55px;               /* Mesma altura das priority-lines */
+            height: 50px;               /* Mesma altura das priority-lines */
             padding: 8px 12px;          /* Padding reduzido para caber na altura */
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             cursor: grab;
@@ -679,6 +679,42 @@
     <script src="/static/js/dashboard.js"></script>
     <script src="/static/js/programacao.js"></script>
     <script src="/static/js/pmp-integration.js"></script>
+
+<script>
+async function gerarOSFaltantesBBN01() {
+    try {
+        const button = event.target;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
+        
+        const response = await fetch('/api/pmp/gerar-os-bbn01-faltantes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(`${data.os_geradas.length} OS geradas com sucesso!`, 'success');
+            // Recarregar a programação
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            showNotification('Erro ao gerar OS: ' + data.error, 'error');
+        }
+    } catch (error) {
+        showNotification('Erro ao gerar OS: ' + error.message, 'error');
+    } finally {
+        const button = event.target;
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-sync"></i> Gerar OS Faltantes PMP';
+    }
+}
+</script>
+
 </body>
 </html>
 
