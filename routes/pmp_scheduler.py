@@ -179,7 +179,7 @@ def obter_cronograma_geracao(pmp_id):
         return jsonify({
             'success': True,
             'pmp_id': pmp_id,
-            'pmp_atividade': pmp.atividade,
+            'pmp_atividade': pmp.descricao,
             'frequencia': pmp.frequencia,
             'data_inicio_plano': pmp.data_inicio_plano.isoformat(),
             'data_fim_plano': pmp.data_fim_plano.isoformat() if pmp.data_fim_plano else None,
@@ -239,7 +239,7 @@ def verificar_pendencias_hoje():
                         if not os_existente:
                             pendencias.append({
                                 'pmp_id': pmp.id,
-                                'pmp_atividade': pmp.atividade,
+                                'pmp_atividade': pmp.descricao,
                                 'equipamento_tag': pmp.equipamento.tag if pmp.equipamento else 'N/A',
                                 'data_geracao': data_geracao.isoformat(),
                                 'frequencia': pmp.frequencia,

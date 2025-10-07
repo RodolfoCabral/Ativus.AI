@@ -113,7 +113,7 @@ def gerar_os_from_pmp():
         if not pmp:
             return jsonify({'error': 'PMP não encontrada'}), 404
         
-        current_app.logger.info(f"📋 PMP encontrada: {pmp.atividade} (ID: {pmp_id})")
+        current_app.logger.info(f"📋 PMP encontrada: {pmp.descricao} (ID: {pmp_id})")
         
         # Converter data de início
         if isinstance(data_inicio_plano, str):
@@ -178,7 +178,7 @@ def gerar_os_from_pmp():
         nova_os = OrdemServico(
             # Dados da PMP
             pmp_id=pmp_id,
-            descricao=f"PMP: {pmp.atividade} - Sequência #{numero_sequencia}",
+            descricao=f"PMP: {pmp.descricao} - Sequência #{numero_sequencia}",
             tipo_manutencao='preventiva',
             oficina=pmp.forma_impressao or 'mecanica',
             condicao_ativo='funcionando',
@@ -324,11 +324,11 @@ def gerar_os_automatica():
                             os_info = result[0].get_json()
                             os_geradas.append({
                                 'pmp_id': pmp.id,
-                                'pmp_atividade': pmp.atividade,
+                                'pmp_atividade': pmp.descricao,
                                 'os_id': os_info['os']['id'],
                                 'motivo': data.get('motivo')
                             })
-                            current_app.logger.info(f"✅ OS gerada para PMP {pmp.id}: {pmp.atividade}")
+                            current_app.logger.info(f"✅ OS gerada para PMP {pmp.id}: {pmp.descricao}")
                         
             except Exception as e:
                 current_app.logger.error(f"❌ Erro ao processar PMP {pmp.id}: {e}")

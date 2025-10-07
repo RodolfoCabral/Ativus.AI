@@ -672,6 +672,44 @@ def create_app():
             db.session.rollback()
             return jsonify({'error': f'Erro ao gerar OS: {str(e)}'}), 500
     
+    # API para listar usuários (necessária para a programação)
+    @app.route('/api/usuarios', methods=['GET'])
+    @login_required
+    def api_listar_usuarios():
+        """Lista todos os usuários para a programação"""
+        try:
+            from models import User
+            
+            # Buscar usuários da mesma empresa
+            if hasattr(current_user, 'company') and current_user.company:
+                usuarios = User.query.filter_by(company=current_user.company).all()
+            else:
+                # Fallback: buscar todos os usuários
+                usuarios = User.query.all()
+            
+            usuarios_data = []
+            for usuario in usuarios:
+                usuarios_data.append({
+                    'id': usuario.id,
+                    'name': usuario.name or usuario.email.split('@')[0],
+                    'email': usuario.email,
+                    'profile': usuario.profile or 'user',
+                    'company': usuario.company or 'Sistema'
+                })
+            
+            return jsonify({
+                'success': True,
+                'usuarios': usuarios_data
+            })
+            
+        except Exception as e:
+            app.logger.error(f"❌ Erro ao listar usuários: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Erro ao carregar usuários',
+                'message': str(e)
+            }), 500
+
     return app
 
 def send_signup_email(data):
