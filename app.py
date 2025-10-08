@@ -166,6 +166,18 @@ def create_app():
         print(f"Erro ao registrar blueprint de geração de OS PMP: {e}")
         print("Sistema funcionará sem funcionalidades de geração automática de OS.")
     
+    # Importar e registrar blueprint de API aprimorada de PMP OS
+    try:
+        from routes.pmp_os_api import pmp_os_api_bp
+        app.register_blueprint(pmp_os_api_bp)
+        print("Blueprint de API aprimorada PMP OS registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar pmp_os_api_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de API aprimorada de OS.")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de API aprimorada PMP OS: {e}")
+        print("Sistema funcionará sem funcionalidades de API aprimorada de OS.")
+    
     # Importar e registrar blueprint de agendamento por frequência
     try:
         from routes.pmp_scheduler import pmp_scheduler_bp
@@ -600,77 +612,128 @@ def create_app():
         
         return response
     
-    @app.route('/api/pmp/gerar-os-bbn01-faltantes', methods=['POST'])
-    def gerar_os_bbn01_faltantes():
-        """Gera OS faltantes específicas da PMP-02-BBN01"""
+    @app.route('/api/pmp/gerar-todas-os', methods=['POST'])
+    @login_required
+    def gerar_todas_os_pmp():
+        """Gera todas as OS necessárias para todas as PMPs ativas"""
         try:
-            from datetime import datetime, date, timedelta
-            from assets_models import OrdemServico
+            from sistema_geracao_os_pmp import GeradorOSPMP
             
-            # Datas que deveriam ter OS (baseado na análise)
-            datas_faltantes = [
-                date(2025, 9, 5),   # 05/09/2025 - Data inicial
-                date(2025, 9, 12),  # 12/09/2025 - +1 semana
-                date(2025, 9, 19),  # 19/09/2025 - +2 semanas
-                date(2025, 9, 26),  # 26/09/2025 - +3 semanas
-                date(2025, 10, 3),  # 03/10/2025 - +4 semanas
-            ]
+            app.logger.info(f"Usuário {current_user.id} iniciou geração de OS para todas as PMPs")
             
-            os_geradas = []
-            hoje = date.today()
+            gerador = GeradorOSPMP()
+            resultado = gerador.executar_geracao_completa()
             
-            # Buscar PMP-02-BBN01
-            pmp_query = db.session.execute(
-                "SELECT id FROM pmps WHERE codigo LIKE '%PMP-02%' OR atividade LIKE '%BBN01%' LIMIT 1"
-            ).fetchone()
-            
-            pmp_id = pmp_query[0] if pmp_query else None
-            
-            for i, data_faltante in enumerate(datas_faltantes, 1):
-                # Verificar se já existe OS para esta data
-                os_existente = OrdemServico.query.filter_by(
-                    data_programada=data_faltante
-                ).filter(
-                    OrdemServico.descricao.like('%BBN01%')
-                ).first()
+            if resultado['success']:
+                app.logger.info(f"Geração concluída: {resultado['total_os_geradas']} OS geradas")
+                return jsonify({
+                    'success': True,
+                    'message': f"{resultado['total_os_geradas']} OS geradas com sucesso!",
+                    'total_os_geradas': resultado['total_os_geradas'],
+                    'pmps_processadas': resultado['pmps_processadas'],
+                    'os_geradas': resultado['os_geradas'],
+                    'log_operacoes': resultado['log_operacoes'][-10:]  # Últimas 10 operações
+                })
+            else:
+                app.logger.error(f"Erro na geração: {resultado['error']}")
+                return jsonify({
+                    'success': False,
+                    'error': resultado['error'],
+                    'log_operacoes': resultado['log_operacoes']
+                }), 500
                 
-                if not os_existente and data_faltante <= hoje:
-                    # Criar nova OS
-                    nova_os = OrdemServico(
-                        descricao=f"PMP: PREVENTIVA SEMANAL - MECANICA - BBN01 - Sequência #{i}",
-                        data_programada=data_faltante,
-                        status='aberta',
-                        prioridade='preventiva',
-                        tipo_manutencao='Preventiva',
-                        oficina='Mecânica',
-                        equipamento='BBN01',
-                        pmp_id=pmp_id,
-                        sequencia_pmp=i,
-                        criado_por=current_user.id if hasattr(current_user, 'id') else 1,
-                        criado_em=datetime.now()
-                    )
-                    
-                    db.session.add(nova_os)
-                    db.session.flush()
-                    
-                    os_geradas.append({
-                        'id': nova_os.id,
-                        'sequencia': i,
-                        'data': data_faltante.isoformat(),
-                        'descricao': nova_os.descricao
-                    })
+        except Exception as e:
+            app.logger.error(f"Erro ao gerar OS: {e}")
+            return jsonify({
+                'success': False,
+                'error': f'Erro interno: {str(e)}'
+            }), 500
+    
+    @app.route('/api/pmp/gerar-os/<codigo_pmp>', methods=['POST'])
+    @login_required
+    def gerar_os_pmp_especifica(codigo_pmp):
+        """Gera OS para uma PMP específica pelo código"""
+        try:
+            from sistema_geracao_os_pmp import GeradorOSPMP
             
-            db.session.commit()
+            app.logger.info(f"Usuário {current_user.id} iniciou geração de OS para PMP {codigo_pmp}")
+            
+            gerador = GeradorOSPMP()
+            resultado = gerador.gerar_os_pmp_especifica(codigo_pmp)
+            
+            if resultado['success']:
+                app.logger.info(f"Geração para {codigo_pmp} concluída: {resultado['os_geradas']} OS geradas")
+                return jsonify({
+                    'success': True,
+                    'message': f"{resultado['os_geradas']} OS geradas para {codigo_pmp}!",
+                    'os_geradas': resultado['os_geradas'],
+                    'pmp_processada': resultado['pmp_processada'],
+                    'log_operacoes': resultado['log_operacoes'][-5:]  # Últimas 5 operações
+                })
+            else:
+                app.logger.error(f"Erro na geração para {codigo_pmp}: {resultado['error']}")
+                return jsonify({
+                    'success': False,
+                    'error': resultado['error'],
+                    'log_operacoes': resultado['log_operacoes']
+                }), 500
+                
+        except Exception as e:
+            app.logger.error(f"Erro ao gerar OS para {codigo_pmp}: {e}")
+            return jsonify({
+                'success': False,
+                'error': f'Erro interno: {str(e)}'
+            }), 500
+    
+    @app.route('/api/pmp/verificar-pendencias', methods=['GET'])
+    @login_required
+    def verificar_pendencias_pmp():
+        """Verifica quantas OS estão pendentes de geração para cada PMP"""
+        try:
+            from sistema_geracao_os_pmp import GeradorOSPMP
+            from models.pmp_limpo import PMP
+            
+            # Buscar PMPs ativas
+            pmps_ativas = PMP.query.filter(
+                PMP.status == 'ativo',
+                PMP.data_inicio_plano.isnot(None)
+            ).all()
+            
+            pendencias = []
+            
+            for pmp in pmps_ativas:
+                gerador = GeradorOSPMP()
+                datas_necessarias = gerador.gerar_datas_os(pmp)
+                
+                # Contar OS existentes
+                from assets_models import OrdemServico
+                os_existentes = OrdemServico.query.filter_by(pmp_id=pmp.id).count()
+                
+                os_pendentes = len(datas_necessarias) - os_existentes
+                
+                if os_pendentes > 0:
+                    pendencias.append({
+                        'pmp_codigo': pmp.codigo,
+                        'pmp_descricao': pmp.descricao,
+                        'os_pendentes': os_pendentes,
+                        'os_existentes': os_existentes,
+                        'total_necessarias': len(datas_necessarias),
+                        'data_inicio': pmp.data_inicio_plano.isoformat() if pmp.data_inicio_plano else None,
+                        'frequencia': pmp.frequencia
+                    })
             
             return jsonify({
                 'success': True,
-                'message': f'{len(os_geradas)} OS geradas para PMP-02-BBN01',
-                'os_geradas': os_geradas
-            }), 200
+                'pendencias': pendencias,
+                'total_pmps_com_pendencias': len(pendencias)
+            })
             
         except Exception as e:
-            db.session.rollback()
-            return jsonify({'error': f'Erro ao gerar OS: {str(e)}'}), 500
+            app.logger.error(f"Erro ao verificar pendências: {e}")
+            return jsonify({
+                'success': False,
+                'error': f'Erro interno: {str(e)}'
+            }), 500
     
     # API para listar usuários (necessária para a programação)
     @app.route('/api/usuarios', methods=['GET'])

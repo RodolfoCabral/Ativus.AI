@@ -1344,40 +1344,119 @@ async function verificarOSPendentesPMP() {
     try {
         console.log('🔍 Verificando OS pendentes de PMP...');
         
-        const response = await fetch('/api/pmp/verificar-pendencias-hoje');
+        const response = await fetch('/api/pmp/verificar-pendencias', {
+            credentials: 'include'
+        });
+        
         if (response.ok) {
             const data = await response.json();
             
-            if (data.success && data.total_pendencias > 0) {
-                console.log(`⚠️ ${data.total_pendencias} OS pendentes encontradas`);
+            if (data.success && data.total_pmps_com_pendencias > 0) {
+                console.log(`⚠️ ${data.total_pmps_com_pendencias} PMPs com pendências encontradas`);
+                
+                // Mostrar detalhes das pendências
+                data.pendencias.forEach(pendencia => {
+                    console.log(`📋 ${pendencia.pmp_codigo}: ${pendencia.os_pendentes} OS pendentes (${pendencia.frequencia})`);
+                });
                 
                 // Gerar OS pendentes automaticamente
-                const gerarResponse = await fetch('/api/pmp/gerar-os-pendentes', {
+                const gerarResponse = await fetch('/api/pmp/gerar-todas-os', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ limite: 20 })
+                    credentials: 'include'
                 });
                 
                 if (gerarResponse.ok) {
                     const gerarData = await gerarResponse.json();
-                    console.log(`✅ ${gerarData.os_geradas?.length || 0} OS geradas automaticamente`);
-                    
-                    // Recarregar a programação após gerar OS
-                    if (gerarData.os_geradas?.length > 0) {
-                        setTimeout(() => {
-                            loadOrdensServico();
-                        }, 2000);
+                    if (gerarData.success) {
+                        console.log(`✅ ${gerarData.total_os_geradas} OS geradas automaticamente para ${gerarData.pmps_processadas} PMPs`);
+                        
+                        // Recarregar a programação após gerar OS
+                        if (gerarData.total_os_geradas > 0) {
+                            console.log('🔄 Recarregando programação com novas OS...');
+                            setTimeout(() => {
+                                loadOrdensServico();
+                            }, 2000);
+                        }
+                    } else {
+                        console.error('❌ Erro na geração automática:', gerarData.error);
                     }
+                } else {
+                    console.error('❌ Erro na requisição de geração:', gerarResponse.status);
                 }
             } else {
                 console.log('✅ Nenhuma OS pendente de PMP encontrada');
             }
+        } else {
+            console.error('❌ Erro na verificação de pendências:', response.status);
         }
     } catch (error) {
         console.error('❌ Erro ao verificar OS pendentes:', error);
     }
+}
+
+// Função para gerar OS manualmente para uma PMP específica
+function gerarOSPMPEspecifica(codigoPMP) {
+    console.log(`🎯 Gerando OS para PMP: ${codigoPMP}`);
+    
+    fetch(`/api/pmp/gerar-os/${codigoPMP}`, {
+        method: 'POST',
+        credentials: 'include'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log(`✅ ${data.message}`);
+            alert(`Sucesso! ${data.message}`);
+            
+            // Recarregar programação
+            if (typeof loadOrdensServico === 'function') {
+                loadOrdensServico();
+            }
+        } else {
+            console.error('❌ Erro:', data.error);
+            alert(`Erro: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Erro ao gerar OS:', error);
+        alert('Erro ao gerar OS. Verifique o console para detalhes.');
+    });
+}
+
+// Função para gerar todas as OS pendentes manualmente
+function gerarTodasOSPendentes() {
+    console.log('🚀 Iniciando geração manual de todas as OS pendentes...');
+    
+    if (!confirm('Deseja gerar todas as OS pendentes para todas as PMPs ativas?')) {
+        return;
+    }
+    
+    fetch('/api/pmp/gerar-todas-os', {
+        method: 'POST',
+        credentials: 'include'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log(`✅ ${data.message}`);
+            console.log('📊 Log das operações:', data.log_operacoes);
+            
+            alert(`Sucesso! ${data.message}\n\nPMPs processadas: ${data.pmps_processadas}\nOS geradas: ${data.total_os_geradas}`);
+            
+            // Recarregar programação
+            if (typeof loadOrdensServico === 'function') {
+                loadOrdensServico();
+            }
+        } else {
+            console.error('❌ Erro:', data.error);
+            console.log('📊 Log das operações:', data.log_operacoes);
+            alert(`Erro: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Erro ao gerar OS:', error);
+        alert('Erro ao gerar OS. Verifique o console para detalhes.');
+    });
 }
 
 // Executar verificação ao carregar a página
