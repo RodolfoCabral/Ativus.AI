@@ -188,6 +188,55 @@ def create_app():
     except Exception as e:
         print(f"Erro ao registrar blueprint de status automático: {e}")
     
+    # Importar e registrar blueprint de debug (apenas em desenvolvimento)
+    try:
+        from routes.debug_routes import debug_routes_bp
+        app.register_blueprint(debug_routes_bp)
+        print("Blueprint de debug registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar debug_routes_bp: {e}")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de debug: {e}")
+    
+    # 🔧 REGISTRO MANUAL FORÇADO DAS BLUEPRINTS PMP (para resolver erro 404)
+    print("🔧 Forçando registro manual das blueprints PMP...")
+    
+    # Registro forçado da blueprint pmp_os_api
+    try:
+        from routes.pmp_os_api import pmp_os_api_bp
+        if 'pmp_os_api' not in app.blueprints:
+            app.register_blueprint(pmp_os_api_bp)
+            print("✅ pmp_os_api_bp registrada manualmente")
+        else:
+            print("⚠️ pmp_os_api_bp já estava registrada")
+    except Exception as e:
+        print(f"❌ Erro ao registrar pmp_os_api_bp manualmente: {e}")
+    
+    # Registro forçado da blueprint pmp_auto_status
+    try:
+        from routes.pmp_auto_status import pmp_auto_status_bp
+        if 'pmp_auto_status' not in app.blueprints:
+            app.register_blueprint(pmp_auto_status_bp)
+            print("✅ pmp_auto_status_bp registrada manualmente")
+        else:
+            print("⚠️ pmp_auto_status_bp já estava registrada")
+    except Exception as e:
+        print(f"❌ Erro ao registrar pmp_auto_status_bp manualmente: {e}")
+    
+    # Verificar rotas após registro manual
+    try:
+        pmp_routes = [r.rule for r in app.url_map.iter_rules() if '/api/pmp/' in r.rule]
+        print(f"📊 Total de rotas PMP registradas: {len(pmp_routes)}")
+        
+        # Verificar rotas específicas que estavam falhando
+        target_routes = ['/api/pmp/os/verificar-pendencias', '/api/pmp/os/gerar-todas', '/api/pmp/os/executar-automatico']
+        for target in target_routes:
+            found = any(r.rule == target for r in app.url_map.iter_rules())
+            status = "✅" if found else "❌"
+            print(f"   {status} {target}")
+    except Exception as e:
+        print(f"❌ Erro ao verificar rotas: {e}")
+    
     # Importar e registrar blueprint de agendamento por frequência
     try:
         from routes.pmp_scheduler import pmp_scheduler_bp

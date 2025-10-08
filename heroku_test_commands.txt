@@ -1,0 +1,15 @@
+# 1. Verificar se arquivos existem
+heroku run ls routes/pmp* --app ativusai-af6f1462097d
+
+# 2. Testar importação das blueprints
+heroku run python -c "from routes.pmp_os_api import pmp_os_api_bp; print('pmp_os_api OK')" --app ativusai-af6f1462097d
+heroku run python -c "from routes.pmp_auto_status import pmp_auto_status_bp; print('pmp_auto_status OK')" --app ativusai-af6f1462097d
+
+# 3. Verificar rotas registradas
+heroku run python -c "from app import create_app; app=create_app(); print([r.rule for r in app.url_map.iter_rules() if '/api/pmp/os/' in r.rule])" --app ativusai-af6f1462097d
+
+# 4. Testar endpoint de debug
+curl https://ativusai-af6f1462097d.herokuapp.com/debug/pmp-status
+
+# 5. Verificar logs durante inicialização
+heroku logs --tail --app ativusai-af6f1462097d | grep -i blueprint
