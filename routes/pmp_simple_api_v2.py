@@ -1,5 +1,5 @@
 """
-API Simplificada para PMP - Versão Final com Busca de Filiais/Setores Válidos
+API Simplificada para PMP - Versão Corrigida com Campos Obrigatórios
 """
 
 from flask import Blueprint, request, jsonify, current_app
@@ -10,7 +10,7 @@ from models import db
 
 # Importações dos modelos
 try:
-    from assets_models import OrdemServico, Equipamento, Filial, Setor
+    from assets_models import OrdemServico, Equipamento
     from models.pmp_limpo import PMP
     MODELS_AVAILABLE = True
 except ImportError as e:
@@ -89,57 +89,25 @@ def gerar_cronograma_os(pmp):
     
     return datas
 
-def obter_dados_validos_equipamento(equipamento_id):
-    """Obtém dados válidos do equipamento e relacionamentos"""
+def obter_dados_equipamento(equipamento_id):
+    """Obtém dados do equipamento para preencher campos obrigatórios"""
     try:
-        # Buscar equipamento
         equipamento = Equipamento.query.get(equipamento_id)
-        
         if equipamento:
-            # Tentar usar dados do equipamento
-            filial_id = getattr(equipamento, 'filial_id', None)
-            setor_id = getattr(equipamento, 'setor_id', None)
-            empresa = getattr(equipamento, 'empresa', None)
-            
-            # Validar se filial existe
-            if filial_id:
-                filial = Filial.query.get(filial_id)
-                if not filial:
-                    filial_id = None
-            
-            # Validar se setor existe
-            if setor_id:
-                setor = Setor.query.get(setor_id)
-                if not setor:
-                    setor_id = None
-            
-            # Se temos dados válidos, usar
-            if filial_id and setor_id and empresa:
-                return {
-                    'filial_id': filial_id,
-                    'setor_id': setor_id,
-                    'empresa': empresa
-                }
-    
+            return {
+                'filial_id': getattr(equipamento, 'filial_id', 1),
+                'setor_id': getattr(equipamento, 'setor_id', 1),
+                'empresa': getattr(equipamento, 'empresa', 'Ativus')
+            }
     except Exception as e:
         current_app.logger.warning(f"Erro ao buscar equipamento {equipamento_id}: {e}")
     
-    # Buscar primeira filial e setor válidos
-    try:
-        primeira_filial = Filial.query.first()
-        primeiro_setor = Setor.query.first()
-        
-        if primeira_filial and primeiro_setor:
-            return {
-                'filial_id': primeira_filial.id,
-                'setor_id': primeiro_setor.id,
-                'empresa': getattr(primeira_filial, 'empresa', 'Ativus')
-            }
-    except Exception as e:
-        current_app.logger.error(f"Erro ao buscar filial/setor padrão: {e}")
-    
-    # Se nada funcionar, retornar None para indicar erro
-    return None
+    # Valores padrão se não conseguir buscar
+    return {
+        'filial_id': 1,
+        'setor_id': 1,
+        'empresa': 'Ativus'
+    }
 
 @pmp_simple_api_bp.route('/api/pmp/os/verificar-pendencias', methods=['GET'])
 @login_required
@@ -212,7 +180,7 @@ def api_verificar_pendencias_simples():
 @pmp_simple_api_bp.route('/api/pmp/os/gerar-todas', methods=['POST'])
 @login_required
 def api_gerar_todas_os_simples():
-    """Gera todas as OS pendentes - Versão Final com Validação de FK"""
+    """Gera todas as OS pendentes - Versão Simplificada Corrigida"""
     try:
         current_app.logger.info("🚀 API Simples: Iniciando geração de todas as OS pendentes")
         
@@ -245,93 +213,87 @@ def api_gerar_todas_os_simples():
                 if not cronograma:
                     continue
                 
-                # Obter dados válidos do equipamento
-                dados_equipamento = obter_dados_validos_equipamento(pmp.equipamento_id)
-                
-                if not dados_equipamento:
-                    current_app.logger.error(f"❌ Não foi possível obter dados válidos para PMP {pmp.codigo}")
-                    erros += 1
-                    continue
-                
                 pmps_processadas += 1
+                
+                # Obter dados do equipamento
+                dados_equipamento = obter_dados_equipamento(pmp.equipamento_id)
                 
                 # Gerar OS para cada data do cronograma
                 for i, data_programada in enumerate(cronograma, 1):
-                    try:
-                        # Verificar se já existe OS para esta data
-                        os_existente = OrdemServico.query.filter_by(
-                            pmp_id=pmp.id,
-                            data_programada=data_programada
-                        ).first()
+                    # Verificar se já existe OS para esta data
+                    os_existente = OrdemServico.query.filter_by(
+                        pmp_id=pmp.id,
+                        data_programada=data_programada
+                    ).first()
+                    
+                    if os_existente:
+                        continue  # OS já existe
+                    
+                    # Criar nova OS com todos os campos obrigatórios
+                    sequencia = f"#{i:03d}"
+                    descricao = f"PMP: {pmp.descricao} - Sequência {sequencia}"
+                    
+                    # Calcular hh (horas-homem)
+                    qtd_pessoas = pmp.num_pessoas or 1
+                    horas = pmp.tempo_pessoa or 1.0
+                    hh = qtd_pessoas * horas
+                    
+                    nova_os = OrdemServico(
+                        # Campos obrigatórios básicos
+                        descricao=descricao,
+                        tipo_manutencao='preventiva-periodica',
+                        oficina=pmp.oficina or 'mecanica',
+                        condicao_ativo='funcionando',
+                        qtd_pessoas=qtd_pessoas,
+                        horas=horas,
+                        hh=hh,
+                        prioridade='media',
+                        status='programada',
                         
-                        if os_existente:
-                            continue  # OS já existe
+                        # Campos de relacionamento obrigatórios
+                        equipamento_id=pmp.equipamento_id,
+                        filial_id=dados_equipamento['filial_id'],
+                        setor_id=dados_equipamento['setor_id'],
                         
-                        # Criar nova OS com todos os campos obrigatórios
-                        sequencia = f"#{i:03d}"
-                        descricao = f"PMP: {pmp.descricao} - Sequência {sequencia}"
+                        # Campos de empresa e usuário obrigatórios
+                        empresa=dados_equipamento['empresa'],
+                        usuario_criacao=getattr(current_user, 'username', 'sistema'),
                         
-                        # Calcular hh (horas-homem)
-                        qtd_pessoas = pmp.num_pessoas or 1
-                        horas = pmp.tempo_pessoa or 1.0
-                        hh = qtd_pessoas * horas
+                        # Campos de data
+                        data_programada=data_programada,
+                        data_criacao=datetime.now(),
                         
-                        nova_os = OrdemServico(
-                            # Campos obrigatórios básicos
-                            descricao=descricao,
-                            tipo_manutencao='preventiva-periodica',
-                            oficina=pmp.oficina or 'mecanica',
-                            condicao_ativo='funcionando',
-                            qtd_pessoas=qtd_pessoas,
-                            horas=horas,
-                            hh=hh,
-                            prioridade='media',
-                            status='programada',
-                            
-                            # Campos de relacionamento obrigatórios (VALIDADOS)
-                            equipamento_id=pmp.equipamento_id,
-                            filial_id=dados_equipamento['filial_id'],
-                            setor_id=dados_equipamento['setor_id'],
-                            
-                            # Campos de empresa e usuário obrigatórios
-                            empresa=dados_equipamento['empresa'],
-                            usuario_criacao=getattr(current_user, 'username', 'sistema'),
-                            
-                            # Campos de data
-                            data_programada=data_programada,
-                            data_criacao=datetime.now(),
-                            
-                            # Campos específicos de PMP
-                            pmp_id=pmp.id,
-                            frequencia_origem=pmp.frequencia,
-                            numero_sequencia=i
-                        )
-                        
-                        db.session.add(nova_os)
-                        
-                        # Commit individual para evitar rollback em massa
-                        db.session.commit()
-                        
-                        os_geradas.append({
-                            'descricao': descricao,
-                            'data_programada': data_programada.isoformat(),
-                            'pmp_codigo': pmp.codigo,
-                            'sequencia': i
-                        })
-                        total_os_geradas += 1
-                        
-                    except Exception as e:
-                        db.session.rollback()
-                        current_app.logger.error(f"❌ Erro ao criar OS {i} para PMP {pmp.codigo}: {e}")
-                        erros += 1
-                        continue
+                        # Campos específicos de PMP
+                        pmp_id=pmp.id,
+                        frequencia_origem=pmp.frequencia,
+                        numero_sequencia=i
+                    )
+                    
+                    db.session.add(nova_os)
+                    os_geradas.append({
+                        'descricao': descricao,
+                        'data_programada': data_programada.isoformat(),
+                        'pmp_codigo': pmp.codigo,
+                        'sequencia': i
+                    })
+                    total_os_geradas += 1
                 
             except Exception as e:
                 current_app.logger.error(f"❌ Erro ao processar PMP {pmp.codigo}: {e}")
                 erros += 1
                 continue
         
-        current_app.logger.info(f"✅ Geração concluída: {total_os_geradas} OS geradas, {erros} erros")
+        # Salvar no banco
+        try:
+            db.session.commit()
+            current_app.logger.info(f"✅ Geração concluída: {total_os_geradas} OS geradas")
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"❌ Erro ao salvar no banco: {e}")
+            return jsonify({
+                'success': False,
+                'error': f'Erro ao salvar no banco: {str(e)}'
+            }), 500
         
         return jsonify({
             'success': True,
@@ -403,7 +365,7 @@ def api_status_simples():
                 'timestamp': datetime.now().isoformat(),
                 'sistema_ativo': True,
                 'modo_automatico': True,
-                'versao': 'final_com_validacao_fk',
+                'versao': 'simples_corrigida',
                 'scheduler': {
                     'running': True,
                     'last_execution': datetime.now().isoformat(),
@@ -417,43 +379,4 @@ def api_status_simples():
         return jsonify({
             'success': False,
             'error': f'Erro interno: {str(e)}'
-        }), 500
-
-@pmp_simple_api_bp.route('/debug/filiais-setores', methods=['GET'])
-def debug_filiais_setores():
-    """Endpoint de debug para verificar filiais e setores disponíveis"""
-    try:
-        filiais = []
-        setores = []
-        
-        # Buscar filiais
-        for filial in Filial.query.all():
-            filiais.append({
-                'id': filial.id,
-                'tag': getattr(filial, 'tag', 'N/A'),
-                'descricao': getattr(filial, 'descricao', 'N/A'),
-                'empresa': getattr(filial, 'empresa', 'N/A')
-            })
-        
-        # Buscar setores
-        for setor in Setor.query.all():
-            setores.append({
-                'id': setor.id,
-                'tag': getattr(setor, 'tag', 'N/A'),
-                'descricao': getattr(setor, 'descricao', 'N/A'),
-                'filial_id': getattr(setor, 'filial_id', 'N/A')
-            })
-        
-        return jsonify({
-            'success': True,
-            'filiais': filiais,
-            'setores': setores,
-            'total_filiais': len(filiais),
-            'total_setores': len(setores)
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
         }), 500
