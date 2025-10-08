@@ -38,15 +38,18 @@ async function loadData() {
 // Carregar ordens de serviço em aberto
 async function loadOrdensServico() {
     try {
-        console.log('🔄 Carregando OS...');
+        console.log('🔄 INÍCIO - Carregando OS...');
         
         // CORREÇÃO: Tentar API original primeiro, depois alternativa
         let response;
         let data;
         
         try {
+            console.log('📡 Fazendo requisição para /api/ordens-servico?status=abertas,concluida');
             // Tentar API original - incluir OS abertas E concluídas
             response = await fetch('/api/ordens-servico?status=abertas,concluida');
+            console.log('📊 Status da resposta:', response.status);
+            
             if (response.ok) {
                 data = await response.json();
                 console.log('✅ API original funcionou');
@@ -68,6 +71,7 @@ async function loadOrdensServico() {
         
         ordensServico = data.ordens_servico || [];
         console.log(`📊 Total de OS carregadas: ${ordensServico.length}`);
+        console.log('📋 Dados recebidos da API:', data);
         
         // Verificar duplicação inicial
         const osIdsIniciais = ordensServico.map(os => os.id);
@@ -132,11 +136,17 @@ async function loadOrdensServico() {
 // Carregar usuários (apenas perfil 'user')
 async function loadUsuarios() {
     try {
-        const response = await fetch('/api/users?profile=user');
+        console.log('🔄 INÍCIO - Carregando usuários...');
+        console.log('📡 Fazendo requisição para /api/usuarios');
+        
+        const response = await fetch('/api/usuarios');
+        console.log('📊 Status da resposta usuários:', response.status);
+        
         if (response.ok) {
             const data = await response.json();
-            usuarios = data.users || [];
-            console.log('Usuários carregados:', usuarios.length);
+            console.log('📋 Dados de usuários recebidos:', data);
+            usuarios = data.usuarios || [];
+            console.log(`✅ ${usuarios.length} usuários carregados:`, usuarios.map(u => u.name));
         } else {
             // Fallback: criar usuários de exemplo se API não estiver disponível
             usuarios = [
@@ -169,12 +179,15 @@ function renderPriorityLines() {
             return;
         }
         
+        console.log(`🔍 Filtrando OS para prioridade: ${prioridade}`);
+        console.log(`📊 Total de OS disponíveis: ${ordensServico.length}`);
+        
         let osFiltered;
-        if ((os.prioridade === 'preventiva' || os.pmp_id || (os.descricao && os.descricao.toLowerCase().includes('pmp')))) {
+        if (prioridade === 'preventiva') {
             // CORREÇÃO: Lógica melhorada para preventivas
             osFiltered = ordensServico.filter(os => {
                 // Condição 1: Prioridade preventiva normal
-                const condicao1 = os.(os.prioridade === 'preventiva' || os.pmp_id || (os.descricao && os.descricao.toLowerCase().includes('pmp'))) && 
+                const condicao1 = (os.prioridade === 'preventiva' || os.pmp_id || (os.descricao && os.descricao.toLowerCase().includes('pmp'))) && 
                                  os.status === 'aberta' &&
                                  (!os.usuario_responsavel || os.usuario_responsavel === null || os.usuario_responsavel === '');
                 
@@ -187,6 +200,13 @@ function renderPriorityLines() {
             console.log(`🔧 Preventivas filtradas: ${osFiltered.length}`);
             if (osFiltered.length > 0) {
                 console.log('📋 IDs das preventivas:', osFiltered.map(os => os.id));
+                console.log('📋 Detalhes das preventivas:', osFiltered.map(os => ({
+                    id: os.id,
+                    descricao: os.descricao?.substring(0, 30) + '...',
+                    prioridade: os.prioridade,
+                    pmp_id: os.pmp_id,
+                    status: os.status
+                })));
             }
         } else {
             // Para outras prioridades: excluir OS de PMP
@@ -195,15 +215,22 @@ function renderPriorityLines() {
                 os.status === 'aberta' &&
                 (!os.pmp_id || os.pmp_id === null)
             );
+            
+            console.log(`📊 ${prioridade} filtradas: ${osFiltered.length}`);
         }
         
         if (osFiltered.length === 0) {
+            console.log(`ℹ️ Nenhuma OS encontrada para prioridade: ${prioridade}`);
             container.innerHTML = '<div class="empty-priority">Nenhuma OS nesta prioridade</div>';
             return;
         }
         
+        console.log(`🎨 Renderizando ${osFiltered.length} cards para prioridade: ${prioridade}`);
+        
         // Renderizar cards
         container.innerHTML = osFiltered.map(os => createOSCard(os)).join('');
+        
+        console.log(`✅ Cards renderizados para ${prioridade}: ${container.children.length} elementos`);
         
         // Adicionar funcionalidade de drag
         osFiltered.forEach(os => {
