@@ -1,0 +1,18 @@
+# Comandos para executar no Heroku e gerar as OS
+# Execute estes comandos no terminal do Heroku
+
+# 1. Conectar ao banco de dados
+heroku pg:psql --app seu-app-name
+
+# 2. Executar os INSERTs das OS
+# Exemplo para PMP-03-BBN01:
+
+INSERT INTO ordens_servico (descricao, equipamento_id, tipo, oficina, status, prioridade, data_programada, data_criacao, criado_por, pmp_id, pmp_codigo, origem) VALUES ('PMP: PREVENTIVA SEMANAL - ELETRICA - Sequência #001', 232, 'preventiva-periodica', 'eletrica', 'programada', 'media', '2025-09-08', NOW(), 1, 135, 'PMP-03-BBN01', 'pmp_automatica');
+INSERT INTO ordens_servico (descricao, equipamento_id, tipo, oficina, status, prioridade, data_programada, data_criacao, criado_por, pmp_id, pmp_codigo, origem) VALUES ('PMP: PREVENTIVA SEMANAL - ELETRICA - Sequência #002', 232, 'preventiva-periodica', 'eletrica', 'programada', 'media', '2025-09-15', NOW(), 1, 135, 'PMP-03-BBN01', 'pmp_automatica');
+INSERT INTO ordens_servico (descricao, equipamento_id, tipo, oficina, status, prioridade, data_programada, data_criacao, criado_por, pmp_id, pmp_codigo, origem) VALUES ('PMP: PREVENTIVA SEMANAL - ELETRICA - Sequência #003', 232, 'preventiva-periodica', 'eletrica', 'programada', 'media', '2025-09-22', NOW(), 1, 135, 'PMP-03-BBN01', 'pmp_automatica');
+INSERT INTO ordens_servico (descricao, equipamento_id, tipo, oficina, status, prioridade, data_programada, data_criacao, criado_por, pmp_id, pmp_codigo, origem) VALUES ('PMP: PREVENTIVA SEMANAL - ELETRICA - Sequência #004', 232, 'preventiva-periodica', 'eletrica', 'programada', 'media', '2025-09-29', NOW(), 1, 135, 'PMP-03-BBN01', 'pmp_automatica');
+INSERT INTO ordens_servico (descricao, equipamento_id, tipo, oficina, status, prioridade, data_programada, data_criacao, criado_por, pmp_id, pmp_codigo, origem) VALUES ('PMP: PREVENTIVA SEMANAL - ELETRICA - Sequência #005', 232, 'preventiva-periodica', 'eletrica', 'programada', 'media', '2025-10-06', NOW(), 1, 135, 'PMP-03-BBN01', 'pmp_automatica');
+
+# 3. Verificar se as OS foram criadas
+SELECT COUNT(*) FROM ordens_servico WHERE pmp_codigo = 'PMP-03-BBN01';
+SELECT * FROM ordens_servico WHERE pmp_codigo = 'PMP-03-BBN01' ORDER BY data_programada;
