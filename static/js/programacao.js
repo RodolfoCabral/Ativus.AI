@@ -1344,15 +1344,15 @@ async function verificarOSPendentesPMP() {
     try {
         console.log('🔍 Verificando OS pendentes de PMP...');
         
-        const response = await fetch('/api/pmp/verificar-pendencias', {
+        const response = await fetch('/api/pmp/os/verificar-pendencias', {
             credentials: 'include'
         });
         
         if (response.ok) {
             const data = await response.json();
             
-            if (data.success && data.total_pmps_com_pendencias > 0) {
-                console.log(`⚠️ ${data.total_pmps_com_pendencias} PMPs com pendências encontradas`);
+            if (data.success && data.resumo && data.resumo.total_pmps_com_pendencias > 0) {
+                console.log(`⚠️ ${data.resumo.total_pmps_com_pendencias} PMPs com pendências encontradas`);
                 
                 // Mostrar detalhes das pendências
                 data.pendencias.forEach(pendencia => {
@@ -1360,7 +1360,7 @@ async function verificarOSPendentesPMP() {
                 });
                 
                 // Gerar OS pendentes automaticamente
-                const gerarResponse = await fetch('/api/pmp/gerar-todas-os', {
+                const gerarResponse = await fetch('/api/pmp/os/gerar-todas', {
                     method: 'POST',
                     credentials: 'include'
                 });
@@ -1368,10 +1368,12 @@ async function verificarOSPendentesPMP() {
                 if (gerarResponse.ok) {
                     const gerarData = await gerarResponse.json();
                     if (gerarData.success) {
-                        console.log(`✅ ${gerarData.total_os_geradas} OS geradas automaticamente para ${gerarData.pmps_processadas} PMPs`);
+                        const osGeradas = gerarData.estatisticas.os_geradas;
+                        const pmpsProcessadas = gerarData.estatisticas.pmps_processadas;
+                        console.log(`✅ ${osGeradas} OS geradas automaticamente para ${pmpsProcessadas} PMPs`);
                         
                         // Recarregar a programação após gerar OS
-                        if (gerarData.total_os_geradas > 0) {
+                        if (osGeradas > 0) {
                             console.log('🔄 Recarregando programação com novas OS...');
                             setTimeout(() => {
                                 loadOrdensServico();
