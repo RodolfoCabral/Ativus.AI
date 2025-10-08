@@ -166,27 +166,39 @@ def create_app():
         print(f"Erro ao registrar blueprint de geração de OS PMP: {e}")
         print("Sistema funcionará sem funcionalidades de geração automática de OS.")
     
-    # Importar e registrar blueprint de API aprimorada de PMP OS
+    # 🚨 BLUEPRINT SIMPLES DE EMERGÊNCIA PARA RESOLVER ERRO 404
+    try:
+        from routes.pmp_simple_api import pmp_simple_api_bp
+        app.register_blueprint(pmp_simple_api_bp)
+        print("✅ Blueprint SIMPLES de PMP registrado com sucesso (versão de emergência)")
+    except ImportError as e:
+        print(f"❌ Erro ao importar pmp_simple_api_bp: {e}")
+    except Exception as e:
+        print(f"❌ Erro ao registrar blueprint simples: {e}")
+    
+    # Importar e registrar blueprint de API aprimorada (como backup)
     try:
         from routes.pmp_os_api import pmp_os_api_bp
         app.register_blueprint(pmp_os_api_bp)
         print("Blueprint de API aprimorada PMP OS registrado com sucesso")
     except ImportError as e:
         print(f"Aviso: Não foi possível importar pmp_os_api_bp: {e}")
-        print("Sistema funcionará sem funcionalidades de API aprimorada de OS.")
+        print("Sistema funcionará com API simples de PMP.")
     except Exception as e:
         print(f"Erro ao registrar blueprint de API aprimorada PMP OS: {e}")
-        print("Sistema funcionará sem funcionalidades de API aprimorada de OS.")
+        print("Sistema funcionará com API simples de PMP.")
     
-    # Importar e registrar blueprint de status automático
+    # Importar e registrar blueprint de status automático (como backup)
     try:
         from routes.pmp_auto_status import pmp_auto_status_bp
         app.register_blueprint(pmp_auto_status_bp)
         print("Blueprint de status automático PMP registrado com sucesso")
     except ImportError as e:
         print(f"Aviso: Não foi possível importar pmp_auto_status_bp: {e}")
+        print("Sistema funcionará com status simples de PMP.")
     except Exception as e:
         print(f"Erro ao registrar blueprint de status automático: {e}")
+        print("Sistema funcionará com status simples de PMP.")
     
     # Importar e registrar blueprint de debug (apenas em desenvolvimento)
     try:
