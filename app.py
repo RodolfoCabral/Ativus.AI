@@ -178,6 +178,16 @@ def create_app():
         print(f"Erro ao registrar blueprint de API aprimorada PMP OS: {e}")
         print("Sistema funcionará sem funcionalidades de API aprimorada de OS.")
     
+    # Importar e registrar blueprint de status automático
+    try:
+        from routes.pmp_auto_status import pmp_auto_status_bp
+        app.register_blueprint(pmp_auto_status_bp)
+        print("Blueprint de status automático PMP registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar pmp_auto_status_bp: {e}")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de status automático: {e}")
+    
     # Importar e registrar blueprint de agendamento por frequência
     try:
         from routes.pmp_scheduler import pmp_scheduler_bp
@@ -773,6 +783,29 @@ def create_app():
                 'message': str(e)
             }), 500
 
+    # Inicializar scheduler automático de PMPs
+    try:
+        from pmp_scheduler_automatico import iniciar_scheduler
+        
+        # Inicializar em thread separada para não bloquear a aplicação
+        import threading
+        def init_scheduler():
+            try:
+                iniciar_scheduler()
+                print("✅ Scheduler automático de PMPs iniciado com sucesso")
+            except Exception as e:
+                print(f"❌ Erro ao iniciar scheduler automático: {e}")
+        
+        # Aguardar um pouco para a aplicação inicializar completamente
+        timer = threading.Timer(10.0, init_scheduler)
+        timer.daemon = True
+        timer.start()
+        
+    except ImportError as e:
+        print(f"Aviso: Scheduler automático não disponível: {e}")
+    except Exception as e:
+        print(f"Erro ao configurar scheduler automático: {e}")
+    
     return app
 
 def send_signup_email(data):

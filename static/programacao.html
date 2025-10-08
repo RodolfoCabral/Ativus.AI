@@ -432,43 +432,55 @@
             }
         }
         
-        /* Controles de PMP */
-        .pmp-actions {
+        /* Indicador de Status PMP Automático */
+        .pmp-status-indicator {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: flex-end;
-        }
-        
-        .pmp-controls-group {
-            display: flex;
-            gap: 8px;
             align-items: center;
+            justify-content: flex-end;
         }
         
-        .pmp-actions .btn {
-            font-size: 12px;
-            padding: 6px 12px;
-            border-radius: 6px;
-            transition: all 0.3s ease;
+        .pmp-auto-status {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            animation: pulse-green 2s infinite;
         }
         
-        .pmp-actions .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        .pmp-auto-status i {
+            font-size: 16px;
+            animation: rotate 3s linear infinite;
         }
         
-        .pmp-actions .input-group {
-            margin-left: 10px;
+        .pmp-auto-status span {
+            font-weight: 600;
+            font-size: 14px;
         }
         
-        .pmp-actions .form-control {
-            font-size: 12px;
-            border-radius: 6px 0 0 6px;
+        .pmp-last-check {
+            font-size: 11px;
+            opacity: 0.9;
+            margin-top: 2px;
         }
         
-        .pmp-actions .btn-success {
-            border-radius: 0 6px 6px 0;
+        @keyframes pulse-green {
+            0%, 100% { 
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 6px 20px rgba(40, 167, 69, 0.5);
+                transform: scale(1.02);
+            }
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         /* Modal de resultados PMP */
@@ -726,27 +738,12 @@
                             <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
-                    <div class="pmp-actions">
-                        <div class="pmp-controls-group">
-                            <button class="btn btn-outline-info btn-sm" onclick="verificarStatusSistemaPMP()" title="Status do Sistema">
-                                <i class="fas fa-info-circle"></i> Status Sistema
-                            </button>
-                            <button class="btn btn-outline-primary btn-sm" onclick="verificarPendenciasPMP()" title="Verificar Pendências">
-                                <i class="fas fa-search"></i> Verificar Pendências
-                            </button>
-                            <button class="btn btn-outline-warning btn-sm" onclick="simularGeracaoPMP()" title="Simular Geração">
-                                <i class="fas fa-flask"></i> Simular
-                            </button>
-                        </div>
-                        <div class="pmp-controls-group">
-                            <button class="btn btn-primary btn-sm" onclick="gerarTodasOSPMP()" title="Gerar Todas as OS Pendentes">
-                                <i class="fas fa-plus-circle"></i> Gerar Todas OS
-                            </button>
-                            <div class="input-group input-group-sm" style="width: 200px;">
-                                <input type="text" class="form-control" id="pmp-codigo-input" placeholder="Código PMP (ex: PMP-03-BBN01)">
-                                <button class="btn btn-success btn-sm" onclick="gerarOSPMPEspecifica()" title="Gerar OS para PMP Específica">
-                                    <i class="fas fa-cog"></i> Gerar
-                                </button>
+                    <div class="pmp-status-indicator">
+                        <div class="pmp-auto-status">
+                            <i class="fas fa-robot"></i>
+                            <span>Sistema Automático PMP Ativo</span>
+                            <div class="pmp-last-check" id="pmp-last-check">
+                                Última verificação: Carregando...
                             </div>
                         </div>
                     </div>
@@ -871,278 +868,142 @@ async function gerarOSFaltantesBBN01() {
     }
 }
 
-// ===== FUNÇÕES APRIMORADAS DE PMP =====
+// ===== SISTEMA AUTOMÁTICO DE PMP =====
 
-// Verificar status do sistema PMP
-async function verificarStatusSistemaPMP() {
-    try {
-        showNotification('Verificando status do sistema...', 'info');
-        
-        const response = await fetch('/api/pmp/os/status-sistema');
-        const data = await response.json();
-        
-        if (data.success) {
-            mostrarModalResultadoPMP('Status do Sistema PMP', formatarStatusSistema(data.status, data.configuracao));
-        } else {
-            showNotification('Erro ao verificar status: ' + data.error, 'error');
-        }
-    } catch (error) {
-        showNotification('Erro ao verificar status: ' + error.message, 'error');
-    }
+// Variáveis globais para controle automático
+let pmpAutoInterval = null;
+let pmpLastCheck = null;
+
+// Inicializar sistema automático de PMP
+function initializePMPAutoSystem() {
+    console.log('🤖 Inicializando sistema automático de PMP');
+    
+    // Executar primeira verificação imediatamente
+    executarVerificacaoAutomaticaPMP();
+    
+    // Configurar verificação automática a cada 5 minutos
+    pmpAutoInterval = setInterval(executarVerificacaoAutomaticaPMP, 5 * 60 * 1000);
+    
+    // Atualizar indicador de status
+    updatePMPStatusIndicator();
 }
 
-// Verificar pendências de PMP
-async function verificarPendenciasPMP() {
+// Executar verificação automática
+async function executarVerificacaoAutomaticaPMP() {
     try {
-        showNotification('Verificando pendências de OS...', 'info');
+        console.log('🔄 Executando verificação automática de PMPs');
         
-        const response = await fetch('/api/pmp/os/verificar-pendencias');
-        const data = await response.json();
-        
-        if (data.success) {
-            mostrarModalResultadoPMP('Pendências de OS - PMPs', formatarPendenciasPMP(data.pendencias, data.resumo));
-        } else {
-            showNotification('Erro ao verificar pendências: ' + data.error, 'error');
-        }
-    } catch (error) {
-        showNotification('Erro ao verificar pendências: ' + error.message, 'error');
-    }
-}
-
-// Simular geração de OS
-async function simularGeracaoPMP() {
-    try {
-        showNotification('Simulando geração de OS...', 'info');
-        
-        const response = await fetch('/api/pmp/os/simular-geracao', {
+        // Chamar endpoint de execução automática
+        const response = await fetch('/api/pmp/os/executar-automatico', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             }
         });
+        
         const data = await response.json();
         
         if (data.success) {
-            mostrarModalResultadoPMP('Simulação de Geração de OS', formatarSimulacaoPMP(data.simulacao, data.resumo));
+            const osGeradas = data.estatisticas.os_geradas;
+            pmpLastCheck = new Date();
+            
+            console.log(`✅ Verificação automática concluída: ${osGeradas} OS geradas`);
+            
+            // Mostrar notificação apenas se OS foram geradas
+            if (osGeradas > 0) {
+                showNotification(`🤖 Sistema automático gerou ${osGeradas} OS de PMPs`, 'success');
+                
+                // Recarregar dados da programação para mostrar novas OS
+                setTimeout(() => {
+                    loadData();
+                }, 2000);
+            }
         } else {
-            showNotification('Erro na simulação: ' + data.error, 'error');
+            console.warn('⚠️ Erro na verificação automática:', data.error);
         }
+        
+        // Atualizar indicador independente do resultado
+        updatePMPStatusIndicator();
+        
     } catch (error) {
-        showNotification('Erro na simulação: ' + error.message, 'error');
+        console.error('❌ Erro na verificação automática de PMPs:', error);
+        updatePMPStatusIndicator();
     }
 }
 
-// Gerar todas as OS de PMP
-async function gerarTodasOSPMP() {
-    if (!confirm('Tem certeza que deseja gerar todas as OS pendentes de PMPs? Esta ação não pode ser desfeita.')) {
-        return;
-    }
+// Atualizar indicador de status
+async function updatePMPStatusIndicator() {
+    const indicator = document.getElementById('pmp-last-check');
+    if (!indicator) return;
     
     try {
-        showNotification('Gerando todas as OS pendentes...', 'info');
-        
-        const response = await fetch('/api/pmp/os/gerar-todas', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
+        // Buscar status do sistema automático
+        const response = await fetch('/api/pmp/auto/status');
         const data = await response.json();
         
-        if (data.success) {
-            mostrarModalResultadoPMP('Geração de OS Concluída', formatarResultadoGeracao(data.estatisticas, data.os_geradas));
-            // Recarregar dados da programação
-            setTimeout(() => {
-                loadData();
-            }, 2000);
-        } else {
-            showNotification('Erro ao gerar OS: ' + data.error, 'error');
-        }
-    } catch (error) {
-        showNotification('Erro ao gerar OS: ' + error.message, 'error');
-    }
-}
-
-// Gerar OS para PMP específica
-async function gerarOSPMPEspecifica() {
-    const codigoPMP = document.getElementById('pmp-codigo-input').value.trim();
-    
-    if (!codigoPMP) {
-        showNotification('Por favor, digite o código da PMP', 'warning');
-        return;
-    }
-    
-    try {
-        showNotification(`Gerando OS para PMP ${codigoPMP}...`, 'info');
-        
-        const response = await fetch(`/api/pmp/os/gerar-pmp/${codigoPMP}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
+        if (data.success && data.status) {
+            const scheduler = data.status.scheduler;
+            const isRunning = scheduler.running;
+            const lastExecution = scheduler.last_execution;
+            
+            if (isRunning) {
+                if (lastExecution) {
+                    const lastTime = new Date(lastExecution).toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    indicator.textContent = `Última execução: ${lastTime}`;
+                } else {
+                    indicator.textContent = 'Sistema iniciado, aguardando primeira execução';
+                }
+            } else {
+                indicator.textContent = 'Sistema automático inativo';
             }
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-            mostrarModalResultadoPMP(`Geração de OS - ${codigoPMP}`, formatarResultadoPMPEspecifica(data.resultado_pmp, data.estatisticas));
-            // Limpar campo
-            document.getElementById('pmp-codigo-input').value = '';
-            // Recarregar dados da programação
-            setTimeout(() => {
-                loadData();
-            }, 2000);
         } else {
-            showNotification('Erro ao gerar OS: ' + data.error, 'error');
+            // Fallback para horário atual
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pt-BR', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            indicator.textContent = `Última verificação: ${timeStr}`;
         }
     } catch (error) {
-        showNotification('Erro ao gerar OS: ' + error.message, 'error');
-    }
-}
-
-// Mostrar modal com resultados
-function mostrarModalResultadoPMP(titulo, conteudo) {
-    const modal = document.getElementById('pmp-modal');
-    const modalTitle = document.getElementById('pmp-modal-title');
-    const modalBody = document.getElementById('pmp-modal-body');
-    
-    modalTitle.textContent = titulo;
-    modalBody.innerHTML = conteudo;
-    modal.style.display = 'flex';
-}
-
-// Fechar modal
-function fecharModalPMP() {
-    document.getElementById('pmp-modal').style.display = 'none';
-}
-
-// Formatadores de conteúdo
-function formatarStatusSistema(status, config) {
-    return `
-        <div class="pmp-result-item pmp-result-success">
-            <h5><i class="fas fa-info-circle"></i> Status Geral</h5>
-            <p><strong>Sistema Ativo:</strong> ${status.sistema_ativo ? 'Sim' : 'Não'}</p>
-            <p><strong>PMPs Ativas:</strong> ${status.total_pmps_ativas}</p>
-            <p><strong>PMPs com Data de Início:</strong> ${status.total_pmps_com_data_inicio}</p>
-            <p><strong>Total de OS de PMP:</strong> ${status.total_os_de_pmp}</p>
-            <p><strong>OS Programadas Hoje:</strong> ${status.os_programadas_hoje}</p>
-            <p><strong>OS Pendentes:</strong> ${status.total_os_pendentes}</p>
-        </div>
-        <div class="pmp-result-item">
-            <h5><i class="fas fa-cog"></i> Configuração</h5>
-            <p><strong>Geração Automática:</strong> ${config.gera_os_automaticamente ? 'Ativada' : 'Desativada'}</p>
-            <p><strong>Limite Dias Futuro:</strong> ${config.limite_dias_futuro} dias</p>
-            <p><strong>Frequências Suportadas:</strong> ${config.frequencias_suportadas.join(', ')}</p>
-        </div>
-    `;
-}
-
-function formatarPendenciasPMP(pendencias, resumo) {
-    if (pendencias.length === 0) {
-        return '<div class="pmp-result-item pmp-result-success"><h5>✅ Nenhuma pendência encontrada</h5><p>Todas as PMPs estão em dia!</p></div>';
-    }
-    
-    let html = `
-        <div class="pmp-result-item pmp-result-warning">
-            <h5><i class="fas fa-exclamation-triangle"></i> Resumo das Pendências</h5>
-            <p><strong>PMPs Verificadas:</strong> ${resumo.total_pmps_verificadas}</p>
-            <p><strong>PMPs com Pendências:</strong> ${resumo.total_pmps_com_pendencias}</p>
-            <p><strong>Total de OS Pendentes:</strong> ${resumo.total_os_pendentes}</p>
-        </div>
-    `;
-    
-    pendencias.forEach(pmp => {
-        html += `
-            <div class="pmp-result-item pmp-result-warning">
-                <h6><i class="fas fa-tools"></i> ${pmp.pmp_codigo}</h6>
-                <p><strong>Descrição:</strong> ${pmp.pmp_descricao}</p>
-                <p><strong>OS Pendentes:</strong> ${pmp.os_pendentes}</p>
-                <p><strong>OS Existentes:</strong> ${pmp.os_existentes}</p>
-                <p><strong>Frequência:</strong> ${pmp.frequencia}</p>
-                <p><strong>Data Início:</strong> ${new Date(pmp.data_inicio).toLocaleDateString('pt-BR')}</p>
-            </div>
-        `;
-    });
-    
-    return html;
-}
-
-function formatarSimulacaoPMP(simulacao, resumo) {
-    let html = `
-        <div class="pmp-result-item pmp-result-success">
-            <h5><i class="fas fa-flask"></i> Resultado da Simulação</h5>
-            <p><strong>PMPs Analisadas:</strong> ${resumo.total_pmps_analisadas}</p>
-            <p><strong>PMPs Processadas:</strong> ${resumo.total_pmps_processadas}</p>
-            <p><strong>Total de OS a Gerar:</strong> ${resumo.total_os_a_gerar}</p>
-        </div>
-    `;
-    
-    simulacao.forEach(pmp => {
-        const classe = pmp.processada ? (pmp.os_a_gerar > 0 ? 'pmp-result-warning' : 'pmp-result-success') : 'pmp-result-error';
-        html += `
-            <div class="pmp-result-item ${classe}">
-                <h6><i class="fas fa-tools"></i> ${pmp.pmp_codigo}</h6>
-                <p><strong>Descrição:</strong> ${pmp.pmp_descricao}</p>
-                ${pmp.processada ? `
-                    <p><strong>OS a Gerar:</strong> ${pmp.os_a_gerar}</p>
-                    <p><strong>OS Existentes:</strong> ${pmp.os_existentes}</p>
-                    <p><strong>Frequência:</strong> ${pmp.frequencia}</p>
-                ` : `
-                    <p><strong>Motivo:</strong> ${pmp.motivo}</p>
-                `}
-            </div>
-        `;
-    });
-    
-    return html;
-}
-
-function formatarResultadoGeracao(stats, osGeradas) {
-    let html = `
-        <div class="pmp-result-item pmp-result-success">
-            <h5><i class="fas fa-check-circle"></i> Estatísticas da Geração</h5>
-            <p><strong>PMPs Processadas:</strong> ${stats.pmps_processadas}</p>
-            <p><strong>OS Geradas:</strong> ${stats.os_geradas}</p>
-            <p><strong>OS Já Existentes:</strong> ${stats.os_ja_existentes}</p>
-            <p><strong>Erros:</strong> ${stats.erros}</p>
-        </div>
-    `;
-    
-    if (osGeradas && osGeradas.length > 0) {
-        html += '<div class="pmp-result-item"><h5><i class="fas fa-list"></i> OS Geradas</h5>';
-        osGeradas.slice(0, 10).forEach(os => {
-            html += `<p><strong>OS #${os.id}:</strong> ${os.descricao}</p>`;
+        console.warn('Erro ao obter status automático:', error);
+        
+        // Fallback para horário atual
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('pt-BR', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
         });
-        if (osGeradas.length > 10) {
-            html += `<p><em>... e mais ${osGeradas.length - 10} OS</em></p>`;
-        }
-        html += '</div>';
+        indicator.textContent = `Última verificação: ${timeStr}`;
     }
-    
-    return html;
 }
 
-function formatarResultadoPMPEspecifica(resultado, stats) {
-    const classe = resultado.processada ? (resultado.os_geradas > 0 ? 'pmp-result-success' : 'pmp-result-warning') : 'pmp-result-error';
-    
-    return `
-        <div class="pmp-result-item ${classe}">
-            <h5><i class="fas fa-tools"></i> ${resultado.pmp_codigo}</h5>
-            ${resultado.processada ? `
-                <p><strong>OS Geradas:</strong> ${resultado.os_geradas}</p>
-                <p><strong>OS Já Existentes:</strong> ${resultado.os_ja_existentes}</p>
-                <p><strong>Total de Datas:</strong> ${resultado.total_datas}</p>
-            ` : `
-                <p><strong>Motivo:</strong> ${resultado.motivo}</p>
-            `}
-        </div>
-        <div class="pmp-result-item">
-            <h5><i class="fas fa-chart-bar"></i> Estatísticas</h5>
-            <p><strong>PMPs Processadas:</strong> ${stats.pmps_processadas}</p>
-            <p><strong>OS Geradas:</strong> ${stats.os_geradas}</p>
-            <p><strong>Erros:</strong> ${stats.erros}</p>
-        </div>
-    `;
+// Parar sistema automático (se necessário)
+function stopPMPAutoSystem() {
+    if (pmpAutoInterval) {
+        clearInterval(pmpAutoInterval);
+        pmpAutoInterval = null;
+        console.log('🛑 Sistema automático de PMP parado');
+    }
 }
+
+// Inicializar sistema automático quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 Página carregada, inicializando sistema automático de PMP');
+    
+    // Aguardar um pouco para garantir que outros scripts carregaram
+    setTimeout(() => {
+        initializePMPAutoSystem();
+    }, 2000);
+});
+
+// Parar sistema automático quando sair da página
+window.addEventListener('beforeunload', function() {
+    stopPMPAutoSystem();
+});
 </script>
 
 <!-- Modal de Resultados PMP -->
