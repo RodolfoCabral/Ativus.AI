@@ -348,6 +348,16 @@ def create_app():
         print(f"Erro ao registrar blueprint de atividades_os_bp: {e}")
         print("Sistema funcionará sem funcionalidades de atividades da OS.")
     
+    # 🔄 BLUEPRINT DE ATIVIDADES COM FALLBACK
+    try:
+        from routes.atividades_os_com_fallback import atividades_os_fallback_bp
+        app.register_blueprint(atividades_os_fallback_bp)
+        print("✅ Blueprint de ATIVIDADES COM FALLBACK registrado com sucesso")
+    except ImportError as e:
+        print(f"❌ Erro ao importar atividades_os_fallback_bp: {e}")
+    except Exception as e:
+        print(f"❌ Erro ao registrar blueprint de atividades fallback: {e}")
+    
     # Rotas para arquivos estáticos
     @app.route('/')
     def index():

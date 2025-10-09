@@ -1,0 +1,57 @@
+# COMANDO SIMPLES PARA DEBUG NO HEROKU
+
+heroku run python3 -c "
+from app import create_app
+from models import db
+
+app = create_app()
+with app.app_context():
+    print('🔍 DEBUG RÁPIDO - TABELAS DE ATIVIDADES')
+    
+    # 1. Verificar se existe tabela atividades_os
+    try:
+        result = db.engine.execute('SELECT COUNT(*) FROM atividades_os')
+        count = result.fetchone()[0]
+        print(f'✅ Tabela atividades_os existe: {count} registros')
+    except Exception as e:
+        print(f'❌ Tabela atividades_os: {e}')
+    
+    # 2. Verificar outras possíveis tabelas
+    for nome in ['atividade_os', 'os_atividades', 'atividades', 'atividade']:
+        try:
+            result = db.engine.execute(f'SELECT COUNT(*) FROM {nome}')
+            count = result.fetchone()[0]
+            print(f'✅ Tabela {nome} existe: {count} registros')
+        except:
+            print(f'❌ Tabela {nome} não existe')
+    
+    # 3. Verificar modelo Python
+    try:
+        from models.atividade_os import AtividadeOS
+        print(f'✅ Modelo AtividadeOS: tabela = {AtividadeOS.__tablename__}')
+        
+        # Tentar buscar atividades da OS 862
+        atividades = AtividadeOS.query.filter_by(os_id=862).all()
+        print(f'📊 OS 862 via modelo: {len(atividades)} atividades')
+        
+        # Se não encontrou, tentar buscar qualquer atividade
+        primeira_atividade = AtividadeOS.query.first()
+        if primeira_atividade:
+            print(f'✅ Primeira atividade encontrada: OS {primeira_atividade.os_id} - {primeira_atividade.descricao}')
+        else:
+            print('❌ Nenhuma atividade encontrada via modelo')
+            
+    except Exception as e:
+        print(f'❌ Erro no modelo: {e}')
+    
+    # 4. Verificar se OS 862 existe
+    try:
+        result = db.engine.execute('SELECT id, descricao, pmp_id FROM ordens_servico WHERE id = 862')
+        os_data = result.fetchone()
+        if os_data:
+            print(f'✅ OS 862 existe: {os_data[1]} (PMP: {os_data[2]})')
+        else:
+            print('❌ OS 862 não existe')
+    except Exception as e:
+        print(f'❌ Erro ao buscar OS: {e}')
+" --app ativusai-af6f1462097d

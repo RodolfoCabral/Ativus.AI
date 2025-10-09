@@ -1,0 +1,86 @@
+# COMANDO PARA INVESTIGAR TABELAS NO HEROKU
+
+heroku run python3 -c "
+from app import create_app
+from models import db
+
+app = create_app()
+with app.app_context():
+    print('🔍 INVESTIGANDO TABELAS DE ATIVIDADES')
+    print('='*50)
+    
+    # Listar tabelas com 'atividade' no nome
+    result = db.engine.execute(\"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name LIKE '%atividade%'\")
+    tabelas = [row[0] for row in result]
+    print(f'Tabelas de atividades: {tabelas}')
+    
+    # Verificar estrutura de cada tabela
+    for tabela in tabelas:
+        print(f'\\n📊 TABELA: {tabela}')
+        try:
+            # Estrutura
+            result = db.engine.execute(f\"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{tabela}' ORDER BY ordinal_position\")
+            colunas = list(result)
+            print(f'Colunas: {[c[0] for c in colunas]}')
+            
+            # Contar registros
+            result = db.engine.execute(f'SELECT COUNT(*) FROM {tabela}')
+            count = result.fetchone()[0]
+            print(f'Total registros: {count}')
+            
+            # Se tem registros, mostrar alguns
+            if count > 0:
+                result = db.engine.execute(f'SELECT * FROM {tabela} LIMIT 2')
+                registros = list(result)
+                for i, reg in enumerate(registros):
+                    print(f'  Registro {i+1}: {dict(reg)}')
+        except Exception as e:
+            print(f'Erro: {e}')
+    
+    print('\\n🔍 VERIFICANDO OS 862:')
+    
+    # Verificar OS 862
+    result = db.engine.execute('SELECT id, descricao, pmp_id FROM ordens_servico WHERE id = 862')
+    os_data = result.fetchone()
+    
+    if os_data:
+        print(f'OS 862: {os_data[1]} (PMP: {os_data[2]})')
+        
+        # Buscar atividades em cada tabela
+        for tabela in tabelas:
+            try:
+                # Tentar diferentes colunas
+                for coluna in ['os_id', 'ordem_servico_id', 'id_os']:
+                    try:
+                        result = db.engine.execute(f'SELECT COUNT(*) FROM {tabela} WHERE {coluna} = 862')
+                        count = result.fetchone()[0]
+                        if count > 0:
+                            print(f'✅ {tabela}.{coluna}: {count} atividades')
+                            result = db.engine.execute(f'SELECT * FROM {tabela} WHERE {coluna} = 862 LIMIT 2')
+                            atividades = list(result)
+                            for ativ in atividades:
+                                print(f'  - {dict(ativ)}')
+                        else:
+                            print(f'⚪ {tabela}.{coluna}: 0')
+                    except:
+                        pass
+            except Exception as e:
+                print(f'Erro em {tabela}: {e}')
+    else:
+        print('OS 862 não encontrada')
+    
+    print('\\n🔍 VERIFICANDO MODELO PYTHON:')
+    try:
+        from models.atividade_os import AtividadeOS
+        print(f'Modelo AtividadeOS: tabela {AtividadeOS.__tablename__}')
+        count = AtividadeOS.query.count()
+        print(f'Total via modelo: {count}')
+        
+        atividades_862 = AtividadeOS.query.filter_by(os_id=862).all()
+        print(f'Atividades OS 862 via modelo: {len(atividades_862)}')
+        
+        for ativ in atividades_862[:2]:
+            print(f'  - ID: {ativ.id}, Desc: {ativ.descricao}')
+    except Exception as e:
+        print(f'Erro no modelo: {e}')
+" --app ativusai-af6f1462097d

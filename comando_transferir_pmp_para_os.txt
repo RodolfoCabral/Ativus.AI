@@ -1,0 +1,117 @@
+# COMANDO PARA TRANSFERIR ATIVIDADES DE PMP PARA OS
+
+heroku run python3 -c "
+from app import create_app
+from models import db
+
+app = create_app()
+with app.app_context():
+    print('🔧 TRANSFERINDO ATIVIDADES DE PMP PARA OS')
+    print('='*50)
+    
+    # 1. Verificar estrutura das tabelas
+    print('📋 VERIFICANDO TABELAS:')
+    
+    # Verificar atividades_pmp
+    try:
+        result = db.engine.execute('SELECT COUNT(*) FROM atividades_pmp')
+        count_pmp = result.fetchone()[0]
+        print(f'✅ atividades_pmp: {count_pmp} registros')
+    except Exception as e:
+        print(f'❌ atividades_pmp: {e}')
+        count_pmp = 0
+    
+    # Verificar atividades_os
+    try:
+        result = db.engine.execute('SELECT COUNT(*) FROM atividades_os')
+        count_os = result.fetchone()[0]
+        print(f'✅ atividades_os: {count_os} registros')
+    except Exception as e:
+        print(f'❌ atividades_os: {e}')
+        count_os = 0
+    
+    if count_pmp == 0:
+        print('❌ Não há atividades na tabela atividades_pmp')
+        exit()
+    
+    # 2. Buscar OS de PMP que não têm atividades
+    print('\\n🔍 BUSCANDO OS SEM ATIVIDADES:')
+    
+    # Buscar OS de PMP
+    result = db.engine.execute('''
+        SELECT os.id, os.descricao, os.pmp_id 
+        FROM ordens_servico os 
+        WHERE os.pmp_id IS NOT NULL 
+        AND os.id NOT IN (SELECT DISTINCT os_id FROM atividades_os WHERE os_id IS NOT NULL)
+        LIMIT 20
+    ''')
+    os_sem_atividades = list(result)
+    
+    print(f'📊 Encontradas {len(os_sem_atividades)} OS sem atividades')
+    
+    if len(os_sem_atividades) == 0:
+        print('✅ Todas as OS já têm atividades!')
+        exit()
+    
+    # 3. Para cada OS, transferir atividades da PMP
+    transferencias = 0
+    
+    for os_data in os_sem_atividades:
+        os_id, os_desc, pmp_id = os_data
+        print(f'\\n🔧 OS {os_id}: {os_desc} (PMP: {pmp_id})')
+        
+        # Buscar atividades da PMP
+        result = db.engine.execute(f'''
+            SELECT id, descricao, ordem, oficina 
+            FROM atividades_pmp 
+            WHERE pmp_id = {pmp_id} 
+            ORDER BY ordem
+        ''')
+        atividades_pmp = list(result)
+        
+        if not atividades_pmp:
+            print(f'   ⚠️ PMP {pmp_id} não tem atividades')
+            continue
+        
+        print(f'   📋 Transferindo {len(atividades_pmp)} atividades...')
+        
+        # Transferir cada atividade
+        for atividade_pmp in atividades_pmp:
+            ativ_id, descricao, ordem, oficina = atividade_pmp
+            
+            # Inserir na tabela atividades_os
+            db.engine.execute(f'''
+                INSERT INTO atividades_os 
+                (os_id, atividade_pmp_id, descricao, ordem, status, data_criacao, data_atualizacao)
+                VALUES 
+                ({os_id}, {ativ_id}, '{descricao.replace(\"'\", \"''\")}', {ordem or 1}, 'pendente', NOW(), NOW())
+            ''')
+            
+            print(f'     ✅ {ordem}. {descricao}')
+        
+        transferencias += 1
+        print(f'   ✅ {len(atividades_pmp)} atividades transferidas!')
+    
+    # 4. Commit das mudanças
+    db.session.commit()
+    
+    print(f'\\n📊 RESULTADO FINAL:')
+    print(f'✅ {transferencias} OS processadas')
+    
+    # Verificar resultado
+    result = db.engine.execute('SELECT COUNT(*) FROM atividades_os')
+    count_final = result.fetchone()[0]
+    print(f'📋 Total de atividades_os agora: {count_final}')
+    
+    # Testar OS 862 especificamente
+    result = db.engine.execute('SELECT COUNT(*) FROM atividades_os WHERE os_id = 862')
+    count_862 = result.fetchone()[0]
+    print(f'🎯 OS 862 agora tem: {count_862} atividades')
+    
+    if count_862 > 0:
+        result = db.engine.execute('SELECT descricao FROM atividades_os WHERE os_id = 862 LIMIT 3')
+        atividades_862 = list(result)
+        print(f'   Exemplos:')
+        for i, ativ in enumerate(atividades_862):
+            print(f'     {i+1}. {ativ[0]}')
+" --app ativusai-af6f1462097d
