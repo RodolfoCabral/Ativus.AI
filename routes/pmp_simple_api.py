@@ -276,6 +276,29 @@ def api_gerar_todas_os_simples():
                         horas = pmp.tempo_pessoa or 1.0
                         hh = qtd_pessoas * horas
                         
+                        # Verificar se PMP tem usuários responsáveis
+                        usuarios_responsaveis = []
+                        if pmp.usuarios_responsaveis:
+                            try:
+                                import json
+                                usuarios_responsaveis = json.loads(pmp.usuarios_responsaveis)
+                            except:
+                                usuarios_responsaveis = []
+                        
+                        # Determinar status e usuário responsável
+                        if usuarios_responsaveis and len(usuarios_responsaveis) > 0:
+                            # PMP tem usuário designado - criar como programada
+                            status_os = 'programada'
+                            usuario_responsavel = usuarios_responsaveis[0]  # Primeiro usuário da lista
+                            current_app.logger.info(f"📋 OS {sequencia} para PMP {pmp.codigo}: PROGRAMADA para usuário {usuario_responsavel} em {data_programada}")
+                        else:
+                            # PMP sem usuário designado - criar como aberta
+                            status_os = 'aberta'
+                            usuario_responsavel = None
+                            current_app.logger.info(f"📋 OS {sequencia} para PMP {pmp.codigo}: ABERTA (sem usuário) em {data_programada}")
+                        
+                        current_app.logger.info(f"🔧 Criando OS: Status={status_os}, Usuário={usuario_responsavel}, Data={data_programada}")
+                        
                         nova_os = OrdemServico(
                             # Campos obrigatórios básicos
                             descricao=descricao,
@@ -286,7 +309,7 @@ def api_gerar_todas_os_simples():
                             horas=horas,
                             hh=hh,
                             prioridade='media',
-                            status='programada',
+                            status=status_os,  # ← CORRIGIDO: aberta ou programada conforme PMP
                             
                             # Campos de relacionamento obrigatórios (VALIDADOS)
                             equipamento_id=pmp.equipamento_id,
@@ -296,9 +319,10 @@ def api_gerar_todas_os_simples():
                             # Campos de empresa e usuário obrigatórios
                             empresa=dados_equipamento['empresa'],
                             usuario_criacao=getattr(current_user, 'username', 'sistema'),
+                            usuario_responsavel=usuario_responsavel,  # ← CORRIGIDO: usuário da PMP ou None
                             
                             # Campos de data
-                            data_programada=data_programada,
+                            data_programada=data_programada if status_os == 'programada' else None,  # ← CORRIGIDO: só se programada
                             data_criacao=datetime.now(),
                             
                             # Campos específicos de PMP

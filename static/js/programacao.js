@@ -184,17 +184,24 @@ function renderPriorityLines() {
         
         let osFiltered;
         if (prioridade === 'preventiva') {
-            // CORREÇÃO: Lógica melhorada para preventivas
+            // CORREÇÃO: Lógica para preventivas - APENAS STATUS ABERTA (sem usuário responsável)
             osFiltered = ordensServico.filter(os => {
-                // Condição 1: Prioridade preventiva normal
+                // Condição 1: Prioridade preventiva normal (apenas abertas sem responsável)
                 const condicao1 = (os.prioridade === 'preventiva' || os.pmp_id || (os.descricao && os.descricao.toLowerCase().includes('pmp'))) && 
                                  os.status === 'aberta' &&
                                  (!os.usuario_responsavel || os.usuario_responsavel === null || os.usuario_responsavel === '');
                 
-                // Condição 2: Qualquer OS de PMP aberta (independente da prioridade)
-                const condicao2 = os.pmp_id && os.pmp_id !== null && os.status === 'aberta';
+                // Condição 2: Qualquer OS de PMP aberta sem responsável
+                const condicao2 = os.pmp_id && os.pmp_id !== null && 
+                                 os.status === 'aberta' &&
+                                 (!os.usuario_responsavel || os.usuario_responsavel === null || os.usuario_responsavel === '');
                 
-                return condicao1 || condicao2;
+                // Condição 3: OS geradas automaticamente pelo sistema PMP (abertas sem responsável)
+                const condicao3 = os.tipo_manutencao === 'preventiva-periodica' && 
+                                 os.status === 'aberta' &&
+                                 (!os.usuario_responsavel || os.usuario_responsavel === null || os.usuario_responsavel === '');
+                
+                return condicao1 || condicao2 || condicao3;
             });
             
             console.log(`🔧 Preventivas filtradas: ${osFiltered.length}`);
@@ -1375,9 +1382,20 @@ async function verificarOSPendentesPMP() {
                         // Recarregar a programação após gerar OS
                         if (osGeradas > 0) {
                             console.log('🔄 Recarregando programação com novas OS...');
+                            
+                            // Recarregar imediatamente
+                            loadOrdensServico().then(() => {
+                                renderPriorityLines();
+                                console.log('✅ Programação recarregada com novas OS preventivas');
+                            });
+                            
+                            // Recarregar novamente após 3 segundos para garantir
                             setTimeout(() => {
-                                loadOrdensServico();
-                            }, 2000);
+                                loadOrdensServico().then(() => {
+                                    renderPriorityLines();
+                                    console.log('✅ Segundo recarregamento concluído');
+                                });
+                            }, 3000);
                         }
                     } else {
                         console.error('❌ Erro na geração automática:', gerarData.error);
