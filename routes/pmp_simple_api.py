@@ -258,13 +258,18 @@ def api_gerar_todas_os_simples():
                 # Gerar OS para cada data do cronograma
                 for i, data_programada in enumerate(cronograma, 1):
                     try:
-                        # Verificar se já existe OS para esta data
-                        os_existente = OrdemServico.query.filter_by(
-                            pmp_id=pmp.id,
-                            data_programada=data_programada
-                        ).first()
+                        # Verificação robusta de OS existente
+                        from routes.verificador_duplicatas_os import verificar_os_existente_robusta
+                        
+                        os_existente = verificar_os_existente_robusta(
+                            pmp=pmp,
+                            data_programada=data_programada,
+                            numero_sequencia=i,
+                            OrdemServico=OrdemServico
+                        )
                         
                         if os_existente:
+                            current_app.logger.info(f"⚠️ OS já existe para PMP {pmp.codigo} sequência {i}: ID {os_existente.id}")
                             continue  # OS já existe
                         
                         # Criar nova OS com todos os campos obrigatórios

@@ -176,6 +176,16 @@ def create_app():
     except Exception as e:
         print(f"❌ Erro ao registrar blueprint simples: {e}")
     
+    # 🧹 BLUEPRINT DE LIMPEZA E MANUTENÇÃO
+    try:
+        from routes.pmp_cleanup_api import pmp_cleanup_api_bp
+        app.register_blueprint(pmp_cleanup_api_bp)
+        print("✅ Blueprint de LIMPEZA PMP registrado com sucesso")
+    except ImportError as e:
+        print(f"❌ Erro ao importar pmp_cleanup_api_bp: {e}")
+    except Exception as e:
+        print(f"❌ Erro ao registrar blueprint de limpeza: {e}")
+    
     # Importar e registrar blueprint de API aprimorada (como backup)
     try:
         from routes.pmp_os_api import pmp_os_api_bp
