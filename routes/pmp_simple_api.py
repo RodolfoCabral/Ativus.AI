@@ -294,8 +294,13 @@ def api_gerar_todas_os_simples():
                         if usuarios_responsaveis and len(usuarios_responsaveis) > 0:
                             # PMP tem usuário designado - criar como programada
                             status_os = 'programada'
-                            usuario_responsavel = usuarios_responsaveis[0]  # Primeiro usuário da lista
-                            current_app.logger.info(f"📋 OS {sequencia} para PMP {pmp.codigo}: PROGRAMADA para usuário {usuario_responsavel} em {data_programada}")
+                            
+                            # Buscar nome do usuário pelo ID
+                            from routes.usuario_helper import buscar_nome_usuario_por_id
+                            user_id = usuarios_responsaveis[0]  # Primeiro usuário da lista
+                            usuario_responsavel = buscar_nome_usuario_por_id(user_id)
+                            
+                            current_app.logger.info(f"📋 OS {sequencia} para PMP {pmp.codigo}: PROGRAMADA para usuário ID {user_id} → Nome: {usuario_responsavel} em {data_programada}")
                         else:
                             # PMP sem usuário designado - criar como aberta
                             status_os = 'aberta'
