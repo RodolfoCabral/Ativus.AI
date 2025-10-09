@@ -13,7 +13,6 @@ with app.app_context():
         FROM ordens_servico os 
         WHERE os.pmp_id IS NOT NULL 
         AND os.id NOT IN (SELECT DISTINCT os_id FROM atividades_os)
-        LIMIT 10
     '''))
 
     transferidos = 0
