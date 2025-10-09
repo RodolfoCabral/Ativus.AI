@@ -938,14 +938,27 @@ def create_app():
     except Exception as e:
         print(f"Erro ao configurar scheduler automático: {e}")
     
-    # 🚀 INICIALIZAR TRANSFERÊNCIA AUTOMÁTICA DE ATIVIDADES
+    # 🚀 EXECUTAR TRANSFERÊNCIA DE ATIVIDADES NA INICIALIZAÇÃO
     try:
-        from auto_transferir_atividades import executar_na_inicializacao
-        with app.app_context():
-            executar_na_inicializacao()
-        print("✅ Sistema de transferência automática inicializado")
+        import subprocess
+        import threading
+        
+        def executar_transferencia():
+            try:
+                print("🚀 Iniciando transferência de atividades em background...")
+                subprocess.run(['python3', 'transferir_atividades.py'], 
+                             cwd='/app', capture_output=True, text=True)
+                print("✅ Transferência de atividades concluída")
+            except Exception as e:
+                print(f"⚠️ Erro na transferência: {e}")
+        
+        # Executar em thread separada para não bloquear a inicialização
+        thread = threading.Thread(target=executar_transferencia)
+        thread.daemon = True
+        thread.start()
+        
     except Exception as e:
-        print(f"⚠️ Erro ao inicializar transferência automática: {e}")
+        print(f"⚠️ Erro ao inicializar transferência: {e}")
     
     return app
 

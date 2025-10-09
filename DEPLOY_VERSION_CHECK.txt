@@ -1,0 +1,13 @@
+VERSÃO DO DEPLOY: 2025-10-09 02:55:00
+CORREÇÕES APLICADAS:
+- ✅ render_template → send_from_directory (linha 374)
+- ✅ Contexto da aplicação para transferência automática
+- ✅ Todas as rotas dentro de create_app()
+
+VERIFICAR NO HEROKU:
+1. Se este arquivo existe
+2. Se app.py linha 374 tem send_from_directory
+3. Se ainda há render_template na linha 374
+
+COMANDO PARA VERIFICAR:
+heroku run cat app.py | grep -n "def index" -A 2 --app ativusai-af6f1462097d
