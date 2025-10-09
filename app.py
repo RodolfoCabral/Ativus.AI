@@ -196,6 +196,16 @@ def create_app():
     except Exception as e:
         print(f"❌ Erro ao registrar blueprint de usuários: {e}")
     
+    # 🔍 BLUEPRINT DE DEBUG DE USUÁRIOS
+    try:
+        from routes.debug_users_api import debug_users_api_bp
+        app.register_blueprint(debug_users_api_bp)
+        print("✅ Blueprint de DEBUG DE USUÁRIOS registrado com sucesso")
+    except ImportError as e:
+        print(f"❌ Erro ao importar debug_users_api_bp: {e}")
+    except Exception as e:
+        print(f"❌ Erro ao registrar blueprint de debug: {e}")
+    
     # Importar e registrar blueprint de API aprimorada (como backup)
     try:
         from routes.pmp_os_api import pmp_os_api_bp
