@@ -342,6 +342,33 @@ def api_gerar_todas_os_simples():
                         )
                         
                         db.session.add(nova_os)
+                        db.session.flush()  # Garante que nova_os.id esteja disponível
+                        
+                        # 🔧 TRANSFERIR ATIVIDADES DA PMP PARA A OS
+                        try:
+                            from models.pmp_limpo import AtividadePMP
+                            from models.atividade_os import AtividadeOS, StatusConformidade
+                            
+                            # Buscar atividades da PMP
+                            atividades_pmp = AtividadePMP.query.filter_by(pmp_id=pmp.id).order_by(AtividadePMP.ordem).all()
+                            
+                            atividades_criadas = 0
+                            for atividade_pmp in atividades_pmp:
+                                nova_atividade_os = AtividadeOS(
+                                    os_id=nova_os.id,
+                                    atividade_pmp_id=atividade_pmp.id,
+                                    descricao=atividade_pmp.descricao,
+                                    ordem=atividade_pmp.ordem,
+                                    status=StatusConformidade.PENDENTE
+                                )
+                                db.session.add(nova_atividade_os)
+                                atividades_criadas += 1
+                            
+                            current_app.logger.info(f"✅ {atividades_criadas} atividades transferidas da PMP {pmp.codigo} para OS {nova_os.id}")
+                            
+                        except Exception as atividade_error:
+                            current_app.logger.warning(f"⚠️ Erro ao transferir atividades da PMP {pmp.codigo}: {atividade_error}")
+                            # Não falhar a criação da OS por causa das atividades
                         
                         # Commit individual para evitar rollback em massa
                         db.session.commit()
