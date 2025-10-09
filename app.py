@@ -373,19 +373,10 @@ def create_app():
     def index():
         return render_template('index.html')
     
-    # 🚀 INICIALIZAR TRANSFERÊNCIA AUTOMÁTICA DE ATIVIDADES
-    try:
-        from auto_transferir_atividades import executar_na_inicializacao
-        executar_na_inicializacao()
-        print("✅ Sistema de transferência automática inicializado")
-    except Exception as e:
-        print(f"⚠️ Erro ao inicializar transferência automática: {e}")
-    
-    return app
-
-@app.route('/signup')
-def signup():
-    return send_from_directory('static', 'signup.html')
+    # Rotas adicionais
+    @app.route('/signup')
+    def signup():
+        return send_from_directory('static', 'signup.html')
     
     @app.route('/dashboard')
     @login_required
@@ -946,6 +937,14 @@ def signup():
         print(f"Aviso: Scheduler automático não disponível: {e}")
     except Exception as e:
         print(f"Erro ao configurar scheduler automático: {e}")
+    
+    # 🚀 INICIALIZAR TRANSFERÊNCIA AUTOMÁTICA DE ATIVIDADES
+    try:
+        from auto_transferir_atividades import executar_na_inicializacao
+        executar_na_inicializacao()
+        print("✅ Sistema de transferência automática inicializado")
+    except Exception as e:
+        print(f"⚠️ Erro ao inicializar transferência automática: {e}")
     
     return app
 
