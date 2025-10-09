@@ -371,7 +371,7 @@ def create_app():
         # Rotas para arquivos estáticos
     @app.route('/')
     def index():
-        return render_template('index.html')
+        return send_from_directory('static', 'index.html')
     
     # Rotas adicionais
     @app.route('/signup')
@@ -941,7 +941,8 @@ def create_app():
     # 🚀 INICIALIZAR TRANSFERÊNCIA AUTOMÁTICA DE ATIVIDADES
     try:
         from auto_transferir_atividades import executar_na_inicializacao
-        executar_na_inicializacao()
+        with app.app_context():
+            executar_na_inicializacao()
         print("✅ Sistema de transferência automática inicializado")
     except Exception as e:
         print(f"⚠️ Erro ao inicializar transferência automática: {e}")
