@@ -1,0 +1,94 @@
+# COMANDOS PARA EXECUTAR NO HEROKU - TRANSFERÊNCIA DE ATIVIDADES
+
+# 1. Verificar OS sem atividades
+curl -H "Cookie: session=SEU_COOKIE_AQUI" \
+     https://ativusai-af6f1462097d.herokuapp.com/api/debug/os-sem-atividades
+
+# 2. Verificar detalhes da OS 793 específica
+curl -H "Cookie: session=SEU_COOKIE_AQUI" \
+     https://ativusai-af6f1462097d.herokuapp.com/api/debug/os/793/detalhes
+
+# 3. Transferir atividades faltantes para todas as OS
+curl -X POST \
+     -H "Cookie: session=SEU_COOKIE_AQUI" \
+     https://ativusai-af6f1462097d.herokuapp.com/api/debug/transferir-atividades-faltantes
+
+# 4. Verificar se a OS 793 agora tem atividades
+curl -H "Cookie: session=SEU_COOKIE_AQUI" \
+     https://ativusai-af6f1462097d.herokuapp.com/api/os/793/atividades
+
+# ALTERNATIVA: Usar heroku run para executar script Python
+heroku run python3 -c "
+from app import create_app
+from models import db
+from assets_models import OrdemServico
+from models.atividade_os import AtividadeOS
+from models.pmp_limpo import PMP, AtividadePMP
+
+app = create_app()
+with app.app_context():
+    # Buscar OS 793
+    os = OrdemServico.query.get(793)
+    print(f'OS 793: {os.descricao if os else \"Não encontrada\"}')
+    
+    if os and os.pmp_id:
+        # Verificar atividades existentes
+        atividades_os = AtividadeOS.query.filter_by(os_id=793).count()
+        print(f'Atividades na OS: {atividades_os}')
+        
+        # Verificar atividades da PMP
+        atividades_pmp = AtividadePMP.query.filter_by(pmp_id=os.pmp_id).all()
+        print(f'Atividades na PMP: {len(atividades_pmp)}')
+        
+        if len(atividades_pmp) > 0 and atividades_os == 0:
+            print('Transferindo atividades...')
+            for atividade_pmp in atividades_pmp:
+                nova_atividade = AtividadeOS(
+                    os_id=793,
+                    atividade_pmp_id=atividade_pmp.id,
+                    descricao=atividade_pmp.descricao,
+                    ordem=atividade_pmp.ordem,
+                    status='pendente'
+                )
+                db.session.add(nova_atividade)
+            
+            db.session.commit()
+            print('Atividades transferidas com sucesso!')
+        else:
+            print('Não é necessário transferir atividades')
+" --app ativusai-af6f1462097d
+
+# COMANDO SIMPLIFICADO PARA HEROKU
+heroku run python3 -c "
+from app import create_app
+from models import db
+from assets_models import OrdemServico
+from models.atividade_os import AtividadeOS
+from models.pmp_limpo import AtividadePMP
+
+app = create_app()
+with app.app_context():
+    # Buscar todas as OS de PMP sem atividades
+    os_pmp = OrdemServico.query.filter(OrdemServico.pmp_id.isnot(None)).all()
+    transferencias = 0
+    
+    for os in os_pmp:
+        atividades_os = AtividadeOS.query.filter_by(os_id=os.id).count()
+        if atividades_os == 0:
+            atividades_pmp = AtividadePMP.query.filter_by(pmp_id=os.pmp_id).all()
+            if atividades_pmp:
+                for atividade_pmp in atividades_pmp:
+                    nova_atividade = AtividadeOS(
+                        os_id=os.id,
+                        atividade_pmp_id=atividade_pmp.id,
+                        descricao=atividade_pmp.descricao,
+                        ordem=atividade_pmp.ordem,
+                        status='pendente'
+                    )
+                    db.session.add(nova_atividade)
+                db.session.commit()
+                transferencias += 1
+                print(f'OS {os.id}: {len(atividades_pmp)} atividades transferidas')
+    
+    print(f'Total: {transferencias} OS processadas')
+" --app ativusai-af6f1462097d

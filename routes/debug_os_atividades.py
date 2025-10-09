@@ -169,7 +169,7 @@ def api_debug_transferir_atividades_faltantes():
         
         # Importar modelos
         from assets_models import OrdemServico
-        from models.atividade_os import AtividadeOS, StatusConformidade
+        from models.atividade_os import AtividadeOS
         from models.pmp_limpo import PMP, AtividadePMP
         from models import db
         
@@ -201,7 +201,7 @@ def api_debug_transferir_atividades_faltantes():
                         atividade_pmp_id=atividade_pmp.id,
                         descricao=atividade_pmp.descricao,
                         ordem=atividade_pmp.ordem,
-                        status=StatusConformidade.PENDENTE
+                        status='pendente'
                     )
                     db.session.add(nova_atividade_os)
                     atividades_criadas += 1

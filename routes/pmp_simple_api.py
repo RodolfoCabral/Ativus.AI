@@ -347,7 +347,7 @@ def api_gerar_todas_os_simples():
                         # 🔧 TRANSFERIR ATIVIDADES DA PMP PARA A OS
                         try:
                             from models.pmp_limpo import AtividadePMP
-                            from models.atividade_os import AtividadeOS, StatusConformidade
+                            from models.atividade_os import AtividadeOS
                             
                             # Buscar atividades da PMP
                             atividades_pmp = AtividadePMP.query.filter_by(pmp_id=pmp.id).order_by(AtividadePMP.ordem).all()
@@ -359,7 +359,7 @@ def api_gerar_todas_os_simples():
                                     atividade_pmp_id=atividade_pmp.id,
                                     descricao=atividade_pmp.descricao,
                                     ordem=atividade_pmp.ordem,
-                                    status=StatusConformidade.PENDENTE
+                                    status='pendente'
                                 )
                                 db.session.add(nova_atividade_os)
                                 atividades_criadas += 1
