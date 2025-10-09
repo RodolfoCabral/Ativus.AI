@@ -216,6 +216,16 @@ def create_app():
     except Exception as e:
         print(f"❌ Erro ao registrar blueprint de debug atividades: {e}")
     
+    # 🔍 BLUEPRINT DE DEBUG DE OS ATIVIDADES
+    try:
+        from routes.debug_os_atividades import debug_os_atividades_bp
+        app.register_blueprint(debug_os_atividades_bp)
+        print("✅ Blueprint de DEBUG DE OS ATIVIDADES registrado com sucesso")
+    except ImportError as e:
+        print(f"❌ Erro ao importar debug_os_atividades_bp: {e}")
+    except Exception as e:
+        print(f"❌ Erro ao registrar blueprint de debug OS atividades: {e}")
+    
     # Importar e registrar blueprint de API aprimorada (como backup)
     try:
         from routes.pmp_os_api import pmp_os_api_bp
