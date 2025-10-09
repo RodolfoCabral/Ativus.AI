@@ -19,6 +19,15 @@ def login():
             return jsonify({'success': False, 'message': 'Usuário bloqueado. Entre em contato com o administrador.'})
             
         login_user(user)
+        
+        # 🚀 EXECUTAR TRANSFERÊNCIA AUTOMÁTICA DE ATIVIDADES APÓS LOGIN
+        try:
+            from auto_transferir_atividades import executar_apos_login
+            executar_apos_login()
+        except Exception as e:
+            # Não falhar o login se a transferência der erro
+            print(f"⚠️ Erro na transferência automática: {e}")
+        
         return jsonify({
             'success': True, 
             'message': 'Login realizado com sucesso',

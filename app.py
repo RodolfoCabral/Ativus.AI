@@ -358,14 +358,34 @@ def create_app():
     except Exception as e:
         print(f"❌ Erro ao registrar blueprint de atividades fallback: {e}")
     
-    # Rotas para arquivos estáticos
+    # 📊 BLUEPRINT DE STATUS DA TRANSFERÊNCIA AUTOMÁTICA
+    try:
+        from routes.auto_transfer_status import auto_transfer_status_bp
+        app.register_blueprint(auto_transfer_status_bp)
+        print("✅ Blueprint de STATUS TRANSFERÊNCIA AUTOMÁTICA registrado com sucesso")
+    except ImportError as e:
+        print(f"❌ Erro ao importar auto_transfer_status_bp: {e}")
+    except Exception as e:
+        print(f"❌ Erro ao registrar blueprint de status transferência: {e}")
+    
+        # Rotas para arquivos estáticos
     @app.route('/')
     def index():
-        return send_from_directory('static', 'index.html')
+        return render_template('index.html')
     
-    @app.route('/signup')
-    def signup():
-        return send_from_directory('static', 'signup.html')
+    # 🚀 INICIALIZAR TRANSFERÊNCIA AUTOMÁTICA DE ATIVIDADES
+    try:
+        from auto_transferir_atividades import executar_na_inicializacao
+        executar_na_inicializacao()
+        print("✅ Sistema de transferência automática inicializado")
+    except Exception as e:
+        print(f"⚠️ Erro ao inicializar transferência automática: {e}")
+    
+    return app
+
+@app.route('/signup')
+def signup():
+    return send_from_directory('static', 'signup.html')
     
     @app.route('/dashboard')
     @login_required

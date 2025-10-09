@@ -1,0 +1,108 @@
+# COMANDO PARA TRANSFERIR TODAS AS ATIVIDADES (SEM LIMITE)
+
+heroku run python3 -c "
+from app import create_app
+from models import db
+
+app = create_app()
+with app.app_context():
+    print('🔧 TRANSFERINDO TODAS AS ATIVIDADES DE PMP PARA OS')
+    print('='*60)
+    
+    # 1. Verificar quantas OS precisam de transferência
+    result = db.engine.execute('''
+        SELECT COUNT(*) 
+        FROM ordens_servico os 
+        WHERE os.pmp_id IS NOT NULL 
+        AND os.id NOT IN (SELECT DISTINCT os_id FROM atividades_os WHERE os_id IS NOT NULL)
+    ''')
+    total_pendentes = result.fetchone()[0]
+    print(f'📊 Total de OS que precisam de transferência: {total_pendentes}')
+    
+    if total_pendentes == 0:
+        print('✅ Todas as OS já têm atividades!')
+        exit()
+    
+    # 2. Buscar TODAS as OS sem atividades (SEM LIMIT)
+    result = db.engine.execute('''
+        SELECT os.id, os.descricao, os.pmp_id 
+        FROM ordens_servico os 
+        WHERE os.pmp_id IS NOT NULL 
+        AND os.id NOT IN (SELECT DISTINCT os_id FROM atividades_os WHERE os_id IS NOT NULL)
+        ORDER BY os.id
+    ''')
+    os_sem_atividades = list(result)
+    
+    print(f'🔍 Processando {len(os_sem_atividades)} OS...')
+    
+    # 3. Transferir atividades para cada OS
+    transferencias_realizadas = 0
+    atividades_transferidas = 0
+    
+    for i, os_data in enumerate(os_sem_atividades):
+        os_id, os_desc, pmp_id = os_data
+        
+        # Mostrar progresso a cada 10 OS
+        if i % 10 == 0:
+            print(f'📋 Processando OS {i+1}/{len(os_sem_atividades)}...')
+        
+        # Buscar atividades da PMP
+        result_ativ = db.engine.execute(f'''
+            SELECT id, descricao, ordem, oficina 
+            FROM atividades_pmp 
+            WHERE pmp_id = {pmp_id} 
+            ORDER BY ordem
+        ''')
+        atividades_pmp = list(result_ativ)
+        
+        if not atividades_pmp:
+            print(f'   ⚠️ OS {os_id}: PMP {pmp_id} não tem atividades')
+            continue
+        
+        # Transferir cada atividade
+        for atividade_pmp in atividades_pmp:
+            ativ_id, descricao, ordem, oficina = atividade_pmp
+            
+            # Escapar aspas na descrição
+            descricao_escaped = descricao.replace(\"'\", \"''\") if descricao else 'Atividade'
+            
+            # Inserir na tabela atividades_os
+            db.engine.execute(f'''
+                INSERT INTO atividades_os 
+                (os_id, atividade_pmp_id, descricao, ordem, status, data_criacao, data_atualizacao)
+                VALUES 
+                ({os_id}, {ativ_id}, '{descricao_escaped}', {ordem or 1}, 'pendente', NOW(), NOW())
+            ''')
+            
+            atividades_transferidas += 1
+        
+        transferencias_realizadas += 1
+        
+        # Mostrar detalhes das primeiras 5 OS
+        if i < 5:
+            print(f'   ✅ OS {os_id}: {len(atividades_pmp)} atividades transferidas')
+    
+    # 4. Commit de todas as mudanças
+    db.session.commit()
+    
+    print(f'\\n📊 RESULTADO FINAL:')
+    print(f'✅ OS processadas: {transferencias_realizadas}')
+    print(f'✅ Atividades transferidas: {atividades_transferidas}')
+    
+    # 5. Verificar resultado final
+    result = db.engine.execute('SELECT COUNT(*) FROM atividades_os')
+    total_atividades_os = result.fetchone()[0]
+    print(f'📋 Total de atividades_os agora: {total_atividades_os}')
+    
+    # 6. Verificar algumas OS específicas
+    os_teste = [792, 793, 862]
+    for os_id in os_teste:
+        result = db.engine.execute(f'SELECT COUNT(*) FROM atividades_os WHERE os_id = {os_id}')
+        count = result.fetchone()[0]
+        if count > 0:
+            print(f'✅ OS {os_id}: {count} atividades')
+        else:
+            print(f'❌ OS {os_id}: 0 atividades')
+    
+    print('\\n🎉 TRANSFERÊNCIA COMPLETA CONCLUÍDA!')
+" --app ativusai-af6f1462097d

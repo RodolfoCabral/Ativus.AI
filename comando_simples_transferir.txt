@@ -1,0 +1,43 @@
+# COMANDO SIMPLES PARA TRANSFERIR TODAS AS ATIVIDADES
+
+heroku run python3 -c "
+from app import create_app
+from models import db
+
+app = create_app()
+with app.app_context():
+    print('🚀 TRANSFERÊNCIA SIMPLES - TODAS AS ATIVIDADES')
+    
+    # Buscar e transferir em uma única operação
+    result = db.engine.execute('''
+        INSERT INTO atividades_os (os_id, atividade_pmp_id, descricao, ordem, status, data_criacao, data_atualizacao)
+        SELECT 
+            os.id as os_id,
+            ap.id as atividade_pmp_id,
+            ap.descricao,
+            ap.ordem,
+            'pendente' as status,
+            NOW() as data_criacao,
+            NOW() as data_atualizacao
+        FROM ordens_servico os
+        INNER JOIN atividades_pmp ap ON os.pmp_id = ap.pmp_id
+        WHERE os.pmp_id IS NOT NULL
+        AND os.id NOT IN (SELECT DISTINCT os_id FROM atividades_os WHERE os_id IS NOT NULL)
+    ''')
+    
+    # Commit
+    db.session.commit()
+    
+    # Verificar resultado
+    result = db.engine.execute('SELECT COUNT(*) FROM atividades_os')
+    total = result.fetchone()[0]
+    print(f'✅ Total de atividades_os: {total}')
+    
+    # Testar OS específicas
+    for os_id in [792, 793, 862]:
+        result = db.engine.execute(f'SELECT COUNT(*) FROM atividades_os WHERE os_id = {os_id}')
+        count = result.fetchone()[0]
+        print(f'OS {os_id}: {count} atividades')
+    
+    print('🎉 CONCLUÍDO!')
+" --app ativusai-af6f1462097d
