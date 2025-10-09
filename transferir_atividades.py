@@ -5,7 +5,10 @@ from sqlalchemy import text
 app = create_app()
 
 with app.app_context():
-    result = db.engine.execute(text('''
+    print("🔍 Iniciando transferência de atividades PMP para OS...")
+
+    # Usando db.session.execute em vez de engine.execute
+    result = db.session.execute(text('''
         SELECT os.id, os.pmp_id 
         FROM ordens_servico os 
         WHERE os.pmp_id IS NOT NULL 
@@ -13,24 +16,40 @@ with app.app_context():
         LIMIT 10
     '''))
 
+    transferidos = 0
+
     for os_data in result:
         os_id, pmp_id = os_data
+        print(f"➡️ OS {os_id} vinculada à PMP {pmp_id}")
 
-        atividades = db.engine.execute(text(f'''
+        atividades = db.session.execute(text('''
             SELECT id, descricao, ordem 
             FROM atividades_pmp 
-            WHERE pmp_id = {pmp_id}
-        '''))
+            WHERE pmp_id = :pmp_id
+        '''), {"pmp_id": pmp_id})
 
+        count = 0
         for ativ in atividades:
-            desc = ativ[1].replace("'", "''")
-            db.engine.execute(text(f'''
+            desc = ativ.descricao.replace("'", "''") if ativ.descricao else ""
+            ordem = ativ.ordem or 1
+
+            db.session.execute(text('''
                 INSERT INTO atividades_os 
                 (os_id, atividade_pmp_id, descricao, ordem, status, data_criacao)
-                VALUES ({os_id}, {ativ[0]}, '{desc}', {ativ[2] or 1}, 'pendente', NOW())
-            '''))
+                VALUES (:os_id, :atividade_pmp_id, :descricao, :ordem, 'pendente', NOW())
+            '''), {
+                "os_id": os_id,
+                "atividade_pmp_id": ativ.id,
+                "descricao": desc,
+                "ordem": ordem
+            })
+            count += 1
 
-        print(f'OS {os_id}: atividades transferidas')
+        if count > 0:
+            print(f"✅ {count} atividades transferidas para OS {os_id}")
+            transferidos += 1
+        else:
+            print(f"⚠️ Nenhuma atividade encontrada para PMP {pmp_id}")
 
     db.session.commit()
-    print('Transferência concluída!')
+    print(f"🎯 Transferência concluída! {transferidos} OS atualizadas.")
