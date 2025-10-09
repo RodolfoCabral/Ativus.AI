@@ -319,6 +319,55 @@
                         </div>
                     </div>
                     
+                    <!-- Card Plano de 52 Semanas -->
+                    <div class="card" onclick="gerarPlano52Semanas()" style="
+                        background: white;
+                        border-radius: 16px;
+                        padding: 32px 24px;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        border: 1px solid rgba(153, 86, 152, 0.1);
+                        text-align: center;
+                        min-height: 200px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        position: relative;
+                        overflow: hidden;
+                    " onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='0 16px 48px rgba(153, 86, 152, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(0, 0, 0, 0.1)'">
+                        <div style="
+                            width: 80px;
+                            height: 80px;
+                            background: linear-gradient(135deg, #2E8B57, #32CD32);
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            margin-bottom: 20px;
+                            box-shadow: 0 4px 16px rgba(46, 139, 87, 0.3);
+                        ">
+                            <i class="fas fa-calendar-week" style="font-size: 32px; color: white;"></i>
+                        </div>
+                        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #333;">Plano de 52 Semanas</h3>
+                        <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">Visualize o cronograma anual de manutenções preventivas por equipamento</p>
+                        <div style="
+                            position: absolute;
+                            bottom: 16px;
+                            right: 16px;
+                            width: 32px;
+                            height: 32px;
+                            background: linear-gradient(135deg, #2E8B57, #32CD32);
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        ">
+                            <i class="fas fa-arrow-right" style="font-size: 14px; color: white;"></i>
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
         </div>
@@ -326,6 +375,69 @@
     
     <script src="/static/js/user_info.js"></script>
     <script src="/static/js/dashboard.js"></script>
+    
+    <script>
+        function gerarPlano52Semanas() {
+            // Mostrar loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
+                    color: white;
+                    font-size: 18px;
+                ">
+                    <div style="text-align: center;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 20px;"></i>
+                        <div>Gerando Plano de 52 Semanas...</div>
+                        <div style="font-size: 14px; margin-top: 10px; opacity: 0.8;">Isso pode levar alguns segundos</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(loadingDiv);
+            
+            // Fazer requisição para gerar o PDF
+            fetch('/api/relatorios/plano-52-semanas', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                }
+                throw new Error('Erro ao gerar relatório');
+            })
+            .then(blob => {
+                // Criar URL do blob e fazer download
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Plano_52_Semanas_${new Date().getFullYear()}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                // Remover loading
+                document.body.removeChild(loadingDiv);
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao gerar o relatório. Tente novamente.');
+                document.body.removeChild(loadingDiv);
+            });
+        }
+    </script>
     <script>
         function navigateTo(url) {
             window.location.href = url;

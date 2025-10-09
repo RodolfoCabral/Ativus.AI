@@ -348,6 +348,18 @@ def create_app():
         print(f"Erro ao registrar blueprint de atividades_os_bp: {e}")
         print("Sistema funcionará sem funcionalidades de atividades da OS.")
     
+    # Importar e registrar a blueprint do relatório de 52 semanas
+    try:
+        from routes.relatorio_52_semanas import relatorio_52_semanas_bp
+        app.register_blueprint(relatorio_52_semanas_bp)
+        print("Blueprint do relatório de 52 semanas registrado com sucesso")
+    except ImportError as e:
+        print(f"Aviso: Não foi possível importar relatorio_52_semanas_bp: {e}")
+        print("Sistema funcionará sem funcionalidades de relatório de 52 semanas.")
+    except Exception as e:
+        print(f"Erro ao registrar blueprint de relatório de 52 semanas: {e}")
+        print("Sistema funcionará sem funcionalidades de relatório de 52 semanas.")
+    
     # 🔄 BLUEPRINT DE ATIVIDADES COM FALLBACK
     try:
         from routes.atividades_os_com_fallback import atividades_os_fallback_bp
