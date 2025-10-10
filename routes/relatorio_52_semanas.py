@@ -94,8 +94,8 @@ def obter_status_os_semana(pmp_id, semana_numero, semanas_ano):
     # Buscar OS da PMP nesta semana
     os_semana = OrdemServico.query.filter(
         OrdemServico.pmp_id == pmp_id,
-        OrdemServico.data_criacao >= semana['inicio'],
-        OrdemServico.data_criacao <= semana['fim']
+        OrdemServico.data_criacao >= semana['inicio'].date(),
+        OrdemServico.data_criacao <= semana['fim'].date()
     ).first()
     
     if not os_semana:
