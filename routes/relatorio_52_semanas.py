@@ -137,12 +137,23 @@ def hh_por_mes_oficina(ano: int):
 
 # ---------- Geração do PDF ----------
 def gerar_pdf_visual_paginas(ano: int, equipamentos_por_pagina: int = 10):
+    """
+    Gera o PDF do plano 52 semanas em formato A3 paisagem.
+    """
+    # 🔧 Importes internos para evitar NameError fora do contexto do app
+    from models.pmp_limpo import PMP
+    from models.assets import equipamento as EquipamentoModel
+    from assets_models import OrdemServico
+
+    logger.info("🚀 Iniciando geração do PDF para o ano %s", ano)
+
     semanas = semanas_do_ano(ano)
     semanas_1 = [s for s in semanas if s["numero"] <= 26]
     semanas_2 = [s for s in semanas if s["numero"] > 26]
 
     pmps = PMP.query.order_by(PMP.id.asc()).all()
     grupos = defaultdict(list)
+
     for pmp in pmps:
         equip_id = getattr(pmp, "equipamento_id", None)
         nome_equip = "Equipamento sem nome"
