@@ -155,7 +155,12 @@ def gerar_pdf_visual_paginas(ano: int, equipamentos_por_pagina: int = 10):
         PMP = importlib.import_module("models.pmp_limpo").PMP
 
         # ⚙️ Recupera o modelo 'equipamento' do registry sem importar o módulo
-        db = current_app.extensions["sqlalchemy"].db
+        try:
+            from models import db
+        except Exception as e:
+            logger.error("[REL52] ❌ Falha ao importar db de models: %s", e)
+            raise
+
         EquipamentoModel = None
         for cls in db.Model._decl_class_registry.values():
             if hasattr(cls, "__tablename__") and cls.__tablename__ == "equipamentos":
