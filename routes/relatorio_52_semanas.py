@@ -1,45 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-Relatorio Plano 52 Semanas (PDF Visual Paginado) - com LOGS [REL52] e correção de contexto SQLAlchemy
+Relatorio Plano 52 Semanas (PDF Visual Paginado)
+Versão estável – compatível com Heroku e contexto Flask SQLAlchemy
 """
 
 import traceback
 import logging
+import importlib
 from io import BytesIO
 from datetime import datetime, timedelta, date
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 from flask import Blueprint, send_file, jsonify, current_app
 
-# ===== LOGGING =====
-logger = logging.getLogger("relatorio_52")
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    fmt = logging.Formatter("[REL52] %(levelname)s: %(message)s")
-    handler.setFormatter(fmt)
-    logger.addHandler(handler)
-logger.setLevel(logging.INFO)
-
-logger.info("🔧 Inicializando módulo relatorio_52_semanas.py")
-
-# ===== OBTÉM DB DO CONTEXTO DO APP =====
-try:
-    db = current_app.extensions["sqlalchemy"].db
-    logger.info("✅ Conectado ao contexto SQLAlchemy existente via current_app")
-except Exception as e:
-    logger.error("❌ Não foi possível obter SQLAlchemy do current_app: %s", e)
-    db = None
-
-# ===== Imports do projeto =====
-try:
-    from models.pmp_limpo import PMP
-    from models.assets import equipamento as EquipamentoModel
-    from assets_models import OrdemServico
-    logger.info("✅ Imports de modelos concluídos (PMP, equipamento, OrdemServico)")
-except Exception as e:
-    logger.error("❌ Erro ao importar modelos: %s", e)
-    logger.error(traceback.format_exc())
-
-# ===== ReportLab (PDF) =====
 from reportlab.lib.pagesizes import A3, landscape
 from reportlab.lib import colors
 from reportlab.platypus import (
@@ -48,11 +20,20 @@ from reportlab.platypus import (
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
 
+# ===== Logging =====
+logger = logging.getLogger("relatorio_52")
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    fmt = logging.Formatter("[REL52] %(levelname)s: %(message)s")
+    handler.setFormatter(fmt)
+    logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
 relatorio_52_semanas_bp = Blueprint('relatorio_52_semanas', __name__)
-logger.info("✅ Blueprint 'relatorio_52_semanas' criado")
+logger.info("✅ Blueprint 'relatorio_52_semanas' criado com sucesso")
 
 
-# ---------- Utils de data ----------
+# ---------- Utilidades ----------
 def _to_date(x):
     if isinstance(x, datetime):
         return x.date()
@@ -71,14 +52,11 @@ def semanas_do_ano(ano: int):
              "fim": (base + timedelta(weeks=i, days=6)).date()} for i in range(52)]
 
 
-# ---------- Frequência ----------
 def semanas_planejadas(frequencia: str):
     if not frequencia:
         return set()
     f = frequencia.lower()
-    if "diar" in f:
-        return set(range(1, 53))
-    if "seman" in f:
+    if "diar" in f or "seman" in f:
         return set(range(1, 53))
     if "quinzen" in f:
         return {i for i in range(2, 53, 2)}
@@ -95,26 +73,43 @@ def semanas_planejadas(frequencia: str):
     return set()
 
 
-# ---------- Status OS ----------
-def status_os_na_semana(pmp_id: int, semana: dict):
-    ini = datetime.combine(semana["inicio"], datetime.min.time())
-    fim = datetime.combine(semana["fim"], datetime.max.time())
-    os_ = OrdemServico.query.filter(
-        OrdemServico.pmp_id == pmp_id,
-        OrdemServico.data_criacao >= ini,
-        OrdemServico.data_criacao <= fim
-    ).order_by(OrdemServico.id.desc()).first()
-    if os_:
-        status = (getattr(os_, "status", "") or "").lower()
-        os_num = getattr(os_, "id", None)
-        if "conclu" in status or "final" in status:
-            return "concluida", os_num
-        return "gerada", os_num
-    return "nao_gerada", None
+# ---------- Status da OS ----------
+def status_os_na_semana(pmp_id, semana):
+    """Retorna o status e número da OS associada à PMP naquela semana."""
+    try:
+        from models.ordem_servico import OrdemServico
+    except Exception as e:
+        logger.error("[REL52] ⚠️ Falha ao importar OrdemServico: %s", e)
+        return "erro", None
+
+    try:
+        ini = datetime.combine(semana["inicio"], datetime.min.time())
+        fim = datetime.combine(semana["fim"], datetime.max.time())
+        os_ = OrdemServico.query.filter(
+            OrdemServico.pmp_id == pmp_id,
+            OrdemServico.data_criacao >= ini,
+            OrdemServico.data_criacao <= fim
+        ).order_by(OrdemServico.id.desc()).first()
+        if os_:
+            status = (getattr(os_, "status", "") or "").lower()
+            os_num = getattr(os_, "id", None)
+            if "conclu" in status or "final" in status:
+                return "concluida", os_num
+            return "gerada", os_num
+        return "nao_gerada", None
+    except Exception as e:
+        logger.error("[REL52] Erro ao consultar OS (%s): %s", pmp_id, e)
+        return "erro", None
 
 
-# ---------- HH por mês ----------
+# ---------- HH por oficina ----------
 def hh_por_mes_oficina(ano: int):
+    try:
+        from models.ordem_servico import OrdemServico
+    except Exception as e:
+        logger.error("[REL52] ⚠️ Falha ao importar OrdemServico: %s", e)
+        return [], []
+
     ini, fim = datetime(ano, 1, 1), datetime(ano, 12, 31, 23, 59, 59)
     os_conc = OrdemServico.query.filter(
         OrdemServico.status.in_(["concluida", "concluída"]),
@@ -137,15 +132,18 @@ def hh_por_mes_oficina(ano: int):
 
 # ---------- Geração do PDF ----------
 def gerar_pdf_visual_paginas(ano: int, equipamentos_por_pagina: int = 10):
-    """
-    Gera o PDF do plano 52 semanas em formato A3 paisagem.
-    """
-    # 🔧 Importes internos para evitar NameError fora do contexto do app
-    from models.pmp_limpo import PMP
-    from models.assets import equipamento as EquipamentoModel
-    from assets_models import OrdemServico
+    """Gera o PDF completo com as duas metades de semanas."""
+    logger.info("[REL52] 🚀 Iniciando geração do PDF (ano=%s)", ano)
 
-    logger.info("🚀 Iniciando geração do PDF para o ano %s", ano)
+    try:
+        # ⚙️ Importa modelos dinamicamente via importlib para evitar redefinições de tabelas
+        PMP = importlib.import_module("models.pmp_limpo").PMP
+        equipamento_mod = importlib.import_module("models.assets")
+        EquipamentoModel = getattr(equipamento_mod, "equipamento")
+        logger.info("[REL52] ✅ Modelos PMP e Equipamento importados com sucesso")
+    except Exception as e:
+        logger.error("[REL52] ❌ Erro ao importar modelos dinamicamente: %s", e)
+        raise
 
     semanas = semanas_do_ano(ano)
     semanas_1 = [s for s in semanas if s["numero"] <= 26]
@@ -153,7 +151,6 @@ def gerar_pdf_visual_paginas(ano: int, equipamentos_por_pagina: int = 10):
 
     pmps = PMP.query.order_by(PMP.id.asc()).all()
     grupos = defaultdict(list)
-
     for pmp in pmps:
         equip_id = getattr(pmp, "equipamento_id", None)
         nome_equip = "Equipamento sem nome"
@@ -163,7 +160,7 @@ def gerar_pdf_visual_paginas(ano: int, equipamentos_por_pagina: int = 10):
                 if eq and getattr(eq, "descricao", None):
                     nome_equip = eq.descricao
         except Exception as e:
-            logger.error("❌ Erro ao obter nome do equipamento (%s): %s", equip_id, e)
+            logger.error("[REL52] ⚠️ Erro ao obter nome do equipamento (%s): %s", equip_id, e)
         grupos[nome_equip].append(pmp)
 
     equipamentos = sorted(grupos.keys(), key=str.lower)
@@ -225,7 +222,6 @@ def gerar_pdf_visual_paginas(ano: int, equipamentos_por_pagina: int = 10):
     story.append(PageBreak())
     desenhar_metade(semanas_2, "Semanas 27–52")
 
-    # HH por oficina
     oficinas, tabela_hh = hh_por_mes_oficina(ano)
     story.append(PageBreak())
     story.append(Paragraph("Resumo de HH por mês e oficina", h2))
@@ -244,19 +240,20 @@ def gerar_pdf_visual_paginas(ano: int, equipamentos_por_pagina: int = 10):
 
     doc.build(story)
     buf.seek(0)
+    logger.info("[REL52] ✅ PDF gerado com sucesso")
     return buf
 
 
+# ---------- Rota ----------
 @relatorio_52_semanas_bp.route('/api/relatorios/plano-52-semanas', methods=['GET'])
 def gerar_relatorio_visual():
-    logger.info("🌐 GET /api/relatorios/plano-52-semanas recebido")
+    logger.info("[REL52] 🌐 GET /api/relatorios/plano-52-semanas recebido")
     try:
         ano = datetime.now().year
         pdf = gerar_pdf_visual_paginas(ano)
         fname = f"Plano_52_Semanas_{ano}_visual.pdf"
-        logger.info("📦 Enviando arquivo %s", fname)
         return send_file(pdf, as_attachment=True, download_name=fname, mimetype="application/pdf")
     except Exception as e:
-        logger.error("❌ Erro ao gerar PDF: %s", e)
+        logger.error("[REL52] ❌ Erro ao gerar PDF: %s", e)
         logger.error(traceback.format_exc())
         return jsonify({"erro": str(e)}), 500
