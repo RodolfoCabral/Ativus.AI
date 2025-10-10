@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Relatorio Plano 52 Semanas (PDF Visual Paginado)
-Versão estável – compatível com Heroku e contexto Flask SQLAlchemy
+Relatório Plano 52 Semanas (PDF Visual Paginado)
+Versão segura — evita redefinição de tabelas (filiais) e conflitos no SQLAlchemy
 """
 
 import traceback
 import logging
 import importlib
+import sys
 from io import BytesIO
 from datetime import datetime, timedelta, date
 from collections import defaultdict
@@ -20,6 +21,7 @@ from reportlab.platypus import (
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
 
+
 # ===== Logging =====
 logger = logging.getLogger("relatorio_52")
 if not logger.handlers:
@@ -29,7 +31,7 @@ if not logger.handlers:
     logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
-relatorio_52_semanas_bp = Blueprint('relatorio_52_semanas', __name__)
+relatorio_52_semanas_bp = Blueprint("relatorio_52_semanas", __name__)
 logger.info("✅ Blueprint 'relatorio_52_semanas' criado com sucesso")
 
 
@@ -47,9 +49,14 @@ def _to_date(x):
 
 def semanas_do_ano(ano: int):
     base = datetime(ano, 1, 1)
-    return [{"numero": i + 1,
-             "inicio": (base + timedelta(weeks=i)).date(),
-             "fim": (base + timedelta(weeks=i, days=6)).date()} for i in range(52)]
+    return [
+        {
+            "numero": i + 1,
+            "inicio": (base + timedelta(weeks=i)).date(),
+            "fim": (base + timedelta(weeks=i, days=6)).date(),
+        }
+        for i in range(52)
+    ]
 
 
 def semanas_planejadas(frequencia: str):
@@ -85,11 +92,15 @@ def status_os_na_semana(pmp_id, semana):
     try:
         ini = datetime.combine(semana["inicio"], datetime.min.time())
         fim = datetime.combine(semana["fim"], datetime.max.time())
-        os_ = OrdemServico.query.filter(
-            OrdemServico.pmp_id == pmp_id,
-            OrdemServico.data_criacao >= ini,
-            OrdemServico.data_criacao <= fim
-        ).order_by(OrdemServico.id.desc()).first()
+        os_ = (
+            OrdemServico.query.filter(
+                OrdemServico.pmp_id == pmp_id,
+                OrdemServico.data_criacao >= ini,
+                OrdemServico.data_criacao <= fim,
+            )
+            .order_by(OrdemServico.id.desc())
+            .first()
+        )
         if os_:
             status = (getattr(os_, "status", "") or "").lower()
             os_num = getattr(os_, "id", None)
@@ -111,11 +122,13 @@ def hh_por_mes_oficina(ano: int):
         return [], []
 
     ini, fim = datetime(ano, 1, 1), datetime(ano, 12, 31, 23, 59, 59)
-    os_conc = OrdemServico.query.filter(
-        OrdemServico.status.in_(["concluida", "concluída"]),
-        OrdemServico.data_criacao >= ini,
-        OrdemServico.data_criacao <= fim
-    ).all()
+    os_conc = (
+        OrdemServico.query.filter(
+            OrdemServico.status.in_(["concluida", "concluída"]),
+            OrdemServico.data_criacao >= ini,
+            OrdemServico.data_criacao <= fim,
+        ).all()
+    )
     resumo = defaultdict(lambda: defaultdict(float))
     oficinas = set()
     for os_ in os_conc:
@@ -126,7 +139,9 @@ def hh_por_mes_oficina(ano: int):
         resumo[mes]["Total"] += hh
         oficinas.add(oficina)
     oficinas = ["Total"] + sorted(o for o in oficinas if o != "Total")
-    tabela = [{ "mes": m, **{o: resumo[m].get(o, 0.0) for o in oficinas} } for m in range(1, 13)]
+    tabela = [
+        {"mes": m, **{o: resumo[m].get(o, 0.0) for o in oficinas}} for m in range(1, 13)
+    ]
     return oficinas, tabela
 
 
@@ -135,14 +150,30 @@ def gerar_pdf_visual_paginas(ano: int, equipamentos_por_pagina: int = 10):
     """Gera o PDF completo com as duas metades de semanas."""
     logger.info("[REL52] 🚀 Iniciando geração do PDF (ano=%s)", ano)
 
+    # 🔧 Importação segura dos modelos
+    from sqlalchemy import Table
     try:
-        # ⚙️ Importa modelos dinamicamente via importlib para evitar redefinições de tabelas
         PMP = importlib.import_module("models.pmp_limpo").PMP
-        equipamento_mod = importlib.import_module("models.assets")
+
+        # ⚙️ Importa o módulo 'models.assets' sem recriar as tabelas
+        if "models.assets" in sys.modules:
+            equipamento_mod = sys.modules["models.assets"]
+            logger.info("[REL52] ♻️ Reutilizando módulo 'models.assets' já carregado")
+        else:
+            equipamento_mod = importlib.import_module("models.assets")
+            logger.info("[REL52] ✅ Módulo 'models.assets' importado pela primeira vez")
+
+        # ⚙️ Força o SQLAlchemy a reutilizar tabela existente
+        metadata = current_app.extensions["sqlalchemy"].db.metadata
+        if "filiais" in metadata.tables:
+            metadata.tables["filiais"].extend_existing = True
+            logger.info("[REL52] 🧩 Reutilizando tabela 'filiais' existente")
+
         EquipamentoModel = getattr(equipamento_mod, "equipamento")
-        logger.info("[REL52] ✅ Modelos PMP e Equipamento importados com sucesso")
+        logger.info("[REL52] ✅ Modelos PMP e Equipamento prontos para uso")
+
     except Exception as e:
-        logger.error("[REL52] ❌ Erro ao importar modelos dinamicamente: %s", e)
+        logger.error("[REL52] ❌ Erro ao importar modelos de forma segura: %s", e)
         raise
 
     semanas = semanas_do_ano(ano)
@@ -199,8 +230,10 @@ def gerar_pdf_visual_paginas(ano: int, equipamentos_por_pagina: int = 10):
                     table_data.append(linha)
                 widths = [60 * mm, 25 * mm] + [10 * mm] * len(semanas_metade)
                 t = Table(table_data, colWidths=widths)
-                s = TableStyle([("GRID", (0, 0), (-1, -1), 0.25, colors.black),
-                                ("FONT", (0, 0), (-1, -1), "Helvetica", 7)])
+                s = TableStyle([
+                    ("GRID", (0, 0), (-1, -1), 0.25, colors.black),
+                    ("FONT", (0, 0), (-1, -1), "Helvetica", 7),
+                ])
                 for r in range(1, len(table_data)):
                     freq = table_data[r][1]
                     sem_plan = semanas_planejadas(freq)
@@ -245,7 +278,7 @@ def gerar_pdf_visual_paginas(ano: int, equipamentos_por_pagina: int = 10):
 
 
 # ---------- Rota ----------
-@relatorio_52_semanas_bp.route('/api/relatorios/plano-52-semanas', methods=['GET'])
+@relatorio_52_semanas_bp.route("/api/relatorios/plano-52-semanas", methods=["GET"])
 def gerar_relatorio_visual():
     logger.info("[REL52] 🌐 GET /api/relatorios/plano-52-semanas recebido")
     try:
