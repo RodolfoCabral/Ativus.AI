@@ -22,7 +22,7 @@ from collections import defaultdict, OrderedDict
 # ===== Imports do projeto =====
 from models import db
 from models.pmp_limpo import PMP
-from models.assets import Equipamento  # caminho confirmado pelo usuario
+from models.assets import equipamento  # caminho confirmado pelo usuario
 from assets_models import OrdemServico
 
 # ===== ReportLab (PDF) =====
@@ -253,7 +253,7 @@ def gerar_pdf_visual_paginas(ano:int, equipamentos_por_pagina:int=10):
         nome_equip = "Equipamento sem nome"
         try:
             if equip_id:
-                eq = Equipamento.query.get(equip_id)
+                eq = equipamento.query.get(equip_id)
                 if eq and getattr(eq, "descricao", None):
                     nome_equip = eq.descricao
         except Exception:
