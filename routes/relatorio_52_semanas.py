@@ -1,16 +1,18 @@
 
 # -*- coding: utf-8 -*-
-"""Relatório Plano 52 Semanas (PDF Visual Paginado)
-- Mantém o endpoint original: /api/relatorios/plano-52-semanas
-- A3 paisagem
-- Semanas 1–26 (página(s)) e 27–52 (página(s))
-- Até 10 equipamentos/PMPs por página (gera páginas extras quando necessário)
-- Linhas = PMPs do equipamento; Colunas = Semanas (26 por metade)
-- Cores por status: concluída (verde), gerada (cinza escuro), planejada sem OS (cinza claro)
-- Legenda colorida no rodapé de cada página
-- Tabela final: HH por mês e por oficina
 """
+Relatorio Plano 52 Semanas (PDF Visual Paginado)
 
+- Endpoint: /api/relatorios/plano-52-semanas
+- A3 paisagem
+- Semanas 1-26 (paginas) e 27-52 (paginas)
+- Ate 10 equipamentos/PMPs por pagina
+- Linhas = PMPs do equipamento; Colunas = Semanas (26 por metade)
+- Cores: concluida (verde), gerada (cinza escuro), planejada (cinza claro)
+- Legenda colorida no rodape
+- Tabela final: HH por mes e por oficina
+- Equipamento: nome buscado em models.assets.Equipamento.descricao (via equipamento_id)
+"""
 from flask import Blueprint, send_file, jsonify
 from datetime import datetime, timedelta, date
 from io import BytesIO
@@ -20,6 +22,7 @@ from collections import defaultdict, OrderedDict
 # ===== Imports do projeto =====
 from models import db
 from models.pmp_limpo import PMP
+from models.assets import Equipamento  # caminho confirmado pelo usuario
 from assets_models import OrdemServico
 
 # ===== ReportLab (PDF) =====
@@ -29,7 +32,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
 
-# Mantém o mesmo nome de blueprint esperado pelo app
+# Mantem o mesmo nome de blueprint esperado pelo app
 relatorio_52_semanas_bp = Blueprint('relatorio_52_semanas', __name__)
 
 # ---------- Utils de data ----------
@@ -63,9 +66,9 @@ def semanas_do_ano(ano:int):
         })
     return semanas
 
-# ---------- Frequência -> semanas planejadas ----------
+# ---------- Frequencia -> semanas planejadas ----------
 def semanas_planejadas(frequencia:str):
-    """Retorna um set com números de semanas planejadas conforme a frequência textual."""
+    """Retorna um set com numeros de semanas planejadas conforme a frequencia textual."""
     if not frequencia:
         return set()
     f = str(frequencia).strip().lower()
@@ -86,7 +89,7 @@ def semanas_planejadas(frequencia:str):
         return set([26,52])
     if f in {"anual","yearly","anualidade"}:
         return set([52])
-    # fallback: tentar número de semanas por periodicidade (ex: "cada 6 semanas")
+    # fallback: "cada 6 semanas"
     import re
     m = re.search(r"(?:cada|a cada|every)\s*(\d+)\s*(?:semana|semanas|week|weeks)", f)
     if m:
@@ -108,14 +111,14 @@ def status_os_na_semana(pmp_id:int, semana:dict):
     ).order_by(OrdemServico.id.desc()).first()
     if os_:
         st = (getattr(os_, "status", None) or "").lower()
-        os_num = getattr(os_, "id", None)  # troque para os_.codigo se preferir
+        os_num = getattr(os_, "id", None)  # ajuste para codigo se preferir
         if st in {"concluida","concluída","done","finalizada"}:
             return ("concluida", os_num)
         else:
             return ("gerada", os_num)
     return ("nao_gerada", None)
 
-# ---------- HH por mês / oficina ----------
+# ---------- HH por mes / oficina ----------
 def hh_por_mes_oficina(ano:int):
     ini = datetime(ano,1,1)
     fim = datetime(ano,12,31,23,59,59)
@@ -124,7 +127,7 @@ def hh_por_mes_oficina(ano:int):
         OrdemServico.data_criacao >= ini,
         OrdemServico.data_criacao <= fim
     ).all()
-    resumo = defaultdict(lambda: defaultdict(float))  # mês -> oficina -> hh
+    resumo = defaultdict(lambda: defaultdict(float))  # mes -> oficina -> hh
     oficinas_set = set()
     for os_ in os_conc:
         d = getattr(os_, "data_criacao", None)
@@ -136,7 +139,7 @@ def hh_por_mes_oficina(ano:int):
         oficinas_set.add(oficina)
         resumo[mes][oficina] += hh
         resumo[mes]["Total"] += hh
-    # ordenar por mês e garantir todas oficinas como colunas
+    # ordenar por mes e garantir todas oficinas como colunas
     oficinas = ["Total"] + sorted([o for o in oficinas_set if o != "Total"])
     # construir matriz
     tabela = []
@@ -157,11 +160,11 @@ def _tabela_equipamento(pmps, semanas, estilos_cores):
     # Larguras
     col_pmp = 60*mm
     col_freq = 25*mm
-    col_sem = 10*mm  # 26 colunas -> 260 mm aprox
+    col_sem = 10*mm  # 26 colunas -> ~260 mm
     widths = [col_pmp, col_freq] + [col_sem]*len(semanas)
 
-    # Cabeçalho
-    header = ["PMP", "Frequência"] + [str(s["numero"]) for s in semanas]
+    # Cabecalho
+    header = ["PMP", "Frequencia"] + [str(s["numero"]) for s in semanas]
     data = [header]
 
     style = TableStyle([
@@ -179,7 +182,6 @@ def _tabela_equipamento(pmps, semanas, estilos_cores):
         semanas_plan = semanas_planejadas(freq_text)
 
         linha = [desc, str(freq_text)]
-        # 26 colunas de semana
         for sem in semanas:
             st_sem, os_num = status_os_na_semana(getattr(pmp, "id", 0), sem)
             txt = ""
@@ -188,17 +190,16 @@ def _tabela_equipamento(pmps, semanas, estilos_cores):
             elif st_sem == "gerada":
                 txt = f"OS #{os_num}" if os_num else ""
             else:
-                # sem OS -> marca se for planejada
                 if sem["numero"] in semanas_plan:
                     txt = ""
             linha.append(txt)
         data.append(linha)
 
-    # Aplicar cores por célula (linha a linha, semana a semana)
+    # Aplicar cores por celula
     for r, pmp in enumerate(pmps, start=1):
         freq_text = getattr(pmp, "frequencia", None) or getattr(pmp, "periodicidade", None) or ""
         semanas_plan = semanas_planejadas(freq_text)
-        for c, sem in enumerate(semanas, start=2):  # coluna 0:PMP 1:FREQ; semanas começam no índice 2
+        for c, sem in enumerate(semanas, start=2):  # 0:PMP 1:FREQ
             st_sem, _ = status_os_na_semana(getattr(pmp, "id", 0), sem)
             if st_sem == "concluida":
                 style.add("BACKGROUND", (c, r), (c, r), VERDE)
@@ -218,7 +219,7 @@ def _legenda_tabela(estilos_cores):
     CINZA_CLARO = estilos_cores["CINZA_CLARO"]
 
     data = [
-        ["Legenda:", "", "Concluída", "", "Gerada", "", "Planejada", ""],
+        ["Legenda:", "", "Concluida", "", "Gerada", "", "Planejada", ""],
     ]
     t = Table(data, colWidths=[22*mm, 8*mm, 22*mm, 8*mm, 22*mm, 8*mm, 22*mm, 8*mm])
     style = TableStyle([
@@ -232,22 +233,33 @@ def _legenda_tabela(estilos_cores):
     t.setStyle(style)
     return t
 
-# ---------- Geração do PDF (duas metades) ----------
+# ---------- Geracao do PDF (duas metades) ----------
 def gerar_pdf_visual_paginas(ano:int, equipamentos_por_pagina:int=10):
     semanas = semanas_do_ano(ano)
     semanas_1 = [s for s in semanas if 1 <= s["numero"] <= 26]
     semanas_2 = [s for s in semanas if 27 <= s["numero"] <= 52]
 
-    # Buscar PMPs e agrupar por equipamento
+    # Buscar PMPs e agrupar por equipamento (usando nome em Equipamento.descricao)
     pmps = PMP.query.order_by(PMP.id.asc()).all()
     grupos = defaultdict(list)
+
     for pmp in pmps:
-        # Ignorar PMPs sem data de início de plano (coerente com versões anteriores)
+        # Ignorar PMPs sem data de inicio de plano
         data_inicio_plano = _to_date(getattr(pmp, "data_inicio_plano", None))
         if data_inicio_plano is None:
             continue
-        equip = getattr(pmp, "equipamento_nome", None) or getattr(pmp, "equipamento", None) or getattr(pmp, "descricao_equipamento", None) or "Equipamento sem nome"
-        grupos[equip].append(pmp)
+
+        equip_id = getattr(pmp, "equipamento_id", None)
+        nome_equip = "Equipamento sem nome"
+        try:
+            if equip_id:
+                eq = Equipamento.query.get(equip_id)
+                if eq and getattr(eq, "descricao", None):
+                    nome_equip = eq.descricao
+        except Exception:
+            pass
+
+        grupos[nome_equip].append(pmp)
 
     # Ordenar equipamentos por nome
     equipamentos = sorted(grupos.keys(), key=lambda x: str(x).lower())
@@ -272,7 +284,7 @@ def gerar_pdf_visual_paginas(ano:int, equipamentos_por_pagina:int=10):
     }
 
     def _pagina_metade(semanas_metade, titulo_metade):
-        # Cabeçalho
+        # Cabecalho
         story.append(Paragraph(f"Plano de 52 Semanas - {ano} ({titulo_metade})", h1))
         story.append(Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}", normal))
         story.append(Spacer(1, 6))
@@ -282,30 +294,30 @@ def gerar_pdf_visual_paginas(ano:int, equipamentos_por_pagina:int=10):
             subset = equipamentos[i:i+equipamentos_por_pagina]
             for equip in subset:
                 story.append(Paragraph(f"<b>Equipamento:</b> {equip}", h2))
-                tabela_1 = _tabela_equipamento(grupos[equip], semanas_metade, estilos_cores)
-                story.append(tabela_1)
+                tabela = _tabela_equipamento(grupos[equip], semanas_metade, estilos_cores)
+                story.append(tabela)
                 story.append(Spacer(1, 6))
-            # legenda no fim de cada bloco de página
+            # legenda no fim de cada bloco de pagina
             story.append(_legenda_tabela(estilos_cores))
-            # próxima página, se ainda houver mais equipamentos
+            # proxima pagina, se ainda houver mais equipamentos
             if i + equipamentos_por_pagina < len(equipamentos):
                 story.append(PageBreak())
 
-    # Metade 1 (semanas 1–26)
-    _pagina_metade(semanas_1, "Semanas 1–26")
-    # Nova página para a segunda metade
+    # Metade 1 (semanas 1-26)
+    _pagina_metade(semanas_1, "Semanas 1-26")
+    # Nova pagina para a segunda metade
     story.append(PageBreak())
-    # Metade 2 (semanas 27–52)
-    _pagina_metade(semanas_2, "Semanas 27–52")
+    # Metade 2 (semanas 27-52)
+    _pagina_metade(semanas_2, "Semanas 27-52")
 
-    # ---- Tabela de HH por mês/oficina ----
+    # ---- Tabela de HH por mes/oficina ----
     oficinas, tabela_hh = hh_por_mes_oficina(ano)
     story.append(PageBreak())
-    story.append(Paragraph("Resumo de HH por mês e oficina", h2))
+    story.append(Paragraph("Resumo de HH por mes e oficina", h2))
 
-    head_hh = ["Mês"] + oficinas
+    head_hh = ["Mes"] + oficinas
     data_hh = [head_hh]
-    meses_pt = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
+    meses_pt = ["Janeiro","Fevereiro","Marco","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
     for linha in tabela_hh:
         row = [meses_pt[linha["mes"]-1]]
         for o in oficinas:
