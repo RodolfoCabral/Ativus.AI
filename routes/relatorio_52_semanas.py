@@ -1,58 +1,71 @@
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify
 from datetime import datetime, timedelta, date
 from models import db
 from models.pmp_limpo import PMP
 from assets_models import OrdemServico
+import traceback
 
 relatorio_52_semanas_bp = Blueprint('relatorio_52_semanas', __name__)
 
-# Helper seguro para normalizar date/datetime
+# === Utilitário seguro de datas ===
 def _to_date(x):
+    """Normaliza para datetime.date. Retorna None se não conseguir converter."""
     try:
+        if x is None:
+            return None
+        if isinstance(x, date) and not isinstance(x, datetime):
+            return x
         if isinstance(x, datetime):
             return x.date()
-        return x
+        if isinstance(x, str):
+            # tenta ISO (YYYY-MM-DD ou YYYY-MM-DDTHH:MM:SS)
+            try:
+                return datetime.fromisoformat(x).date()
+            except Exception:
+                pass
+        return None
     except Exception as e:
         print(f"DEBUG[to_date]: erro ao converter {x!r} -> {e}")
-        return x
+        return None
 
-# Gera todas as semanas do ano atual
-def calcular_semanas_ano(ano):
+# === Semanas do ano ===
+def calcular_semanas_ano(ano: int):
     semanas = []
-    # Começa em 1º de janeiro e cria 52 blocos de 7 dias
     inicio_ano = datetime(ano, 1, 1)
     for i in range(52):
-        inicio_semana = inicio_ano + timedelta(weeks=i)
-        fim_semana = inicio_semana + timedelta(days=6)
+        inicio_semana_dt = inicio_ano + timedelta(weeks=i)
+        fim_semana_dt = inicio_semana_dt + timedelta(days=6)
         semanas.append({
             'numero': i + 1,
-            'inicio': inicio_semana.date(),
-            'fim': fim_semana.date(),
-            'mes': inicio_semana.month
+            'inicio': inicio_semana_dt.date(),
+            'fim': fim_semana_dt.date(),
+            'mes': inicio_semana_dt.month
         })
-    print(f"DEBUG[semanas]: total={len(semanas)}")
+    print(f"DEBUG[semanas]: total={len(semanas)} ano={ano}")
     return semanas
 
-# Determina as semanas associadas a cada PMP
-def determinar_semanas_pmp(pmp, semanas_ano):
+# === Semanas associadas a uma PMP ===
+def determinar_semanas_pmp(pmp: PMP, semanas_ano):
     semanas_pmp = []
+    data_inicio_plano = _to_date(getattr(pmp, 'data_inicio_plano', None))
+    print("DEBUG[determinar_semanas_pmp]: PMP", getattr(pmp, 'id', '?'),
+          "data_inicio_plano=", data_inicio_plano, f"({type(data_inicio_plano)})")
+    if data_inicio_plano is None:
+        print(f"⚠️ Ignorando PMP {getattr(pmp, 'id', '?')}: data_inicio_plano ausente")
+        return semanas_pmp  # vazio: será ignorada na rota
     for semana in semanas_ano:
-        print("DEBUG[determinar_semanas_pmp]: PMP", pmp.id,
-              "data_inicio=", pmp.data_inicio_plano, "(" + str(type(pmp.data_inicio_plano)) + ")",
-              "semana_inicio=", _to_date(semana['inicio']),
-              "semana_fim=", _to_date(semana['fim']))
-        if _to_date(semana['inicio']) <= _to_date(pmp.data_inicio_plano) <= _to_date(semana['fim']):
+        if semana['inicio'] <= data_inicio_plano <= semana['fim']:
             semanas_pmp.append(semana['numero'])
     return semanas_pmp
 
-# Obtém o status da OS em uma semana específica
-def obter_status_os_semana(pmp_id, semana_numero, semanas_ano):
+# === Status de OS por semana ===
+def obter_status_os_semana(pmp_id: int, semana_numero: int, semanas_ano):
     semana = semanas_ano[semana_numero - 1]
-    inicio_dt = datetime.combine(_to_date(semana['inicio']), datetime.min.time())
-    fim_dt = datetime.combine(_to_date(semana['fim']), datetime.max.time())
-    print("DEBUG[obter_status_os_semana]:", f"pmp_id={pmp_id}", f"semana_numero={semana_numero}",
-          f"inicio_dt={inicio_dt} ({type(inicio_dt)})", f"fim_dt={fim_dt} ({type(fim_dt)})")
+    inicio_dt = datetime.combine(semana['inicio'], datetime.min.time())
+    fim_dt = datetime.combine(semana['fim'], datetime.max.time())
+    print("DEBUG[obter_status_os_semana]:", f"pmp_id={pmp_id}", f"semana={semana_numero}",
+          f"intervalo=[{inicio_dt} .. {fim_dt}]")
 
     os_semana = OrdemServico.query.filter(
         OrdemServico.pmp_id == pmp_id,
@@ -60,14 +73,12 @@ def obter_status_os_semana(pmp_id, semana_numero, semanas_ano):
         OrdemServico.data_criacao <= fim_dt
     ).first()
 
-    if os_semana:
-        return os_semana.status
-    return 'sem_os'
+    return os_semana.status if os_semana else 'sem_os'
 
-# Calcula horas-homem (HH) por mês e oficina
-def calcular_hh_por_mes_oficina(ano):
+# === HH por mês/oficina (mantém lógica existente) ===
+def calcular_hh_por_mes_oficina(ano: int):
     inicio_ano = datetime(ano, 1, 1)
-    fim_ano = datetime(ano, 12, 31, 23, 59, 59, 999999)
+    fim_ano = datetime(ano, 12, 31)
     print(f"DEBUG[HH]: ano={ano}, inicio_ano={inicio_ano}, fim_ano={fim_ano}")
 
     pmps_com_os = db.session.query(PMP).join(OrdemServico).filter(
@@ -81,28 +92,37 @@ def calcular_hh_por_mes_oficina(ano):
     for pmp in pmps_com_os:
         os_concluidas = OrdemServico.query.filter(
             OrdemServico.pmp_id == pmp.id,
-            OrdemServico.status == 'concluida',
-            OrdemServico.data_criacao >= inicio_ano,
-            OrdemServico.data_criacao <= fim_ano
+            OrdemServico.status == 'concluida'
         ).all()
         print(f"DEBUG[HH]: PMP {pmp.id} os_concluidas={len(os_concluidas)}")
         for os_ in os_concluidas:
-            mes = os_.data_criacao.month
+            try:
+                mes = _to_date(os_.data_criacao).month if isinstance(os_.data_criacao, date) else os_.data_criacao.month
+            except Exception:
+                mes = _to_date(os_.data_criacao).month if _to_date(os_.data_criacao) else None
+            if mes is None:
+                continue
             hh_por_mes[mes] = hh_por_mes.get(mes, 0) + getattr(os_, 'hh_total', 0)
     return hh_por_mes
 
-# Endpoint principal
+# === Endpoint principal ===
 @relatorio_52_semanas_bp.route('/api/relatorios/plano-52-semanas', methods=['GET'])
 def gerar_relatorio_plano_52():
     try:
         ano = datetime.now().year
         semanas_ano = calcular_semanas_ano(ano)
-        print(f"DEBUG[route]: ano={ano}, primeira_semana={{'inicio': semanas_ano[0]['inicio'], 'fim': semanas_ano[0]['fim']}} tipos=({type(semanas_ano[0]['inicio'])}, {type(semanas_ano[0]['fim'])})")
+        print(f"DEBUG[route]: ano={ano}, primeira_semana={{'inicio': semanas_ano[0]['inicio'], 'fim': semanas_ano[0]['fim']}}")
 
         pmps = PMP.query.all()
         dados_relatorio = []
 
         for pmp in pmps:
+            # Ignora PMPs sem data de início do plano
+            data_inicio_plano = _to_date(getattr(pmp, 'data_inicio_plano', None))
+            if data_inicio_plano is None:
+                print(f"⚠️ Ignorando PMP {getattr(pmp, 'id', '?')}: data_inicio_plano ausente")
+                continue
+
             semanas_pmp = determinar_semanas_pmp(pmp, semanas_ano)
             dados_pmp = {
                 'pmp_id': pmp.id,
@@ -118,13 +138,17 @@ def gerar_relatorio_plano_52():
             dados_relatorio.append(dados_pmp)
 
         hh_por_mes = calcular_hh_por_mes_oficina(ano)
-        return jsonify({
+        resp = {
             'ano': ano,
             'total_pmps': len(pmps),
+            'total_pmps_incluidas': len(dados_relatorio),
             'hh_por_mes': hh_por_mes,
             'dados': dados_relatorio
-        })
+        }
+        print("DEBUG[route]: resposta pronta -> ", {k: (len(v) if isinstance(v, (list, dict)) else v) for k, v in resp.items()})
+        return jsonify(resp)
 
     except Exception as e:
-        print(f"Erro ao gerar relatório: {e}")
+        print("Erro ao gerar relatório:", e)
+        traceback.print_exc()
         return jsonify({'erro': str(e)}), 500
