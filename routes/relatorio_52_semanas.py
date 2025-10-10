@@ -41,7 +41,12 @@ def calcular_semanas_ano(ano=None):
     for i in range(52):
         inicio_semana = primeira_segunda + timedelta(weeks=i)
         fim_semana = inicio_semana + timedelta(days=6)
-        semanas.append({'numero': i + 1, 'inicio': inicio_semana.date(), 'fim': fim_semana.date(), 'mes': inicio_semana.month})
+        semanas.append({
+            'numero': i + 1,
+            'inicio': inicio_semana,
+            'fim': fim_semana,
+            'mes': inicio_semana.month
+        })
     
     return semanas
 
@@ -56,7 +61,7 @@ def determinar_semanas_pmp(pmp, semanas_ano):
     # Encontrar semana de início
     semana_inicio = None
     for semana in semanas_ano:
-        print(f"DEBUG[determinar_semanas_pmp]: PMP {pmp.id} data_inicio={pmp.data_inicio_plano} ({type(pmp.data_inicio_plano)}); semana_inicio={_to_date(semana['inicio'])} fim={_to_date(semana['fim'])}")
+        print("DEBUG[determinar_semanas_pmp]:", f"PMP {{pmp.id}} data_inicio={{pmp.data_inicio_plano}} ({{type(pmp.data_inicio_plano)}})", f"semana_inicio={{_to_date(semana['inicio'])}}", f"semana_fim={{_to_date(semana['fim'])}}")
         if _to_date(semana['inicio']) <= _to_date(pmp.data_inicio_plano) <= _to_date(semana['fim']):
             semana_inicio = semana['numero']
             break
@@ -95,12 +100,12 @@ def determinar_semanas_pmp(pmp, semanas_ano):
 
 def obter_status_os_semana(pmp_id, semana_numero, semanas_ano):
     # Normalizar datas de semana para datetime (início/fim do dia)
-    semana = semanas_ano[semana_numero - 1]
+    # (duplicado removido)
     inicio_dt = datetime.combine(_to_date(semana['inicio']), datetime.min.time())
     fim_dt = datetime.combine(_to_date(semana['fim']), datetime.max.time())
-    print(f\"DEBUG[obter_status_os_semana]: pmp_id={pmp_id} semana_numero={semana_numero} inicio_dt={inicio_dt} ({type(inicio_dt)}), fim_dt={fim_dt} ({type(fim_dt)})\")
+    print("DEBUG[obter_status_os_semana]:", f"pmp_id={{pmp_id}} semana_numero={{semana_numero}}", f"inicio_dt={{inicio_dt}} ({{type(inicio_dt)}})", f"fim_dt={{fim_dt}} ({{type(fim_dt)}})")
     """Obtém o status da OS para uma PMP em uma semana específica"""
-    semana = semanas_ano[semana_numero - 1]
+    # (duplicado removido)
     
     # Buscar OS da PMP nesta semana
     os_semana = OrdemServico.query.filter(
@@ -125,7 +130,6 @@ def calcular_hh_por_mes_oficina(ano=None):
     inicio_ano = datetime(ano, 1, 1)
     fim_ano = datetime(ano, 12, 31)
     print(f"DEBUG[HH]: ano={ano} inicio_ano={inicio_ano} ({type(inicio_ano)}), fim_ano={fim_ano} ({type(fim_ano)})")
-    fim_ano = datetime(ano, 12, 31)
     
     # Buscar todas as PMPs com OS no ano
     pmps_com_os = db.session.query(PMP).join(OrdemServico).filter(
@@ -133,7 +137,7 @@ def calcular_hh_por_mes_oficina(ano=None):
         OrdemServico.data_criacao <= fim_ano,
         OrdemServico.status == 'concluida'
     ).all()
-        print(f"DEBUG[HH]: PMP {pmp.id} os_concluidas={len(os_concluidas)}")
+    print(f"DEBUG[HH]: pmps_com_os={len(pmps_com_os)}")
     
     # Organizar por mês e oficina
     hh_por_mes_oficina = {}
@@ -153,6 +157,7 @@ def calcular_hh_por_mes_oficina(ano=None):
             OrdemServico.data_criacao <= fim_ano,
             OrdemServico.status == 'concluida'
         ).all()
+        print(f"DEBUG[HH]: PMP {pmp.id} os_concluidas={len(os_concluidas)}")
         
         for os in os_concluidas:
             mes_os = os.data_criacao.month
@@ -178,7 +183,7 @@ def gerar_plano_52_semanas():
         
         # Calcular semanas do ano
         semanas_ano = calcular_semanas_ano(ano)
-        print(f"DEBUG[route]: ano={ano} semanas_ano[0]={{'inicio': semanas_ano[0]['inicio'], 'fim': semanas_ano[0]['fim']}} tipos=({type(semanas_ano[0]['inicio'])}, {type(semanas_ano[0]['fim'])})")
+        print(f"DEBUG[route]: ano={ano} primeira_semana={{'inicio': semanas_ano[0]['inicio'], 'fim': semanas_ano[0]['fim']}} tipos=({type(semanas_ano[0]['inicio'])}, {type(semanas_ano[0]['fim'])})")
         
         # Buscar equipamentos e suas PMPs
         equipamentos = Equipamento.query.filter_by(empresa=current_user.company).all()
