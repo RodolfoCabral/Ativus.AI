@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 """
 Relatório Plano 52 Semanas (PDF Visual Paginado)
-Versão final segura — elimina conflito de tabela 'filiais' no SQLAlchemy
+Versão final compatível com Flask-SQLAlchemy 3.x
 """
 
 import traceback
 import logging
 import importlib
-import sys
 from io import BytesIO
 from datetime import datetime, timedelta, date
 from collections import defaultdict
-from flask import Blueprint, send_file, jsonify, current_app
+from flask import Blueprint, send_file, jsonify
 
 from reportlab.lib.pagesizes import A3, landscape
 from reportlab.lib import colors
@@ -20,7 +19,6 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
-
 
 # ===== Logging =====
 logger = logging.getLogger("relatorio_52")
@@ -50,11 +48,9 @@ def _to_date(x):
 def semanas_do_ano(ano: int):
     base = datetime(ano, 1, 1)
     return [
-        {
-            "numero": i + 1,
-            "inicio": (base + timedelta(weeks=i)).date(),
-            "fim": (base + timedelta(weeks=i, days=6)).date(),
-        }
+        {"numero": i + 1,
+         "inicio": (base + timedelta(weeks=i)).date(),
+         "fim": (base + timedelta(weeks=i, days=6)).date()}
         for i in range(52)
     ]
 
@@ -151,27 +147,31 @@ def gerar_pdf_visual_paginas(ano: int, equipamentos_por_pagina: int = 10):
     logger.info("[REL52] 🚀 Iniciando geração do PDF (ano=%s)", ano)
 
     try:
-        # Modelo PMP importado normalmente
+        # Importa o modelo PMP
         PMP = importlib.import_module("models.pmp_limpo").PMP
 
-        # ⚙️ Recupera o modelo 'equipamento' do registry sem importar o módulo
-        try:
-            from models import db
-        except Exception as e:
-            logger.error("[REL52] ❌ Falha ao importar db de models: %s", e)
-            raise
+        # Importa db e busca o modelo 'equipamento' de forma compatível
+        from models import db
+        registry = getattr(db.Model, "_decl_class_registry", None)
+        if registry is None:
+            registry = getattr(getattr(db.Model, "registry", None), "_class_registry", {})
 
         EquipamentoModel = None
-        for cls in db.Model._decl_class_registry.values():
-            if hasattr(cls, "__tablename__") and cls.__tablename__ == "equipamentos":
-                EquipamentoModel = cls
-                logger.info("[REL52] ✅ Modelo 'equipamento' recuperado do registry")
-                break
+        if registry:
+            for cls in registry.values():
+                try:
+                    if hasattr(cls, "__tablename__") and cls.__tablename__ == "equipamentos":
+                        EquipamentoModel = cls
+                        logger.info("[REL52] ✅ Modelo 'equipamento' recuperado do registry (compatível)")
+                        break
+                except Exception:
+                    continue
+
         if EquipamentoModel is None:
             logger.warning("[REL52] ⚠️ Modelo 'equipamento' não encontrado no registry")
             raise Exception("Modelo 'equipamento' não encontrado")
 
-        logger.info("[REL52] ✅ Modelos PMP e Equipamento prontos para uso")
+        logger.info("[REL52] ✅ Modelos PMP e Equipamento prontos")
 
     except Exception as e:
         logger.error("[REL52] ❌ Erro ao preparar modelos: %s", e)
