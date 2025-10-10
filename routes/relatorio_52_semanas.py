@@ -1,24 +1,26 @@
 
-from flask import Blueprint, jsonify, send_file
+from flask import Blueprint, send_file, jsonify
 from datetime import datetime, timedelta, date
 from io import BytesIO
 import traceback
+from collections import defaultdict, OrderedDict
 
-# Imports do projeto
+# ===== Imports do projeto =====
 from models import db
 from models.pmp_limpo import PMP
 from assets_models import OrdemServico
 
-# PDF
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
+# ===== ReportLab (PDF) =====
+from reportlab.lib.pagesizes import A3, landscape
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import mm
 
-# === Blueprint (NOME QUE O LOADER ESPERA) ===
 relatorio_52_semanas_bp = Blueprint('relatorio_52_semanas', __name__)
 
-# === Utilitário seguro de datas ===
+# ---------- Utils de data ----------
 def _to_date(x):
-    """Normaliza entradas para datetime.date. Retorna None se não conseguir converter."""
     try:
         if x is None:
             return None
@@ -28,209 +30,258 @@ def _to_date(x):
             return x.date()
         if isinstance(x, str):
             try:
-                # tenta ISO (YYYY-MM-DD ou YYYY-MM-DDTHH:MM:SS)
                 return datetime.fromisoformat(x).date()
             except Exception:
                 return None
         return None
-    except Exception as e:
-        print(f"DEBUG[to_date]: erro ao converter {x!r} -> {e}")
+    except Exception:
         return None
 
-# === Semanas do ano ===
-def calcular_semanas_ano(ano: int):
+def semanas_do_ano(ano:int):
+    base = datetime(ano, 1, 1)
     semanas = []
-    inicio_ano = datetime(ano, 1, 1)
     for i in range(52):
-        inicio_semana_dt = inicio_ano + timedelta(weeks=i)
-        fim_semana_dt = inicio_semana_dt + timedelta(days=6)
+        ini = base + timedelta(weeks=i)
+        fim = ini + timedelta(days=6)
         semanas.append({
-            'numero': i + 1,
-            'inicio': inicio_semana_dt.date(),
-            'fim': fim_semana_dt.date(),
-            'mes': inicio_semana_dt.month
+            "numero": i+1,
+            "inicio": ini.date(),
+            "fim": fim.date()
         })
-    print(f"DEBUG[semanas]: total={len(semanas)} ano={ano}")
     return semanas
 
-# === Semanas associadas a uma PMP ===
-def determinar_semanas_pmp(pmp: PMP, semanas_ano):
-    semanas_pmp = []
-    data_inicio_plano = _to_date(getattr(pmp, 'data_inicio_plano', None))
-    print("DEBUG[determinar_semanas_pmp]: PMP", getattr(pmp, 'id', '?'),
-          "data_inicio_plano=", data_inicio_plano, f"({type(data_inicio_plano)})")
-    if data_inicio_plano is None:
-        print(f"⚠️ Ignorando PMP {getattr(pmp, 'id', '?')}: data_inicio_plano ausente")
-        return semanas_pmp  # vazio: será ignorada na rota
-    for semana in semanas_ano:
-        if semana['inicio'] <= data_inicio_plano <= semana['fim']:
-            semanas_pmp.append(semana['numero'])
-    return semanas_pmp
+# ---------- Frequência -> semanas planejadas ----------
+def semanas_planejadas(frequencia:str):
+    """Retorna um set com números de semanas planejadas conforme a frequência textual."""
+    if not frequencia:
+        return set()
+    f = str(frequencia).strip().lower()
+    # mapeamentos comuns
+    if f in {"diaria","diária","daily"}:
+        return set(range(1,53))
+    if f in {"semanal","weekly"}:
+        return set(range(1,53))
+    if f in {"quinzenal","biweekly","quizenal"}:
+        return set(i for i in range(1,53) if (i % 2)==0)
+    if f in {"mensal","monthly"}:
+        return set([4,8,12,16,20,24,28,32,36,40,44,48])
+    if f in {"bimestral","bimestra","bimonthly"}:
+        return set([8,16,24,32,40,48])
+    if f in {"trimestral","quarterly"}:
+        return set([12,24,36,48])
+    if f in {"semestral","half-year","semestre"}:
+        return set([26,52])
+    if f in {"anual","yearly","anualidade"}:
+        return set([52])
+    # fallback: tentar número de semanas por periodicidade (ex: "cada 6 semanas")
+    import re
+    m = re.search(r"(?:cada|a cada|every)\s*(\d+)\s*(?:semana|semanas|week|weeks)", f)
+    if m:
+        step = max(1, int(m.group(1)))
+        return set([i for i in range(step, 53, step)])
+    return set()
 
-# === Status de OS por semana ===
-def obter_status_os_semana(pmp_id: int, semana_numero: int, semanas_ano):
-    semana = semanas_ano[semana_numero - 1]
-    inicio_dt = datetime.combine(semana['inicio'], datetime.min.time())
-    fim_dt = datetime.combine(semana['fim'], datetime.max.time())
-    print("DEBUG[obter_status_os_semana]:", f"pmp_id={pmp_id}", f"semana={semana_numero}",
-          f"intervalo=[{inicio_dt} .. {fim_dt}]")
-
-    os_semana = OrdemServico.query.filter(
+# ---------- Status por semana ----------
+def status_os_na_semana(pmp_id:int, semana:dict):
+    """Retorna (status, os_numero) para a semana.
+       status: 'concluida'|'gerada'|'nao_gerada'|None
+    """
+    ini = datetime.combine(semana["inicio"], datetime.min.time())
+    fim = datetime.combine(semana["fim"], datetime.max.time())
+    os_ = OrdemServico.query.filter(
         OrdemServico.pmp_id == pmp_id,
-        OrdemServico.data_criacao >= inicio_dt,
-        OrdemServico.data_criacao <= fim_dt
-    ).first()
+        OrdemServico.data_criacao >= ini,
+        OrdemServico.data_criacao <= fim
+    ).order_by(OrdemServico.id.desc()).first()
+    if os_:
+        st = getattr(os_, "status", None)
+        os_num = getattr(os_, "id", None)
+        if st and str(st).lower() in {"concluida","concluída","done","finalizada"}:
+            return ("concluida", os_num)
+        else:
+            return ("gerada", os_num)
+    return ("nao_gerada", None)
 
-    return os_semana.status if os_semana else 'sem_os'
-
-# === HH por mês/oficina (mantém lógica existente) ===
-def calcular_hh_por_mes_oficina(ano: int):
-    inicio_ano = datetime(ano, 1, 1)
-    fim_ano = datetime(ano, 12, 31)
-    print(f"DEBUG[HH]: ano={ano}, inicio_ano={inicio_ano}, fim_ano={fim_ano}")
-
-    pmps_com_os = db.session.query(PMP).join(OrdemServico).filter(
-        OrdemServico.data_criacao >= inicio_ano,
-        OrdemServico.data_criacao <= fim_ano,
-        OrdemServico.status == 'concluida'
+# ---------- HH por mês / oficina ----------
+def hh_por_mes_oficina(ano:int):
+    ini = datetime(ano,1,1)
+    fim = datetime(ano,12,31,23,59,59)
+    os_conc = OrdemServico.query.filter(
+        OrdemServico.status.in_(["concluida","concluída"]),
+        OrdemServico.data_criacao >= ini,
+        OrdemServico.data_criacao <= fim
     ).all()
-    print(f"DEBUG[HH]: pmps_com_os={len(pmps_com_os)}")
+    resumo = defaultdict(lambda: defaultdict(float))  # mês -> oficina -> hh
+    oficinas_set = set()
+    for os_ in os_conc:
+        d = getattr(os_, "data_criacao", None)
+        if not isinstance(d, (datetime, date)): 
+            continue
+        mes = d.month if isinstance(d, (datetime, date)) else None
+        if not mes:
+            continue
+        hh = float(getattr(os_, "hh_total", 0) or 0)
+        oficina = getattr(os_, "oficina", None) or getattr(os_, "setor", None) or "Outros"
+        oficinas_set.add(oficina)
+        resumo[mes][oficina] += hh
+        resumo[mes]["Total"] += hh
+    # ordenar por mês e garantir todas oficinas como colunas
+    oficinas = ["Total"] + sorted([o for o in oficinas_set if o != "Total"])
+    # construir matriz
+    tabela = []
+    for mes in range(1,13):
+        linha = OrderedDict()
+        linha["mes"] = mes
+        for o in oficinas:
+            linha[o] = resumo[mes].get(o, 0)
+        tabela.append(linha)
+    return oficinas, tabela
 
-    hh_por_mes = {}
-    for pmp in pmps_com_os:
-        os_concluidas = OrdemServico.query.filter(
-            OrdemServico.pmp_id == pmp.id,
-            OrdemServico.status == 'concluida'
-        ).all()
-        print(f"DEBUG[HH]: PMP {pmp.id} os_concluidas={len(os_concluidas)}")
-        for os_ in os_concluidas:
-            d = getattr(os_, 'data_criacao', None)
-            d = d if isinstance(d, (datetime, date)) else None
-            if d is None:
-                continue
-            mes = d.month if isinstance(d, (datetime, date)) else None
-            if mes is None:
-                continue
-            hh_por_mes[mes] = hh_por_mes.get(mes, 0) + getattr(os_, 'hh_total', 0)
-    return hh_por_mes
+# ---------- Geração do PDF ----------
+def gerar_pdf_visual(ano:int):
+    semanas = semanas_do_ano(ano)
+    # Buscar PMPs
+    pmps = PMP.query.order_by(PMP.id.asc()).all()
+    # Agrupar por equipamento
+    grupos = defaultdict(list)
+    for pmp in pmps:
+        equip = getattr(pmp, "equipamento_nome", None) or getattr(pmp, "equipamento", None) or getattr(pmp, "descricao_equipamento", None) or "Equipamento sem nome"
+        grupos[equip].append(pmp)
 
-# === Geração de PDF com dados reais ===
-def _desenha_pdf(dados_relatorio, ano, hh_por_mes):
-    buffer = BytesIO()
-    c = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
+    buf = BytesIO()
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=landscape(A3),
+        leftMargin=10*mm, rightMargin=10*mm, topMargin=10*mm, bottomMargin=10*mm
+    )
+    story = []
+    st = getSampleStyleSheet()
+    h1 = st["Heading1"]; h1.fontSize = 16; h1.spaceAfter = 6
+    h2 = st["Heading2"]; h2.fontSize = 12; h2.spaceAfter = 4
+    normal = st["Normal"]; normal.fontSize = 8
 
     # Cabeçalho
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(40, height - 40, f"Plano de 52 Semanas - {ano}")
-    c.setFont("Helvetica", 10)
-    c.drawString(40, height - 55, f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    story.append(Paragraph(f"Plano de 52 Semanas - {ano}", h1))
+    story.append(Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}", normal))
+    story.append(Spacer(1, 6))
 
-    y = height - 80
+    # Cores
+    VERDE = colors.Color(0.4, 0.73, 0.42)      # concluída
+    CINZA_ESCURO = colors.Color(0.46, 0.46, 0.46)  # gerada
+    CINZA_CLARO = colors.Color(0.74, 0.74, 0.74)   # não gerada
 
-    # HH por mês (resumo)
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(40, y, "Resumo HH por mês:")
-    y -= 16
-    c.setFont("Helvetica", 9)
-    if hh_por_mes:
-        meses = sorted(hh_por_mes.items(), key=lambda kv: kv[0])
-        linha = ", ".join([f"{m:02d}: {v}" for m, v in meses])
-        c.drawString(40, y, linha)
-        y -= 20
-    else:
-        c.drawString(40, y, "(sem HH acumulado no ano)")
-        y -= 20
+    # Tamanhos de coluna
+    col_equip = 55*mm
+    col_pmp = 35*mm
+    col_freq = 22*mm
+    col_sem = 8*mm  # 52 colunas
+    widths = [col_equip, col_pmp, col_freq] + [col_sem]*52
 
-    # Lista de PMPs e semanas
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(40, y, "PMPs e semanas:")
-    y -= 16
+    # Para cada equipamento, montar tabela
+    for equip, lista in grupos.items():
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(f"<b>Equipamento:</b> {equip}", h2))
 
-    c.setFont("Helvetica", 9)
-    for pmp in dados_relatorio:
-        if y < 60:
-            c.showPage()
-            y = height - 40
-            c.setFont("Helvetica-Bold", 14)
-            c.drawString(40, y, f"Plano de 52 Semanas - {ano}")
-            y -= 25
-            c.setFont("Helvetica", 9)
+        # Cabeçalho da matriz
+        header = ["PMP", "Frequência", ""]  # col 0 vira mesclagem com 'PMP' e 'Frequência'
+        header = ["PMP", "Frequência", ""] + [str(i) for i in range(1,53)]
+        data = [header]
 
-        c.setFont("Helvetica-Bold", 9)
-        c.drawString(40, y, f"PMP {pmp['pmp_id']} - {pmp.get('descricao', '')}")
-        y -= 12
-        c.setFont("Helvetica", 9)
+        # Estilo base
+        style = TableStyle([
+            ("FONT", (0,0), (-1,-1), "Helvetica", 7),
+            ("GRID", (0,0), (-1,-1), 0.25, colors.black),
+            ("ALIGN", (3,0), (-1,-1), "CENTER"),
+            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+            ("BACKGROUND", (0,0), (-1,0), colors.whitesmoke),
+        ])
 
-        if pmp['semanas']:
-            semanas_txt = ', '.join([str(s['numero']) if isinstance(s, dict) else str(s) for s in pmp['semanas']])
-            c.drawString(60, y, f"Semanas: {semanas_txt}")
-            y -= 12
+        # Linhas por PMP
+        for pmp in lista:
+            freq_text = getattr(pmp, "frequencia", None) or getattr(pmp, "periodicidade", None) or ""
+            semanas_plan = semanas_planejadas(freq_text)
+            # linha base
+            linha = [getattr(pmp, "descricao", f"PMP {getattr(pmp,'id','?')}"), str(freq_text), ""]
+            # 52 colunas de semana
+            for idx, sem in enumerate(semanas, start=1):
+                # Verificar status real na semana
+                st_sem, os_num = status_os_na_semana(getattr(pmp, "id", 0), sem)
+                txt = ""
+                cor = None
+                if st_sem == "concluida":
+                    cor = VERDE; txt = f"OS #{os_num}" if os_num else ""
+                elif st_sem == "gerada":
+                    cor = CINZA_ESCURO; txt = f"OS #{os_num}" if os_num else ""
+                else:
+                    # Sem OS: marcar apenas se for semana planejada
+                    if idx in semanas_plan:
+                        cor = CINZA_CLARO
+                linha.append(txt)
+                # aplicar cor depois via style (calculando posição)
+            data.append(linha)
 
-            # Status por semana (se disponível)
-            if pmp.get('status_por_semana'):
-                status_linhas = []
-                for k in sorted(pmp['status_por_semana'].keys()):
-                    status_linhas.append(f"S{k:02d}:{pmp['status_por_semana'][k]}")
-                # quebrar em múltiplas linhas se muito longo
-                linha = ", ".join(status_linhas)
-                while len(linha) > 110:
-                    corte = linha[:110]
-                    resto = linha[110:]
-                    c.drawString(60, y, corte)
-                    y -= 12
-                    linha = resto
-                c.drawString(60, y, linha)
-                y -= 12
-        else:
-            c.drawString(60, y, "(sem semanas relacionadas)")
-            y -= 12
+        # Aplicar cores por célula (varre novamente para não misturar índices)
+        # data tem header (linha 0) + N linhas de PMPs
+        for r, pmp in enumerate(lista, start=1):
+            freq_text = getattr(pmp, "frequencia", None) or getattr(pmp, "periodicidade", None) or ""
+            semanas_plan = semanas_planejadas(freq_text)
+            for c, sem in enumerate(semanas, start=3):  # colunas a partir da 3 (0:PMP,1:FREQ,2:vazio)
+                st_sem, os_num = status_os_na_semana(getattr(pmp, "id", 0), sem)
+                if st_sem == "concluida":
+                    style.add("BACKGROUND", (c, r), (c, r), VERDE)
+                elif st_sem == "gerada":
+                    style.add("BACKGROUND", (c, r), (c, r), CINZA_ESCURO)
+                else:
+                    if (c-2) in semanas_plan:
+                        style.add("BACKGROUND", (c, r), (c, r), CINZA_CLARO)
 
-        y -= 6
+        table = Table(data, colWidths=widths, repeatRows=1)
+        table.setStyle(style)
+        story.append(table)
 
-    c.showPage()
-    c.save()
-    buffer.seek(0)
-    return buffer
+        # Quebra se ficar muito grande
+        story.append(Spacer(1, 8))
 
-# === Endpoint principal: retorna PDF binário ===
+    # ---- Tabela de HH por mês/oficina ----
+    oficinas, tabela_hh = hh_por_mes_oficina(ano)
+    story.append(PageBreak())
+    story.append(Paragraph("Resumo de HH por mês e oficina", h2))
+
+    head_hh = ["Mês"] + oficinas
+    data_hh = [head_hh]
+    meses_pt = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
+    for linha in tabela_hh:
+        row = [meses_pt[linha["mes"]-1]]
+        for o in oficinas:
+            val = linha.get(o, 0)
+            row.append(int(val) if float(val).is_integer() else round(float(val),2))
+        data_hh.append(row)
+
+    w0 = 35*mm
+    wcols = [w0] + [25*mm]*len(oficinas)
+    t_hh = Table(data_hh, colWidths=wcols, repeatRows=1)
+    t_hh.setStyle(TableStyle([
+        ("FONT", (0,0), (-1,-1), "Helvetica", 8),
+        ("BACKGROUND", (0,0), (-1,0), colors.whitesmoke),
+        ("GRID", (0,0), (-1,-1), 0.25, colors.black),
+        ("ALIGN", (1,1), (-1,-1), "RIGHT"),
+    ]))
+    story.append(t_hh)
+
+    # Build PDF
+    doc.build(story)
+    buf.seek(0)
+    return buf
+
+# ---------- Rota principal (visual) ----------
 @relatorio_52_semanas_bp.route('/api/relatorios/plano-52-semanas', methods=['GET'])
-def gerar_relatorio_plano_52():
+def gerar_relatorio_visual():
     try:
-        ano = datetime.now().year
-        semanas_ano = calcular_semanas_ano(ano)
-        print(f"DEBUG[route]: ano={ano}, primeira_semana={{'inicio': semanas_ano[0]['inicio'], 'fim': semanas_ano[0]['fim']}}")
-
-        pmps = PMP.query.all()
-        dados_relatorio = []
-
-        for pmp in pmps:
-            data_inicio_plano = _to_date(getattr(pmp, 'data_inicio_plano', None))
-            if data_inicio_plano is None:
-                print(f"⚠️ Ignorando PMP {getattr(pmp, 'id', '?')}: data_inicio_plano ausente")
-                continue
-
-            semanas_pmp = determinar_semanas_pmp(pmp, semanas_ano)
-            # também coletar status por semana
-            status_map = {}
-            for num_semana in semanas_pmp:
-                status_map[num_semana] = obter_status_os_semana(pmp.id, num_semana, semanas_ano)
-
-            dados_relatorio.append({
-                'pmp_id': pmp.id,
-                'descricao': getattr(pmp, 'descricao', ''),
-                'semanas': [{'numero': s} for s in semanas_pmp],
-                'status_por_semana': status_map
-            })
-
-        hh_por_mes = calcular_hh_por_mes_oficina(ano)
-
-        # === Gera PDF com dados reais ===
-        pdf_buffer = _desenha_pdf(dados_relatorio, ano, hh_por_mes)
-        fname = f"Plano_52_Semanas_{ano}.pdf"
-        return send_file(pdf_buffer, as_attachment=True, download_name=fname, mimetype="application/pdf")
-
+        ano = int(datetime.now().year)
+        pdf = gerar_pdf_visual(ano)
+        fname = f"Plano_52_Semanas_{ano}_visual.pdf"
+        return send_file(pdf, as_attachment=True, download_name=fname, mimetype="application/pdf")
     except Exception as e:
-        print("Erro ao gerar relatório:", e)
+        print("Erro ao gerar PDF visual:", e)
         traceback.print_exc()
-        return jsonify({'erro': str(e)}), 500
+        return jsonify({"erro": str(e)}), 500
