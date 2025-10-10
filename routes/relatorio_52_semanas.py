@@ -111,15 +111,15 @@ def calcular_hh_por_mes_oficina(ano=None):
     if ano is None:
         ano = datetime.now().year
     
-    inicio_ano = datetime(ano, 1, 1)
-    fim_ano = datetime(ano, 12, 31)
-    
-    # Buscar todas as PMPs com OS no ano
+    inicio_ano = datetime(ano, 1, 1).date()
+    fim_ano = datetime(ano, 12, 31).date()
+
     pmps_com_os = db.session.query(PMP).join(OrdemServico).filter(
         OrdemServico.data_criacao >= inicio_ano,
         OrdemServico.data_criacao <= fim_ano,
         OrdemServico.status == 'concluida'
     ).all()
+
     
     # Organizar por mês e oficina
     hh_por_mes_oficina = {}
