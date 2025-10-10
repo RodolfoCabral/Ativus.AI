@@ -1,7 +1,9 @@
 
 from flask import Blueprint, jsonify, request
 from datetime import datetime, timedelta, date
-from models import db, PMP, OrdemServico
+from models import db
+from models.pmp_limpo import PMP
+from assets_models import OrdemServico
 
 relatorio_52_semanas_bp = Blueprint('relatorio_52_semanas', __name__)
 
@@ -18,6 +20,7 @@ def _to_date(x):
 # Gera todas as semanas do ano atual
 def calcular_semanas_ano(ano):
     semanas = []
+    # Começa em 1º de janeiro e cria 52 blocos de 7 dias
     inicio_ano = datetime(ano, 1, 1)
     for i in range(52):
         inicio_semana = inicio_ano + timedelta(weeks=i)
@@ -64,7 +67,7 @@ def obter_status_os_semana(pmp_id, semana_numero, semanas_ano):
 # Calcula horas-homem (HH) por mês e oficina
 def calcular_hh_por_mes_oficina(ano):
     inicio_ano = datetime(ano, 1, 1)
-    fim_ano = datetime(ano, 12, 31)
+    fim_ano = datetime(ano, 12, 31, 23, 59, 59, 999999)
     print(f"DEBUG[HH]: ano={ano}, inicio_ano={inicio_ano}, fim_ano={fim_ano}")
 
     pmps_com_os = db.session.query(PMP).join(OrdemServico).filter(
@@ -78,7 +81,9 @@ def calcular_hh_por_mes_oficina(ano):
     for pmp in pmps_com_os:
         os_concluidas = OrdemServico.query.filter(
             OrdemServico.pmp_id == pmp.id,
-            OrdemServico.status == 'concluida'
+            OrdemServico.status == 'concluida',
+            OrdemServico.data_criacao >= inicio_ano,
+            OrdemServico.data_criacao <= fim_ano
         ).all()
         print(f"DEBUG[HH]: PMP {pmp.id} os_concluidas={len(os_concluidas)}")
         for os_ in os_concluidas:
