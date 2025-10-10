@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Relatório Plano 52 Semanas (PDF Visual Paginado)
-Versão segura — evita redefinição de tabelas (filiais) e conflitos no SQLAlchemy
+Versão final segura — elimina conflito de tabela 'filiais' no SQLAlchemy
 """
 
 import traceback
@@ -150,30 +150,26 @@ def gerar_pdf_visual_paginas(ano: int, equipamentos_por_pagina: int = 10):
     """Gera o PDF completo com as duas metades de semanas."""
     logger.info("[REL52] 🚀 Iniciando geração do PDF (ano=%s)", ano)
 
-    # 🔧 Importação segura dos modelos
-    from sqlalchemy import Table
     try:
+        # Modelo PMP importado normalmente
         PMP = importlib.import_module("models.pmp_limpo").PMP
 
-        # ⚙️ Importa o módulo 'models.assets' sem recriar as tabelas
-        if "models.assets" in sys.modules:
-            equipamento_mod = sys.modules["models.assets"]
-            logger.info("[REL52] ♻️ Reutilizando módulo 'models.assets' já carregado")
-        else:
-            equipamento_mod = importlib.import_module("models.assets")
-            logger.info("[REL52] ✅ Módulo 'models.assets' importado pela primeira vez")
+        # ⚙️ Recupera o modelo 'equipamento' do registry sem importar o módulo
+        db = current_app.extensions["sqlalchemy"].db
+        EquipamentoModel = None
+        for cls in db.Model._decl_class_registry.values():
+            if hasattr(cls, "__tablename__") and cls.__tablename__ == "equipamentos":
+                EquipamentoModel = cls
+                logger.info("[REL52] ✅ Modelo 'equipamento' recuperado do registry")
+                break
+        if EquipamentoModel is None:
+            logger.warning("[REL52] ⚠️ Modelo 'equipamento' não encontrado no registry")
+            raise Exception("Modelo 'equipamento' não encontrado")
 
-        # ⚙️ Força o SQLAlchemy a reutilizar tabela existente
-        metadata = current_app.extensions["sqlalchemy"].db.metadata
-        if "filiais" in metadata.tables:
-            metadata.tables["filiais"].extend_existing = True
-            logger.info("[REL52] 🧩 Reutilizando tabela 'filiais' existente")
-
-        EquipamentoModel = getattr(equipamento_mod, "equipamento")
         logger.info("[REL52] ✅ Modelos PMP e Equipamento prontos para uso")
 
     except Exception as e:
-        logger.error("[REL52] ❌ Erro ao importar modelos de forma segura: %s", e)
+        logger.error("[REL52] ❌ Erro ao preparar modelos: %s", e)
         raise
 
     semanas = semanas_do_ano(ano)
