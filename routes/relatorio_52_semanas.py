@@ -204,7 +204,7 @@ def gerar_plano_52_semanas():
                 fontSize=12,
                 spaceAfter=10
             )
-            elements.append(Paragraph(f"Equipamento: {equipamento.nome}", equip_style))
+            elements.append(Paragraph(f"Equipamento: {equipamento.descricao}", equip_style))
             
             # Criar tabela
             # Cabeçalho: Equipamento | PMP | 1 | 2 | 3 | ... | 52
@@ -214,7 +214,7 @@ def gerar_plano_52_semanas():
             
             # Para cada PMP do equipamento
             for i, pmp in enumerate(pmps):
-                row = [equipamento.nome if i == 0 else '', pmp.codigo]
+                row = [equipamento.descricao if i == 0 else '', pmp.codigo]
                 
                 # Determinar semanas de execução
                 semanas_execucao = determinar_semanas_pmp(pmp, semanas_ano)
