@@ -166,7 +166,7 @@ def gerar_plano_52_semanas():
         semanas_ano = calcular_semanas_ano(ano)
         
         # Buscar equipamentos e suas PMPs
-        equipamentos = Equipamento.query.filter_by(empresa=current_user.empresa).all()
+        equipamentos = Equipamento.query.filter_by(empresa=current_user.company).all()
         
         # Criar PDF
         buffer = io.BytesIO()
