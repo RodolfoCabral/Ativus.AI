@@ -189,7 +189,8 @@ def gerar_pdf_52_semanas(ano):
     
     try:
         # Importar modelos
-        from assets_models import Equipamento, PMP
+        from assets_models import Equipamento
+        from pmp import pmps
         
         # Calcular semanas do ano
         semanas_ano = calcular_semanas_ano(ano)
