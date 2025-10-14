@@ -1,7 +1,7 @@
 """
 Relatório de Plano de 52 Semanas
 Gera PDF com cronograma anual de manutenções preventivas
-Versão usando SQL direto para evitar conflitos de modelo
+Versão com importação segura para evitar conflitos de tabela
 """
 
 import io
@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from flask import Blueprint, current_app, send_file, jsonify
 from flask_login import login_required, current_user
-from sqlalchemy import text
 
 # ReportLab imports
 from reportlab.lib.pagesizes import A4, landscape
@@ -24,65 +23,67 @@ logger = logging.getLogger(__name__)
 # Blueprint
 relatorio_52_semanas_bp = Blueprint('relatorio_52_semanas', __name__)
 
-# ---------- Funções de consulta SQL direta ----------
-def executar_sql(query, params=None):
-    """Executa consulta SQL direta usando a conexão do Flask-SQLAlchemy."""
+# Cache global para modelos
+_MODELS_CACHE = {}
+
+def get_model_safe(model_name):
+    """Importa modelos de forma segura, usando cache para evitar reimportações."""
+    if model_name in _MODELS_CACHE:
+        return _MODELS_CACHE[model_name]
+    
     try:
-        from models import db
-        result = db.session.execute(text(query), params or {})
-        return result.fetchall()
+        if model_name == 'Equipamento':
+            from assets_models import Equipamento
+            _MODELS_CACHE[model_name] = Equipamento
+            return Equipamento
+        elif model_name == 'OrdemServico':
+            from assets_models import OrdemServico
+            _MODELS_CACHE[model_name] = OrdemServico
+            return OrdemServico
+        elif model_name == 'PMP':
+            # Tentar diferentes locais para o modelo PMP
+            try:
+                # Primeiro tentar assets_models
+                from assets_models import PMP
+                _MODELS_CACHE[model_name] = PMP
+                return PMP
+            except ImportError:
+                try:
+                    # Depois tentar models.pmp
+                    from models.pmp import PMP
+                    _MODELS_CACHE[model_name] = PMP
+                    return PMP
+                except ImportError:
+                    try:
+                        # Tentar models diretamente
+                        from models import PMP
+                        _MODELS_CACHE[model_name] = PMP
+                        return PMP
+                    except ImportError:
+                        # Se não encontrar, criar um modelo mock
+                        logger.warning(f"[REL52] ⚠️ Modelo PMP não encontrado, usando mock")
+                        
+                        class MockPMP:
+                            @staticmethod
+                            def query():
+                                class MockQuery:
+                                    @staticmethod
+                                    def filter_by(**kwargs):
+                                        class MockResult:
+                                            @staticmethod
+                                            def all():
+                                                return []
+                                        return MockResult()
+                                return MockQuery()
+                        
+                        _MODELS_CACHE[model_name] = MockPMP
+                        return MockPMP
+        else:
+            raise ValueError(f"Modelo desconhecido: {model_name}")
+            
     except Exception as e:
-        logger.error(f"[REL52] ❌ Erro na consulta SQL: {e}")
-        return []
-
-def buscar_equipamentos(empresa):
-    """Busca equipamentos usando SQL direto."""
-    query = """
-    SELECT id, descricao, tag, tipo, setor, filial
-    FROM equipamentos 
-    WHERE empresa = :empresa
-    ORDER BY descricao
-    """
-    return executar_sql(query, {'empresa': empresa})
-
-def buscar_pmps(equipamento_id):
-    """Busca PMPs de um equipamento usando SQL direto."""
-    query = """
-    SELECT id, codigo, descricao, frequencia, tipo, oficina
-    FROM pmps 
-    WHERE equipamento_id = :equipamento_id
-    AND status = 'ativo'
-    ORDER BY codigo
-    """
-    return executar_sql(query, {'equipamento_id': equipamento_id})
-
-def buscar_os_semana(pmp_id, data_inicio, data_fim):
-    """Busca OS de uma PMP em uma semana específica usando SQL direto."""
-    query = """
-    SELECT id, status, data_criacao
-    FROM ordem_servicos 
-    WHERE pmp_id = :pmp_id
-    AND data_criacao >= :data_inicio
-    AND data_criacao <= :data_fim
-    ORDER BY data_criacao DESC
-    LIMIT 1
-    """
-    return executar_sql(query, {
-        'pmp_id': pmp_id,
-        'data_inicio': data_inicio,
-        'data_fim': data_fim
-    })
-
-def buscar_os_ano(ano):
-    """Busca todas as OS do ano usando SQL direto."""
-    query = """
-    SELECT id, status, data_criacao, hh, hh_total, horas_homem, tempo_execucao,
-           tipo, oficina, departamento, setor
-    FROM ordem_servicos 
-    WHERE EXTRACT(YEAR FROM data_criacao) = :ano
-    ORDER BY data_criacao
-    """
-    return executar_sql(query, {'ano': ano})
+        logger.error(f"[REL52] ❌ Erro ao importar modelo {model_name}: {e}")
+        return None
 
 # ---------- Cálculo de semanas ----------
 def calcular_semanas_ano(ano):
@@ -134,17 +135,25 @@ def semanas_planejadas(frequencia):
 # ---------- Status da OS ----------
 def status_os_na_semana(pmp_id, semana):
     """Retorna o status e número da OS associada à PMP naquela semana."""
+    OrdemServico = get_model_safe('OrdemServico')
+    if not OrdemServico:
+        return "erro", None
+
     try:
         ini = datetime.combine(semana["inicio"], datetime.min.time())
         fim = datetime.combine(semana["fim"], datetime.max.time())
         
         # Buscar OS da PMP nesta semana
-        os_list = buscar_os_semana(pmp_id, ini, fim)
+        os_list = OrdemServico.query.filter(
+            OrdemServico.pmp_id == pmp_id,
+            OrdemServico.data_criacao >= ini,
+            OrdemServico.data_criacao <= fim
+        ).all()
         
         if os_list:
-            os_row = os_list[0]  # Primeira OS encontrada
-            status = (os_row[1] or "").lower()  # status
-            os_num = os_row[0]  # id
+            os_ = os_list[0]  # Primeira OS encontrada
+            status = (getattr(os_, "status", "") or "").lower()
+            os_num = getattr(os_, "id", None)
             if "conclu" in status or "final" in status:
                 return "concluida", os_num
             return "gerada", os_num
@@ -156,40 +165,48 @@ def status_os_na_semana(pmp_id, semana):
 # ---------- HH por oficina ----------
 def hh_por_mes_oficina(ano):
     """Calcula HH por mês e oficina baseado nas OS concluídas."""
+    OrdemServico = get_model_safe('OrdemServico')
+    if not OrdemServico:
+        logger.error("[REL52] ⚠️ Modelo OrdemServico não disponível")
+        return [], []
+
+    ini, fim = datetime(ano, 1, 1), datetime(ano, 12, 31, 23, 59, 59)
+    
     try:
-        # Buscar todas as OS do ano
-        os_todas = buscar_os_ano(ano)
+        # Buscar todas as OS do ano (não apenas concluídas para debug)
+        os_todas = OrdemServico.query.filter(
+            OrdemServico.data_criacao >= ini,
+            OrdemServico.data_criacao <= fim,
+        ).all()
         
         logger.info(f"[REL52] 📊 Encontradas {len(os_todas)} OS no ano {ano}")
         
         resumo = defaultdict(lambda: defaultdict(float))
         oficinas = set()
         
-        for os_row in os_todas:
-            # os_row: id, status, data_criacao, hh, hh_total, horas_homem, tempo_execucao, tipo, oficina, departamento, setor
-            data_criacao = os_row[2]
-            mes = data_criacao.month
+        for os_ in os_todas:
+            mes = os_.data_criacao.month
             
             # Tentar diferentes campos para HH
             hh = 0
-            for i, campo in enumerate([3, 4, 5, 6]):  # hh, hh_total, horas_homem, tempo_execucao
-                valor = os_row[campo] if len(os_row) > campo else None
+            for campo in ['hh', 'hh_total', 'horas_homem', 'tempo_execucao']:
+                valor = getattr(os_, campo, None)
                 if valor is not None:
                     try:
                         hh = float(valor)
                         if hh > 0:
-                            logger.debug(f"[REL52] 🔍 OS {os_row[0]}: campo_{campo}={hh}")
+                            logger.debug(f"[REL52] 🔍 OS {os_.id}: {campo}={hh}")
                             break
                     except (ValueError, TypeError):
                         continue
             
             # Se não encontrou HH, usar valor padrão baseado no tipo
             if hh == 0:
-                tipo = os_row[7] if len(os_row) > 7 else None  # tipo
-                if tipo:
-                    if 'preventiva' in str(tipo).lower():
+                # Estimar HH baseado no tipo de manutenção
+                if hasattr(os_, 'tipo') and os_.tipo:
+                    if 'preventiva' in str(os_.tipo).lower():
                         hh = 2.0  # 2 horas para preventiva
-                    elif 'corretiva' in str(tipo).lower():
+                    elif 'corretiva' in str(os_.tipo).lower():
                         hh = 4.0  # 4 horas para corretiva
                     else:
                         hh = 1.0  # 1 hora padrão
@@ -198,9 +215,10 @@ def hh_por_mes_oficina(ano):
             
             # Determinar oficina
             oficina = "Outros"
-            for i in [8, 9, 10]:  # oficina, departamento, setor
-                if len(os_row) > i and os_row[i]:
-                    oficina = str(os_row[i])
+            for campo_oficina in ['oficina', 'departamento', 'setor']:
+                valor_oficina = getattr(os_, campo_oficina, None)
+                if valor_oficina:
+                    oficina = str(valor_oficina)
                     break
             
             resumo[mes][oficina] += hh
@@ -235,14 +253,18 @@ def gerar_pdf_52_semanas(ano):
     logger.info("[REL52] 🚀 Iniciando geração do PDF (ano=%s)", ano)
     
     try:
+        # Importação segura de modelos
+        Equipamento = get_model_safe('Equipamento')
+        PMP = get_model_safe('PMP')
+        
+        if not Equipamento or not PMP:
+            raise Exception("Modelos necessários não disponíveis")
+        
         # Calcular semanas do ano
         semanas_ano = calcular_semanas_ano(ano)
         
-        # Buscar equipamentos usando SQL direto
-        equipamentos = buscar_equipamentos(current_user.company)
-        
-        if not equipamentos:
-            logger.warning("[REL52] ⚠️ Nenhum equipamento encontrado")
+        # Buscar equipamentos e suas PMPs
+        equipamentos = Equipamento.query.filter_by(empresa=current_user.company).all()
         
         # Criar PDF
         buffer = io.BytesIO()
@@ -276,18 +298,14 @@ def gerar_pdf_52_semanas(ano):
         
         # Para cada equipamento
         for equipamento in equipamentos:
-            # equipamento: id, descricao, tag, tipo, setor, filial
-            equipamento_id = equipamento[0]
-            equipamento_descricao = equipamento[1]
-            
-            # Buscar PMPs do equipamento usando SQL direto
-            pmps = buscar_pmps(equipamento_id)
+            # Buscar PMPs do equipamento
+            pmps = PMP.query.filter_by(equipamento_id=equipamento.id).all()
             
             if not pmps:
                 continue
                 
             # Título do equipamento
-            elements.append(Paragraph(f"Equipamento: {equipamento_descricao}", heading_style))
+            elements.append(Paragraph(f"Equipamento: {equipamento.descricao}", heading_style))
             
             # Criar tabela
             # Cabeçalho: Equipamento | PMP | 1 | 2 | 3 | ... | 52
@@ -296,19 +314,14 @@ def gerar_pdf_52_semanas(ano):
             
             # Para cada PMP do equipamento
             for i, pmp in enumerate(pmps):
-                # pmp: id, codigo, descricao, frequencia, tipo, oficina
-                pmp_id = pmp[0]
-                pmp_codigo = pmp[1]
-                pmp_frequencia = pmp[3]
-                
-                row = [equipamento_descricao if i == 0 else '', pmp_codigo]
+                row = [equipamento.descricao if i == 0 else '', pmp.codigo]
                 
                 # Determinar semanas de execução
-                semanas_execucao = semanas_planejadas(pmp_frequencia)
+                semanas_execucao = semanas_planejadas(pmp.frequencia)
                 
                 # Para cada semana do ano
                 for semana in semanas_ano:
-                    status, os_num = status_os_na_semana(pmp_id, semana)
+                    status, os_num = status_os_na_semana(pmp.id, semana)
                     
                     # Determinar texto da célula
                     if status == "concluida" and os_num:
@@ -345,8 +358,7 @@ def gerar_pdf_52_semanas(ano):
             # Aplicar cores baseadas no status
             for row_idx in range(1, len(table_data)):
                 pmp = pmps[row_idx - 1]
-                pmp_frequencia = pmp[3]
-                semanas_execucao = semanas_planejadas(pmp_frequencia)
+                semanas_execucao = semanas_planejadas(pmp.frequencia)
                 
                 for col_idx in range(2, len(table_data[row_idx])):
                     semana_num = col_idx - 1  # col_idx 2 = semana 1, col_idx 3 = semana 2, etc.
@@ -354,8 +366,7 @@ def gerar_pdf_52_semanas(ano):
                     
                     if 0 <= semana_index < len(semanas_ano):
                         semana = semanas_ano[semana_index]
-                        pmp_id = pmp[0]
-                        status, os_num = status_os_na_semana(pmp_id, semana)
+                        status, os_num = status_os_na_semana(pmp.id, semana)
                         
                         if status == "concluida":
                             # Verde para OS concluída
