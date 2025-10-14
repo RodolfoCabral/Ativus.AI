@@ -1,7 +1,6 @@
 """
 Relatório de Plano de 52 Semanas
 Gera PDF com cronograma anual de manutenções preventivas
-Versão com importação segura para evitar conflitos de tabela
 """
 
 import io
@@ -22,68 +21,6 @@ logger = logging.getLogger(__name__)
 
 # Blueprint
 relatorio_52_semanas_bp = Blueprint('relatorio_52_semanas', __name__)
-
-# Cache global para modelos
-_MODELS_CACHE = {}
-
-def get_model_safe(model_name):
-    """Importa modelos de forma segura, usando cache para evitar reimportações."""
-    if model_name in _MODELS_CACHE:
-        return _MODELS_CACHE[model_name]
-    
-    try:
-        if model_name == 'Equipamento':
-            from assets_models import Equipamento
-            _MODELS_CACHE[model_name] = Equipamento
-            return Equipamento
-        elif model_name == 'OrdemServico':
-            from assets_models import OrdemServico
-            _MODELS_CACHE[model_name] = OrdemServico
-            return OrdemServico
-        elif model_name == 'PMP':
-            # Tentar diferentes locais para o modelo PMP
-            try:
-                # Primeiro tentar assets_models
-                from assets_models import PMP
-                _MODELS_CACHE[model_name] = PMP
-                return PMP
-            except ImportError:
-                try:
-                    # Depois tentar models.pmp
-                    from models.pmp import PMP
-                    _MODELS_CACHE[model_name] = PMP
-                    return PMP
-                except ImportError:
-                    try:
-                        # Tentar models diretamente
-                        from models import PMP
-                        _MODELS_CACHE[model_name] = PMP
-                        return PMP
-                    except ImportError:
-                        # Se não encontrar, criar um modelo mock
-                        logger.warning(f"[REL52] ⚠️ Modelo PMP não encontrado, usando mock")
-                        
-                        class MockPMP:
-                            @staticmethod
-                            def query():
-                                class MockQuery:
-                                    @staticmethod
-                                    def filter_by(**kwargs):
-                                        class MockResult:
-                                            @staticmethod
-                                            def all():
-                                                return []
-                                        return MockResult()
-                                return MockQuery()
-                        
-                        _MODELS_CACHE[model_name] = MockPMP
-                        return MockPMP
-        else:
-            raise ValueError(f"Modelo desconhecido: {model_name}")
-            
-    except Exception as e:
-        logger.error(f"[REL52] ❌ Erro ao importar modelo {model_name}: {e}")
-        return None
 
 # ---------- Cálculo de semanas ----------
 def calcular_semanas_ano(ano):
@@ -135,8 +72,11 @@ def semanas_planejadas(frequencia):
 # ---------- Status da OS ----------
 def status_os_na_semana(pmp_id, semana):
     """Retorna o status e número da OS associada à PMP naquela semana."""
-    OrdemServico = get_model_safe('OrdemServico')
-    if not OrdemServico:
+    try:
+        # Importação local para evitar conflitos
+        from assets_models import OrdemServico
+    except Exception as e:
+        logger.error("[REL52] ⚠️ Falha ao importar OrdemServico: %s", e)
         return "erro", None
 
     try:
@@ -165,71 +105,68 @@ def status_os_na_semana(pmp_id, semana):
 # ---------- HH por oficina ----------
 def hh_por_mes_oficina(ano):
     """Calcula HH por mês e oficina baseado nas OS concluídas."""
-    OrdemServico = get_model_safe('OrdemServico')
-    if not OrdemServico:
-        logger.error("[REL52] ⚠️ Modelo OrdemServico não disponível")
+    try:
+        # Importação local para evitar conflitos
+        from assets_models import OrdemServico
+    except Exception as e:
+        logger.error("[REL52] ⚠️ Falha ao importar OrdemServico: %s", e)
         return [], []
 
     ini, fim = datetime(ano, 1, 1), datetime(ano, 12, 31, 23, 59, 59)
     
-    try:
-        # Buscar todas as OS do ano (não apenas concluídas para debug)
-        os_todas = OrdemServico.query.filter(
-            OrdemServico.data_criacao >= ini,
-            OrdemServico.data_criacao <= fim,
-        ).all()
+    # Buscar todas as OS do ano (não apenas concluídas para debug)
+    os_todas = OrdemServico.query.filter(
+        OrdemServico.data_criacao >= ini,
+        OrdemServico.data_criacao <= fim,
+    ).all()
+    
+    logger.info(f"[REL52] 📊 Encontradas {len(os_todas)} OS no ano {ano}")
+    
+    resumo = defaultdict(lambda: defaultdict(float))
+    oficinas = set()
+    
+    for os_ in os_todas:
+        mes = os_.data_criacao.month
         
-        logger.info(f"[REL52] 📊 Encontradas {len(os_todas)} OS no ano {ano}")
+        # Tentar diferentes campos para HH
+        hh = 0
+        for campo in ['hh', 'hh_total', 'horas_homem', 'tempo_execucao']:
+            valor = getattr(os_, campo, None)
+            if valor is not None:
+                try:
+                    hh = float(valor)
+                    if hh > 0:
+                        logger.debug(f"[REL52] 🔍 OS {os_.id}: {campo}={hh}")
+                        break
+                except (ValueError, TypeError):
+                    continue
         
-        resumo = defaultdict(lambda: defaultdict(float))
-        oficinas = set()
-        
-        for os_ in os_todas:
-            mes = os_.data_criacao.month
-            
-            # Tentar diferentes campos para HH
-            hh = 0
-            for campo in ['hh', 'hh_total', 'horas_homem', 'tempo_execucao']:
-                valor = getattr(os_, campo, None)
-                if valor is not None:
-                    try:
-                        hh = float(valor)
-                        if hh > 0:
-                            logger.debug(f"[REL52] 🔍 OS {os_.id}: {campo}={hh}")
-                            break
-                    except (ValueError, TypeError):
-                        continue
-            
-            # Se não encontrou HH, usar valor padrão baseado no tipo
-            if hh == 0:
-                # Estimar HH baseado no tipo de manutenção
-                if hasattr(os_, 'tipo') and os_.tipo:
-                    if 'preventiva' in str(os_.tipo).lower():
-                        hh = 2.0  # 2 horas para preventiva
-                    elif 'corretiva' in str(os_.tipo).lower():
-                        hh = 4.0  # 4 horas para corretiva
-                    else:
-                        hh = 1.0  # 1 hora padrão
+        # Se não encontrou HH, usar valor padrão baseado no tipo
+        if hh == 0:
+            # Estimar HH baseado no tipo de manutenção
+            if hasattr(os_, 'tipo') and os_.tipo:
+                if 'preventiva' in str(os_.tipo).lower():
+                    hh = 2.0  # 2 horas para preventiva
+                elif 'corretiva' in str(os_.tipo).lower():
+                    hh = 4.0  # 4 horas para corretiva
                 else:
                     hh = 1.0  # 1 hora padrão
-            
-            # Determinar oficina
-            oficina = "Outros"
-            for campo_oficina in ['oficina', 'departamento', 'setor']:
-                valor_oficina = getattr(os_, campo_oficina, None)
-                if valor_oficina:
-                    oficina = str(valor_oficina)
-                    break
-            
-            resumo[mes][oficina] += hh
-            resumo[mes]["Total"] += hh
-            oficinas.add(oficina)
-            
-        logger.info(f"[REL52] 📈 Oficinas encontradas: {list(oficinas)}")
+            else:
+                hh = 1.0  # 1 hora padrão
         
-    except Exception as e:
-        logger.error(f"[REL52] ❌ Erro ao calcular HH: {e}")
-        return [], []
+        # Determinar oficina
+        oficina = "Outros"
+        for campo_oficina in ['oficina', 'departamento', 'setor']:
+            valor_oficina = getattr(os_, campo_oficina, None)
+            if valor_oficina:
+                oficina = str(valor_oficina)
+                break
+        
+        resumo[mes][oficina] += hh
+        resumo[mes]["Total"] += hh
+        oficinas.add(oficina)
+        
+    logger.info(f"[REL52] 📈 Oficinas encontradas: {list(oficinas)}")
     
     # Organizar oficinas (Total primeiro)
     oficinas = ["Total"] + sorted(o for o in oficinas if o != "Total")
@@ -253,12 +190,9 @@ def gerar_pdf_52_semanas(ano):
     logger.info("[REL52] 🚀 Iniciando geração do PDF (ano=%s)", ano)
     
     try:
-        # Importação segura de modelos
-        Equipamento = get_model_safe('Equipamento')
-        PMP = get_model_safe('PMP')
-        
-        if not Equipamento or not PMP:
-            raise Exception("Modelos necessários não disponíveis")
+        # Importação local para evitar conflitos de tabela
+        from assets_models import Equipamento
+        from models.pmp import PMP
         
         # Calcular semanas do ano
         semanas_ano = calcular_semanas_ano(ano)
