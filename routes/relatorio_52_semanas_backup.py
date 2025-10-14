@@ -73,7 +73,6 @@ def semanas_planejadas(frequencia):
 def status_os_na_semana(pmp_id, semana):
     """Retorna o status e número da OS associada à PMP naquela semana."""
     try:
-        # Importação local para evitar conflitos
         from assets_models import OrdemServico
     except Exception as e:
         logger.error("[REL52] ⚠️ Falha ao importar OrdemServico: %s", e)
@@ -106,7 +105,6 @@ def status_os_na_semana(pmp_id, semana):
 def hh_por_mes_oficina(ano):
     """Calcula HH por mês e oficina baseado nas OS concluídas."""
     try:
-        # Importação local para evitar conflitos
         from assets_models import OrdemServico
     except Exception as e:
         logger.error("[REL52] ⚠️ Falha ao importar OrdemServico: %s", e)
@@ -190,7 +188,7 @@ def gerar_pdf_52_semanas(ano):
     logger.info("[REL52] 🚀 Iniciando geração do PDF (ano=%s)", ano)
     
     try:
-        # Importação local para evitar conflitos de tabela
+        # Importar modelos
         from assets_models import Equipamento, PMP
         
         # Calcular semanas do ano
