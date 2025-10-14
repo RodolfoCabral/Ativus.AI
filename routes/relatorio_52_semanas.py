@@ -191,7 +191,8 @@ def gerar_pdf_52_semanas(ano):
     
     try:
         # Importação local para evitar conflitos de tabela
-        from assets_models import Equipamento, PMP
+        from assets_models import Equipamento
+        from models.pmp import PMP
         
         # Calcular semanas do ano
         semanas_ano = calcular_semanas_ano(ano)
