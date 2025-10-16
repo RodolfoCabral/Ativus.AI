@@ -366,14 +366,15 @@ def gerar_pdf_52_semanas(ano):
                     status, os_num = status_os_na_semana(pmp_id, semana)
                     
                     # Determinar texto da célula
-                    if status == "concluida" and os_num:
-                        texto = f"{os_num}"  # Apenas o número da OS
-                    elif status == "aberta" and os_num:
-                        texto = f"{os_num}"  # Apenas o número da OS
+                    if os_num:
+                        # Sempre mostra o número da OS, independentemente do status
+                        texto = f"{os_num}"
                     elif semana['numero'] in semanas_execucao:
-                        texto = "●"  # Planejada mas não gerada
+                        # Planejada mas ainda não gerada
+                        texto = "●"
                     else:
-                        texto = ""  # Não planejada
+                        # Não planejada
+                        texto = ""
                     
                     row.append(texto)
                 
