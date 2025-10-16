@@ -1,7 +1,7 @@
 """
 Relatório de Plano de 52 Semanas
 Gera PDF com cronograma anual de manutenções preventivas
-Versão corrigida com consultas SQL ajustadas para a estrutura real da BD
+Versão usando SQL direto para evitar conflitos de modelo
 """
 
 import io
@@ -33,18 +33,12 @@ def executar_sql(query, params=None):
         return result.fetchall()
     except Exception as e:
         logger.error(f"[REL52] ❌ Erro na consulta SQL: {e}")
-        # Em caso de erro, fazer rollback para não afetar próximas consultas
-        try:
-            from models import db
-            db.session.rollback()
-        except:
-            pass
         return []
 
 def buscar_equipamentos(empresa):
-    """Busca equipamentos usando SQL direto com colunas básicas."""
+    """Busca equipamentos usando SQL direto."""
     query = """
-    SELECT id, descricao, tag
+    SELECT id, descricao, tag, tipo, setor, filial
     FROM equipamentos 
     WHERE empresa = :empresa
     ORDER BY descricao
@@ -54,9 +48,10 @@ def buscar_equipamentos(empresa):
 def buscar_pmps(equipamento_id):
     """Busca PMPs de um equipamento usando SQL direto."""
     query = """
-    SELECT id, codigo, descricao, frequencia
+    SELECT id, codigo, descricao, frequencia, tipo, oficina
     FROM pmps 
     WHERE equipamento_id = :equipamento_id
+    AND status = 'ativo'
     ORDER BY codigo
     """
     return executar_sql(query, {'equipamento_id': equipamento_id})
@@ -79,48 +74,15 @@ def buscar_os_semana(pmp_id, data_inicio, data_fim):
     })
 
 def buscar_os_ano(ano):
-    """Busca todas as OS do ano usando SQL direto com colunas básicas."""
+    """Busca todas as OS do ano usando SQL direto."""
     query = """
-    SELECT id, status, data_criacao
+    SELECT id, status, data_criacao, hh, hh_total, horas_homem, tempo_execucao,
+           tipo, oficina, departamento, setor
     FROM ordem_servicos 
     WHERE EXTRACT(YEAR FROM data_criacao) = :ano
     ORDER BY data_criacao
     """
     return executar_sql(query, {'ano': ano})
-
-def verificar_estrutura_tabelas():
-    """Verifica quais colunas existem nas tabelas principais."""
-    logger.info("[REL52] 🔍 Verificando estrutura das tabelas...")
-    
-    # Verificar colunas da tabela equipamentos
-    query_equipamentos = """
-    SELECT column_name 
-    FROM information_schema.columns 
-    WHERE table_name = 'equipamentos'
-    ORDER BY ordinal_position
-    """
-    colunas_equipamentos = executar_sql(query_equipamentos)
-    logger.info(f"[REL52] 📋 Colunas equipamentos: {[col[0] for col in colunas_equipamentos]}")
-    
-    # Verificar colunas da tabela pmps
-    query_pmps = """
-    SELECT column_name 
-    FROM information_schema.columns 
-    WHERE table_name = 'pmps'
-    ORDER BY ordinal_position
-    """
-    colunas_pmps = executar_sql(query_pmps)
-    logger.info(f"[REL52] 📋 Colunas pmps: {[col[0] for col in colunas_pmps]}")
-    
-    # Verificar colunas da tabela ordem_servicos
-    query_os = """
-    SELECT column_name 
-    FROM information_schema.columns 
-    WHERE table_name = 'ordem_servicos'
-    ORDER BY ordinal_position
-    """
-    colunas_os = executar_sql(query_os)
-    logger.info(f"[REL52] 📋 Colunas ordem_servicos: {[col[0] for col in colunas_os]}")
 
 # ---------- Cálculo de semanas ----------
 def calcular_semanas_ano(ano):
@@ -204,15 +166,42 @@ def hh_por_mes_oficina(ano):
         oficinas = set()
         
         for os_row in os_todas:
-            # os_row: id, status, data_criacao
+            # os_row: id, status, data_criacao, hh, hh_total, horas_homem, tempo_execucao, tipo, oficina, departamento, setor
             data_criacao = os_row[2]
             mes = data_criacao.month
             
-            # Usar valor padrão de 2 horas para cada OS
-            hh = 2.0
+            # Tentar diferentes campos para HH
+            hh = 0
+            for i, campo in enumerate([3, 4, 5, 6]):  # hh, hh_total, horas_homem, tempo_execucao
+                valor = os_row[campo] if len(os_row) > campo else None
+                if valor is not None:
+                    try:
+                        hh = float(valor)
+                        if hh > 0:
+                            logger.debug(f"[REL52] 🔍 OS {os_row[0]}: campo_{campo}={hh}")
+                            break
+                    except (ValueError, TypeError):
+                        continue
             
-            # Usar oficina padrão
-            oficina = "Manutenção"
+            # Se não encontrou HH, usar valor padrão baseado no tipo
+            if hh == 0:
+                tipo = os_row[7] if len(os_row) > 7 else None  # tipo
+                if tipo:
+                    if 'preventiva' in str(tipo).lower():
+                        hh = 2.0  # 2 horas para preventiva
+                    elif 'corretiva' in str(tipo).lower():
+                        hh = 4.0  # 4 horas para corretiva
+                    else:
+                        hh = 1.0  # 1 hora padrão
+                else:
+                    hh = 1.0  # 1 hora padrão
+            
+            # Determinar oficina
+            oficina = "Outros"
+            for i in [8, 9, 10]:  # oficina, departamento, setor
+                if len(os_row) > i and os_row[i]:
+                    oficina = str(os_row[i])
+                    break
             
             resumo[mes][oficina] += hh
             resumo[mes]["Total"] += hh
@@ -246,15 +235,14 @@ def gerar_pdf_52_semanas(ano):
     logger.info("[REL52] 🚀 Iniciando geração do PDF (ano=%s)", ano)
     
     try:
-        # Verificar estrutura das tabelas primeiro
-        verificar_estrutura_tabelas()
-        
         # Calcular semanas do ano
         semanas_ano = calcular_semanas_ano(ano)
         
         # Buscar equipamentos usando SQL direto
         equipamentos = buscar_equipamentos(current_user.company)
-        logger.info(f"[REL52] 🔧 Encontrados {len(equipamentos)} equipamentos")
+        
+        if not equipamentos:
+            logger.warning("[REL52] ⚠️ Nenhum equipamento encontrado")
         
         # Criar PDF
         buffer = io.BytesIO()
@@ -286,21 +274,14 @@ def gerar_pdf_52_semanas(ano):
         elements.append(Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
         elements.append(Spacer(1, 20))
         
-        # Se não há equipamentos, mostrar mensagem
-        if not equipamentos:
-            elements.append(Paragraph("⚠️ Nenhum equipamento encontrado para esta empresa.", styles['Normal']))
-            elements.append(Paragraph("Verifique se existem equipamentos cadastrados.", styles['Normal']))
-            elements.append(Spacer(1, 20))
-        
         # Para cada equipamento
         for equipamento in equipamentos:
-            # equipamento: id, descricao, tag
+            # equipamento: id, descricao, tag, tipo, setor, filial
             equipamento_id = equipamento[0]
             equipamento_descricao = equipamento[1]
             
             # Buscar PMPs do equipamento usando SQL direto
             pmps = buscar_pmps(equipamento_id)
-            logger.info(f"[REL52] 📋 Equipamento {equipamento_descricao}: {len(pmps)} PMPs")
             
             if not pmps:
                 continue
@@ -315,16 +296,15 @@ def gerar_pdf_52_semanas(ano):
             
             # Para cada PMP do equipamento
             for i, pmp in enumerate(pmps):
-                # pmp: id, codigo, descricao, frequencia
+                # pmp: id, codigo, descricao, frequencia, tipo, oficina
                 pmp_id = pmp[0]
-                pmp_codigo = pmp[1] or f"PMP-{pmp_id}"
-                pmp_frequencia = pmp[3] or "mensal"
+                pmp_codigo = pmp[1]
+                pmp_frequencia = pmp[3]
                 
                 row = [equipamento_descricao if i == 0 else '', pmp_codigo]
                 
                 # Determinar semanas de execução
                 semanas_execucao = semanas_planejadas(pmp_frequencia)
-                logger.debug(f"[REL52] PMP {pmp_codigo}: frequência {pmp_frequencia}, {len(semanas_execucao)} execuções")
                 
                 # Para cada semana do ano
                 for semana in semanas_ano:
@@ -365,7 +345,7 @@ def gerar_pdf_52_semanas(ano):
             # Aplicar cores baseadas no status
             for row_idx in range(1, len(table_data)):
                 pmp = pmps[row_idx - 1]
-                pmp_frequencia = pmp[3] or "mensal"
+                pmp_frequencia = pmp[3]
                 semanas_execucao = semanas_planejadas(pmp_frequencia)
                 
                 for col_idx in range(2, len(table_data[row_idx])):
