@@ -220,35 +220,61 @@ def status_os_na_semana(pmp_id, semana):
         logger.exception(f"[REL52] ❌ Erro ao consultar OS (PMP={pmp_id}): {e}")
         return "erro", None
 
-
-# ---------- Função: hh_por_mes_oficina ----------
+# ---------- Função: status_os_na_semanahh_por_mes_oficina ----------
 def hh_por_mes_oficina(ano):
-    """Calcula HH por mês e oficina baseado nas OS concluídas."""
+    """
+    Calcula HH por mês e por oficina com base nas OS concluídas,
+    considerando o valor real de HH definido na tabela 'pmps'.
+    """
     try:
         logger.info(f"[REL52] 🚀 Iniciando cálculo de HH por mês/oficina para o ano {ano}")
 
-        # Buscar todas as OS do ano
-        os_todas = buscar_os_ano(ano)
-        logger.info(f"[REL52] 📊 Encontradas {len(os_todas)} OS no ano {ano}")
+        # Consulta SQL com JOIN entre ordens_servico e pmps
+        query = """
+        SELECT 
+            os.id AS os_id,
+            os.status AS status,
+            os.data_criacao AS data_criacao,
+            p.oficina AS oficina,
+            COALESCE(p.hh, 0) AS hh_planejado
+        FROM ordens_servico os
+        LEFT JOIN pmps p ON os.pmp_id = p.id
+        WHERE EXTRACT(YEAR FROM os.data_criacao) = :ano
+        ORDER BY os.data_criacao
+        """
+        os_detalhadas = executar_sql(query, {'ano': ano})
 
+        if not os_detalhadas:
+            logger.warning(f"[REL52] ⚠️ Nenhuma OS encontrada para o ano {ano}.")
+            return [], []
+
+        logger.info(f"[REL52] 📊 Encontradas {len(os_detalhadas)} OS vinculadas a PMPs com oficina e HH.")
+
+        # Estrutura: resumo[mês][oficina] = total de HH
         resumo = defaultdict(lambda: defaultdict(float))
         oficinas = set()
 
-        for i, os_row in enumerate(os_todas, start=1):
-            os_id, status, data_criacao = os_row[:3]
-            logger.debug(f"[REL52] Processando OS {i}: ID={os_id}, Status={status}, Data={data_criacao}")
+        for i, os_row in enumerate(os_detalhadas, start=1):
+            os_id, status, data_criacao, oficina, hh_planejado = os_row
 
-            mes = data_criacao.month if data_criacao else None
-            if mes is None:
+            if not data_criacao:
                 logger.warning(f"[REL52] ⚠️ OS {os_id} sem data_criacao válida, ignorada.")
                 continue
 
-            hh = 2.0  # valor padrão de HH
-            oficina = "Manutenção"
+            mes = data_criacao.month
+            oficina = oficina or "Não informada"
+            hh = float(hh_planejado or 0)
+
+            # Apenas considerar OS que realmente foram geradas (não erros)
+            if hh <= 0:
+                logger.debug(f"[REL52] ⚠️ OS {os_id} possui HH=0, ignorada.")
+                continue
 
             resumo[mes][oficina] += hh
             resumo[mes]["Total"] += hh
             oficinas.add(oficina)
+
+            logger.debug(f"[REL52] ➕ OS {os_id}: {hh}h adicionadas à oficina '{oficina}' (mês {mes})")
 
         logger.info(f"[REL52] 📈 Oficinas encontradas: {list(oficinas)}")
 
@@ -259,9 +285,11 @@ def hh_por_mes_oficina(ano):
     # Organizar oficinas (Total primeiro)
     oficinas = ["Total"] + sorted(o for o in oficinas if o != "Total")
 
-    # Criar tabela por mês
-    meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-             "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+    # Criar tabela mensal
+    meses = [
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ]
     tabela = []
 
     for m in range(1, 13):
@@ -270,10 +298,11 @@ def hh_por_mes_oficina(ano):
             valor = resumo[m].get(oficina, 0.0)
             linha[oficina] = valor
         tabela.append(linha)
-        logger.debug(f"[REL52] Mês {m:02d} ({meses[m-1]}): {linha}")
+        logger.debug(f"[REL52] 📅 Mês {m:02d} ({meses[m-1]}): {linha}")
 
-    logger.info(f"[REL52] ✅ Cálculo finalizado com sucesso para o ano {ano}")
+    logger.info(f"[REL52] ✅ Cálculo de HH concluído com sucesso para {ano}")
     return oficinas, tabela
+
 
 # ---------- Geração do PDF ----------
 def gerar_pdf_52_semanas(ano):
