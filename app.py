@@ -335,7 +335,7 @@ def create_app():
         print(f"Erro ao registrar blueprint de analytics PMP: {e}")
         print("Sistema funcionará sem funcionalidades de analytics.")
 
-    '''
+    
     # Importar e registrar a blueprint de atividades da os
     try:
         from routes.atividades_os import atividades_os_bp
@@ -347,7 +347,7 @@ def create_app():
     except Exception as e:
         print(f"Erro ao registrar blueprint de atividades_os_bp: {e}")
         print("Sistema funcionará sem funcionalidades de atividades da OS.")
-    '''    
+        
     # Importar e registrar a blueprint do relatório de 52 semanas
     try:
         from routes.relatorio_52_semanas import relatorio_52_semanas_bp
@@ -369,7 +369,7 @@ def create_app():
         print(f"❌ Erro ao importar atividades_os_fallback_bp: {e}")
     except Exception as e:
         print(f"❌ Erro ao registrar blueprint de atividades fallback: {e}")
-    
+    '''
     # 📊 BLUEPRINT DE STATUS DA TRANSFERÊNCIA AUTOMÁTICA
     try:
         from routes.auto_transfer_status import auto_transfer_status_bp
@@ -379,7 +379,7 @@ def create_app():
         print(f"❌ Erro ao importar auto_transfer_status_bp: {e}")
     except Exception as e:
         print(f"❌ Erro ao registrar blueprint de status transferência: {e}")
-    
+    '''
         # Rotas para arquivos estáticos
     @app.route('/')
     def index():
