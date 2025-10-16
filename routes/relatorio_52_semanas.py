@@ -12,6 +12,18 @@ from flask import Blueprint, current_app, send_file, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import text
 
+# Configuração básica do logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Formato do log
+formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+
+# Handler para console (pode adicionar um FileHandler se quiser gravar em arquivo)
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
+
 # ReportLab imports
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
@@ -19,7 +31,10 @@ from reportlab.lib.units import mm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
-logger = logging.getLogger(__name__)
+
+
+
+
 
 # Blueprint
 relatorio_52_semanas_bp = Blueprint('relatorio_52_semanas', __name__)
@@ -169,75 +184,95 @@ def semanas_planejadas(frequencia):
     else:
         return []  # Frequência desconhecida
 
-# ---------- Status da OS ----------
+# ---------- Função: status_os_na_semana ----------
 def status_os_na_semana(pmp_id, semana):
     """Retorna o status e número da OS associada à PMP naquela semana."""
     try:
+        logger.debug(f"[REL52] 🔍 Iniciando verificação de OS da PMP {pmp_id} na semana {semana}")
+
         ini = datetime.combine(semana["inicio"], datetime.min.time())
         fim = datetime.combine(semana["fim"], datetime.max.time())
-        
+
+        logger.debug(f"[REL52] Intervalo calculado: {ini} → {fim}")
+
         # Buscar OS da PMP nesta semana
         os_list = buscar_os_semana(pmp_id, ini, fim)
-        
+        logger.debug(f"[REL52] 🔎 Resultado da busca de OS: {os_list}")
+
         if os_list:
             os_row = os_list[0]  # Primeira OS encontrada
-            status = (os_row[1] or "").lower()  # status
-            os_num = os_row[0]  # id
-            if "conclu" in status or "final" in status:
+            os_num = os_row[0]  # ID da OS
+            status = (os_row[1] or "").lower()  # status da OS
+
+            logger.info(f"[REL52] ✅ OS encontrada para PMP {pmp_id}: ID={os_num}, Status={status}")
+
+            if "concl" in status or "final" in status:
+                logger.debug(f"[REL52] OS {os_num} está concluída.")
                 return "concluida", os_num
+
+            logger.debug(f"[REL52] OS {os_num} está apenas gerada (não concluída).")
             return "gerada", os_num
+
+        logger.warning(f"[REL52] ⚠️ Nenhuma OS encontrada para PMP {pmp_id} nesta semana.")
         return "nao_gerada", None
+
     except Exception as e:
-        logger.error("[REL52] Erro ao consultar OS (%s): %s", pmp_id, e)
+        logger.exception(f"[REL52] ❌ Erro ao consultar OS (PMP={pmp_id}): {e}")
         return "erro", None
 
-# ---------- HH por oficina ----------
+
+# ---------- Função: hh_por_mes_oficina ----------
 def hh_por_mes_oficina(ano):
     """Calcula HH por mês e oficina baseado nas OS concluídas."""
     try:
+        logger.info(f"[REL52] 🚀 Iniciando cálculo de HH por mês/oficina para o ano {ano}")
+
         # Buscar todas as OS do ano
         os_todas = buscar_os_ano(ano)
-        
         logger.info(f"[REL52] 📊 Encontradas {len(os_todas)} OS no ano {ano}")
-        
+
         resumo = defaultdict(lambda: defaultdict(float))
         oficinas = set()
-        
-        for os_row in os_todas:
-            # os_row: id, status, data_criacao
-            data_criacao = os_row[2]
-            mes = data_criacao.month
-            
-            # Usar valor padrão de 2 horas para cada OS
-            hh = 2.0
-            
-            # Usar oficina padrão
+
+        for i, os_row in enumerate(os_todas, start=1):
+            os_id, status, data_criacao = os_row[:3]
+            logger.debug(f"[REL52] Processando OS {i}: ID={os_id}, Status={status}, Data={data_criacao}")
+
+            mes = data_criacao.month if data_criacao else None
+            if mes is None:
+                logger.warning(f"[REL52] ⚠️ OS {os_id} sem data_criacao válida, ignorada.")
+                continue
+
+            hh = 2.0  # valor padrão de HH
             oficina = "Manutenção"
-            
+
             resumo[mes][oficina] += hh
             resumo[mes]["Total"] += hh
             oficinas.add(oficina)
-            
+
         logger.info(f"[REL52] 📈 Oficinas encontradas: {list(oficinas)}")
-        
+
     except Exception as e:
-        logger.error(f"[REL52] ❌ Erro ao calcular HH: {e}")
+        logger.exception(f"[REL52] ❌ Erro ao calcular HH por mês/oficina: {e}")
         return [], []
-    
+
     # Organizar oficinas (Total primeiro)
     oficinas = ["Total"] + sorted(o for o in oficinas if o != "Total")
-    
+
     # Criar tabela por mês
-    tabela = []
     meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
              "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
-    
+    tabela = []
+
     for m in range(1, 13):
         linha = {"mes": meses[m-1]}
         for oficina in oficinas:
-            linha[oficina] = resumo[m].get(oficina, 0.0)
+            valor = resumo[m].get(oficina, 0.0)
+            linha[oficina] = valor
         tabela.append(linha)
-    
+        logger.debug(f"[REL52] Mês {m:02d} ({meses[m-1]}): {linha}")
+
+    logger.info(f"[REL52] ✅ Cálculo finalizado com sucesso para o ano {ano}")
     return oficinas, tabela
 
 # ---------- Geração do PDF ----------
@@ -333,7 +368,7 @@ def gerar_pdf_52_semanas(ano):
                     # Determinar texto da célula
                     if status == "concluida" and os_num:
                         texto = f"{os_num}"  # Apenas o número da OS
-                    elif status == "gerada" and os_num:
+                    elif status == "aberta" and os_num:
                         texto = f"{os_num}"  # Apenas o número da OS
                     elif semana['numero'] in semanas_execucao:
                         texto = "●"  # Planejada mas não gerada
