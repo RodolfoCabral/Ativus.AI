@@ -309,7 +309,6 @@ def hh_por_mes_oficina(ano):
 
 # ---------- Geração do PDF ----------
 def gerar_pdf_52_semanas(ano):
-def gerar_pdf_52_semanas(ano):
     """Gera PDF com 1 equipamento por página, 2 tabelas (1–26 e 27–52), conforme modelo visual."""
     logger.info("[REL52] 🚀 Gerando plano de 52 semanas (ano=%s)", ano)
 
