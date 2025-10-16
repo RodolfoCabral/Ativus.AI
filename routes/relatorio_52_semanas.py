@@ -309,17 +309,15 @@ def hh_por_mes_oficina(ano):
 
 # ---------- Geração do PDF ----------
 def gerar_pdf_52_semanas(ano):
-    """Gera o PDF completo do plano de 52 semanas.
-    Cada equipamento ocupa uma folha.
-    Cada PMP ocupa 2 linhas: semanas 1–26 e 27–52.
-    """
-    logger.info("[REL52] 🚀 Iniciando geração do PDF (ano=%s)", ano)
+def gerar_pdf_52_semanas(ano):
+    """Gera PDF com 1 equipamento por página, 2 tabelas (1–26 e 27–52), conforme modelo visual."""
+    logger.info("[REL52] 🚀 Gerando plano de 52 semanas (ano=%s)", ano)
 
     try:
         verificar_estrutura_tabelas()
         semanas_ano = calcular_semanas_ano(ano)
         equipamentos = buscar_equipamentos(current_user.company)
-        logger.info(f"[REL52] 🔧 Encontrados {len(equipamentos)} equipamentos")
+        logger.info(f"[REL52] 🔧 {len(equipamentos)} equipamentos encontrados.")
 
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -334,143 +332,121 @@ def gerar_pdf_52_semanas(ano):
         styles = getSampleStyleSheet()
         title_style = styles["Title"]
         heading_style = styles["Heading2"]
+        normal_style = styles["Normal"]
         elements = []
 
         # Cabeçalho geral
         elements.append(Paragraph("PLANO DE MANUTENÇÃO PREVENTIVA - 52 SEMANAS", title_style))
         elements.append(Paragraph(f"Ano: {ano}", heading_style))
-        elements.append(
-            Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles["Normal"])
-        )
+        elements.append(Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}", normal_style))
         elements.append(Spacer(1, 20))
 
+        # Se não há equipamentos
         if not equipamentos:
-            elements.append(Paragraph("⚠️ Nenhum equipamento encontrado para esta empresa.", styles["Normal"]))
-            elements.append(Spacer(1, 20))
+            elements.append(Paragraph("⚠️ Nenhum equipamento encontrado para esta empresa.", normal_style))
+            doc.build(elements)
+            return buffer
 
-        # ---------- LOOP DE EQUIPAMENTOS ----------
+        # ---------- LOOP DOS EQUIPAMENTOS ----------
         for equipamento in equipamentos:
             equipamento_id = equipamento[0]
-            equipamento_descricao = equipamento[1]
+            equipamento_nome = equipamento[1]
             pmps = buscar_pmps(equipamento_id)
-            logger.info(f"[REL52] 📋 Equipamento {equipamento_descricao}: {len(pmps)} PMPs")
+            logger.info(f"[REL52] 📋 Equipamento {equipamento_nome}: {len(pmps)} PMPs")
 
             if not pmps:
                 continue
 
             # Título do equipamento
-            elements.append(Paragraph(f"Equipamento: {equipamento_descricao}", heading_style))
+            elements.append(Paragraph(f"Equipamento: {equipamento_nome}", heading_style))
+            elements.append(Spacer(1, 5))
 
-            # Cabeçalho com 52 semanas dividido em duas linhas
-            header_1 = ["PMP"] + [str(i) for i in range(1, 27)]
-            header_2 = [""] + [str(i) for i in range(27, 53)]
+            def gerar_tabela(inicio, fim):
+                header = ["PMP"] + [str(i) for i in range(inicio, fim + 1)]
+                table_data = [header]
 
-            table_data = []
-            table_data.append(header_1)
-            table_data.append(header_2)
+                for pmp in pmps:
+                    pmp_id = pmp[0]
+                    pmp_codigo = pmp[1] or f"PMP-{pmp_id}"
+                    pmp_freq = pmp[3] or "mensal"
+                    semanas_exec = semanas_planejadas(pmp_freq)
 
-            # Preenchimento das linhas
-            for pmp in pmps:
-                pmp_id = pmp[0]
-                pmp_codigo = pmp[1] or f"PMP-{pmp_id}"
-                pmp_frequencia = pmp[3] or "mensal"
-                semanas_execucao = semanas_planejadas(pmp_frequencia)
+                    row = [pmp_codigo]
+                    for semana in semanas_ano[inicio - 1:fim]:
+                        status, os_num = status_os_na_semana(pmp_id, semana)
+                        if os_num:
+                            texto = str(os_num)
+                        elif semana["numero"] in semanas_exec:
+                            texto = "*"
+                        else:
+                            texto = ""
+                        row.append(texto)
+                    table_data.append(row)
 
-                # Linha 1 – semanas 1 a 26
-                row_1 = [pmp_codigo]
-                for semana in semanas_ano[0:26]:
-                    status, os_num = status_os_na_semana(pmp_id, semana)
-                    if os_num:
-                        texto = str(os_num)
-                    elif semana["numero"] in semanas_execucao:
-                        texto = "●"
-                    else:
-                        texto = ""
-                    row_1.append(texto)
+                col_widths = [30 * mm] + [6 * mm] * (fim - inicio + 1)
+                table = Table(table_data, colWidths=col_widths)
 
-                # Linha 2 – semanas 27 a 52
-                row_2 = [""]
-                for semana in semanas_ano[26:52]:
-                    status, os_num = status_os_na_semana(pmp_id, semana)
-                    if os_num:
-                        texto = str(os_num)
-                    elif semana["numero"] in semanas_execucao:
-                        texto = "●"
-                    else:
-                        texto = ""
-                    row_2.append(texto)
+                # Estilo
+                estilo = TableStyle([
+                    ('GRID', (0, 0), (-1, -1), 0.4, colors.black),
+                    ('FONT', (0, 0), (-1, -1), 'Helvetica', 7),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica-Bold'),
+                ])
 
-                # Inserir as duas linhas da PMP
-                table_data.append(row_1)
-                table_data.append(row_2)
+                # Colorir conforme status
+                for row_idx in range(1, len(table_data)):
+                    pmp = pmps[row_idx - 1]
+                    pmp_id = pmp[0]
+                    pmp_freq = pmp[3] or "mensal"
+                    semanas_exec = semanas_planejadas(pmp_freq)
 
-            # Criar tabela com larguras
-            col_widths = [25 * mm] + [6 * mm] * 26
-            table = Table(table_data, colWidths=col_widths)
+                    for col_idx in range(1, len(table_data[row_idx])):
+                        semana_num = inicio + col_idx - 1
+                        if semana_num > fim:
+                            continue
+                        semana = semanas_ano[semana_num - 1]
+                        status, _ = status_os_na_semana(pmp_id, semana)
 
-            # Estilo da tabela
-            table_style = TableStyle([
-                ('GRID', (0, 0), (-1, -1), 0.4, colors.black),
-                ('FONT', (0, 0), (-1, -1), 'Helvetica', 7),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-                ('BACKGROUND', (0, 1), (-1, 1), colors.lightgrey),
-                ('FONTNAME', (0, 2), (-1, -1), 'Helvetica-Bold'),
-            ])
+                        if status == "concluida":
+                            estilo.add('BACKGROUND', (col_idx, row_idx), (col_idx, row_idx),
+                                       colors.Color(0.2, 0.8, 0.2))  # Verde
+                            estilo.add('TEXTCOLOR', (col_idx, row_idx), (col_idx, row_idx), colors.white)
+                        elif status == "gerada":
+                            estilo.add('BACKGROUND', (col_idx, row_idx), (col_idx, row_idx),
+                                       colors.Color(0.4, 0.4, 0.4))  # Cinza escuro
+                            estilo.add('TEXTCOLOR', (col_idx, row_idx), (col_idx, row_idx), colors.white)
+                        elif semana_num in semanas_exec:
+                            estilo.add('BACKGROUND', (col_idx, row_idx), (col_idx, row_idx),
+                                       colors.Color(0.95, 0.95, 0.95))  # Cinza claro
 
-            # Aplicar coloração por status
-            for row_idx in range(2, len(table_data)):
-                pmp_index = (row_idx - 2) // 2  # Cada PMP ocupa 2 linhas
-                pmp = pmps[pmp_index]
-                pmp_id = pmp[0]
-                pmp_frequencia = pmp[3] or "mensal"
-                semanas_execucao = semanas_planejadas(pmp_frequencia)
+                table.setStyle(estilo)
+                return table
 
-                # Linha 1 → semanas 1–26
-                if row_idx % 2 == 0:
-                    sem_inicial, sem_final, offset = 0, 26, 0
-                else:
-                    sem_inicial, sem_final, offset = 26, 52, 26
+            # Tabela 1 (1–26)
+            table1 = gerar_tabela(1, 26)
+            elements.append(table1)
+            elements.append(Spacer(1, 10))
 
-                for col_idx in range(1, len(table_data[row_idx])):
-                    semana_num = sem_inicial + col_idx
-                    if semana_num > 52:
-                        continue
+            # Tabela 2 (27–52)
+            table2 = gerar_tabela(27, 52)
+            elements.append(table2)
+            elements.append(PageBreak())
 
-                    semana = semanas_ano[semana_num - 1]
-                    status, _ = status_os_na_semana(pmp_id, semana)
-
-                    if status == "concluida":
-                        table_style.add('BACKGROUND', (col_idx, row_idx), (col_idx, row_idx), colors.Color(0.2, 0.8, 0.2))
-                        table_style.add('TEXTCOLOR', (col_idx, row_idx), (col_idx, row_idx), colors.white)
-                    elif status == "gerada":
-                        table_style.add('BACKGROUND', (col_idx, row_idx), (col_idx, row_idx), colors.Color(0.4, 0.4, 0.4))
-                        table_style.add('TEXTCOLOR', (col_idx, row_idx), (col_idx, row_idx), colors.white)
-                    elif semana_num in semanas_execucao:
-                        table_style.add('BACKGROUND', (col_idx, row_idx), (col_idx, row_idx), colors.Color(0.85, 0.85, 0.85))
-                        table_style.add('TEXTCOLOR', (col_idx, row_idx), (col_idx, row_idx), colors.black)
-
-            table.setStyle(table_style)
-            elements.append(table)
-            elements.append(Spacer(1, 15))
-            elements.append(PageBreak())  # 🔹 Próximo equipamento em nova folha
-
-        # 🔹 Adiciona resumo de HH por mês e oficina
+        # ---------- Resumo HH ----------
         oficinas, tabela_hh = hh_por_mes_oficina(ano)
         if tabela_hh:
             elements.append(Paragraph("RESUMO DE HORAS-HOMEM POR MÊS E OFICINA", heading_style))
             header_hh = ['Mês'] + oficinas
-            table_hh_data = [header_hh]
+            data_hh = [header_hh]
             for linha in tabela_hh:
-                row_hh = [linha['mes']]
-                for oficina in oficinas:
-                    valor = linha.get(oficina, 0.0)
-                    row_hh.append(f"{valor:.1f}")
-                table_hh_data.append(row_hh)
+                row = [linha['mes']] + [f"{linha.get(o, 0.0):.1f}" for o in oficinas]
+                data_hh.append(row)
 
-            table_hh = Table(table_hh_data)
-            table_hh_style = TableStyle([
+            table_hh = Table(data_hh)
+            estilo_hh = TableStyle([
                 ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
                 ('FONT', (0, 0), (-1, -1), 'Helvetica', 8),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -478,19 +454,17 @@ def gerar_pdf_52_semanas(ano):
                 ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
                 ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
             ])
-            table_hh.setStyle(table_hh_style)
+            table_hh.setStyle(estilo_hh)
             elements.append(table_hh)
 
-        # 🔹 Geração final
+        # Monta o PDF
         doc.build(elements)
         buffer.seek(0)
-        logger.info("[REL52] ✅ PDF gerado com sucesso")
+        logger.info("[REL52] ✅ PDF final gerado com sucesso")
         return buffer
 
     except Exception as e:
-        logger.error("[REL52] ❌ Erro ao gerar PDF: %s", e)
-        import traceback
-        traceback.print_exc()
+        logger.exception("[REL52] ❌ Erro ao gerar PDF: %s", e)
         raise
 
 # ---------- Rota da API ----------
