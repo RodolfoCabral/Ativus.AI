@@ -80,7 +80,7 @@ def buscar_os_semana(pmp_id, data_inicio, data_fim):
     """Busca OS de uma PMP em uma semana específica usando SQL direto."""
     query = """
     SELECT id, status, data_criacao
-    FROM ordem_servicos 
+    FROM ordens_servico 
     WHERE pmp_id = :pmp_id
     AND data_criacao >= :data_inicio
     AND data_criacao <= :data_fim
@@ -97,7 +97,7 @@ def buscar_os_ano(ano):
     """Busca todas as OS do ano usando SQL direto com colunas básicas."""
     query = """
     SELECT id, status, data_criacao
-    FROM ordem_servicos 
+    FROM ordens_servico 
     WHERE EXTRACT(YEAR FROM data_criacao) = :ano
     ORDER BY data_criacao
     """
@@ -127,15 +127,15 @@ def verificar_estrutura_tabelas():
     colunas_pmps = executar_sql(query_pmps)
     logger.info(f"[REL52] 📋 Colunas pmps: {[col[0] for col in colunas_pmps]}")
     
-    # Verificar colunas da tabela ordem_servicos
+    # Verificar colunas da tabela ordens_servico
     query_os = """
     SELECT column_name 
     FROM information_schema.columns 
-    WHERE table_name = 'ordem_servicos'
+    WHERE table_name = 'ordens_servico'
     ORDER BY ordinal_position
     """
     colunas_os = executar_sql(query_os)
-    logger.info(f"[REL52] 📋 Colunas ordem_servicos: {[col[0] for col in colunas_os]}")
+    logger.info(f"[REL52] 📋 Colunas ordens_servico: {[col[0] for col in colunas_os]}")
 
 # ---------- Cálculo de semanas ----------
 def calcular_semanas_ano(ano):
