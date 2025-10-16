@@ -12,6 +12,9 @@ from flask import Blueprint, current_app, send_file, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import text
 
+
+
+
 # Configuração básica do logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -28,7 +31,7 @@ logger.addHandler(console_handler)
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
 from reportlab.lib.units import mm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet
 
 
