@@ -224,19 +224,20 @@ def status_os_na_semana(pmp_id, semana):
 def hh_por_mes_oficina(ano):
     """
     Calcula HH por mês e por oficina com base nas OS concluídas,
-    considerando o valor real de HH definido na tabela 'pmps'.
+    considerando o valor de HH armazenado em 'ordens_servico.hh'
+    e a oficina associada à PMP.
     """
     try:
         logger.info(f"[REL52] 🚀 Iniciando cálculo de HH por mês/oficina para o ano {ano}")
 
-        # Consulta SQL com JOIN entre ordens_servico e pmps
+        # Consulta SQL corrigida (usa os.hh)
         query = """
         SELECT 
             os.id AS os_id,
             os.status AS status,
             os.data_criacao AS data_criacao,
             p.oficina AS oficina,
-            COALESCE(p.hh, 0) AS hh_planejado
+            COALESCE(os.hh, 0) AS hh_real
         FROM ordens_servico os
         LEFT JOIN pmps p ON os.pmp_id = p.id
         WHERE EXTRACT(YEAR FROM os.data_criacao) = :ano
@@ -248,14 +249,13 @@ def hh_por_mes_oficina(ano):
             logger.warning(f"[REL52] ⚠️ Nenhuma OS encontrada para o ano {ano}.")
             return [], []
 
-        logger.info(f"[REL52] 📊 Encontradas {len(os_detalhadas)} OS vinculadas a PMPs com oficina e HH.")
+        logger.info(f"[REL52] 📊 Encontradas {len(os_detalhadas)} OS com dados de oficina e HH real.")
 
-        # Estrutura: resumo[mês][oficina] = total de HH
         resumo = defaultdict(lambda: defaultdict(float))
         oficinas = set()
 
         for i, os_row in enumerate(os_detalhadas, start=1):
-            os_id, status, data_criacao, oficina, hh_planejado = os_row
+            os_id, status, data_criacao, oficina, hh_real = os_row
 
             if not data_criacao:
                 logger.warning(f"[REL52] ⚠️ OS {os_id} sem data_criacao válida, ignorada.")
@@ -263,9 +263,9 @@ def hh_por_mes_oficina(ano):
 
             mes = data_criacao.month
             oficina = oficina or "Não informada"
-            hh = float(hh_planejado or 0)
+            hh = float(hh_real or 0)
 
-            # Apenas considerar OS que realmente foram geradas (não erros)
+            # Ignora HH nulos ou 0
             if hh <= 0:
                 logger.debug(f"[REL52] ⚠️ OS {os_id} possui HH=0, ignorada.")
                 continue
