@@ -632,7 +632,7 @@
         });
         
         // Função para salvar material
-        function salvarMaterial() {
+        async function salvarMaterial() {
             const form = document.getElementById('materialForm');
             const formData = new FormData(form);
             
@@ -642,14 +642,49 @@
                 return;
             }
             
-            // Aqui você pode implementar a lógica para enviar os dados para o servidor
-            console.log('Salvando material...', Object.fromEntries(formData));
+            // Converter FormData para objeto
+            const materialData = Object.fromEntries(formData);
+            console.log('Salvando material...', materialData);
             
-            // Simulação de sucesso
-            alert('Material cadastrado com sucesso!');
-            
-            // Opcional: redirecionar para a lista de materiais
-            // window.location.href = '/materiais';
+            try {
+                // Mostrar loading
+                const saveBtn = document.querySelector('.floating-btn.save');
+                const originalIcon = saveBtn.innerHTML;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                saveBtn.disabled = true;
+                
+                // Enviar dados para a API
+                const response = await fetch('/api/materiais', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(materialData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Material cadastrado com sucesso!');
+                    // Limpar formulário
+                    form.reset();
+                    // Recalcular custos
+                    calcularCustos();
+                    // Opcional: redirecionar para a lista de materiais
+                    // window.location.href = '/materiais';
+                } else {
+                    alert('Erro ao cadastrar material: ' + result.message);
+                }
+                
+            } catch (error) {
+                console.error('Erro ao salvar material:', error);
+                alert('Erro de conexão. Tente novamente.');
+            } finally {
+                // Restaurar botão
+                const saveBtn = document.querySelector('.floating-btn.save');
+                saveBtn.innerHTML = originalIcon;
+                saveBtn.disabled = false;
+            }
         }
         
         // Função para voltar à tela de materiais

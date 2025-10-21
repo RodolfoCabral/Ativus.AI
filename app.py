@@ -380,6 +380,17 @@ def create_app():
     except Exception as e:
         print(f"❌ Erro ao registrar blueprint de status transferência: {e}")
     '''
+    
+    # 📦 BLUEPRINT DE MATERIAIS
+    try:
+        from routes.materiais_api import materiais_bp
+        app.register_blueprint(materiais_bp)
+        print("✅ Blueprint de materiais registrado com sucesso")
+    except ImportError as e:
+        print(f"❌ Erro ao importar materiais_bp: {e}")
+    except Exception as e:
+        print(f"❌ Erro ao registrar blueprint de materiais: {e}")
+    
         # Rotas para arquivos estáticos
     @app.route('/')
     def index():
