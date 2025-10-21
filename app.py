@@ -476,10 +476,16 @@ def create_app():
     def executar_os():
         return send_from_directory('static', 'executar-os.html')
     
+
     @app.route('/materiais')
     @login_required
     def materiais():
         return send_from_directory('static', 'materiais.html')
+    
+    @app.route('/materiais/cadastrar')
+    @login_required
+    def cadastrar_materiais():
+        return send_from_directory('static', 'cadastrar-materiais.html')
     
     @app.route('/static/<path:path>')
     def serve_static(path):
